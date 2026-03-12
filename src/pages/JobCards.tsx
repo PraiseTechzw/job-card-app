@@ -32,16 +32,38 @@ const getPriorityBadgeClass = (priority: JobCard['priority']) => {
   }
 };
 
+import { Search, Filter, Calendar, MapPin, ClipboardList, Briefcase } from 'lucide-react';
+
 const JobCards: React.FC = () => {
   const { jobCards: cards } = useJobCards();
   const navigate = useNavigate();
+  const [searchTerm, setSearchTerm] = React.useState<string>('');
   const [statusFilter, setStatusFilter] = React.useState<string>('All');
   const [priorityFilter, setPriorityFilter] = React.useState<string>('All');
+  const [sectionFilter, setSectionFilter] = React.useState<string>('All');
+  const [dateFrom, setDateFrom] = React.useState<string>('');
+  const [dateTo, setDateTo] = React.useState<string>('');
 
   const filteredCards = cards.filter(card => {
+    const s = searchTerm.toLowerCase();
+    const searchMatch = !searchTerm || 
+      card.ticketNumber.toLowerCase().includes(s) ||
+      card.requestedBy?.toLowerCase().includes(s) ||
+      card.plantNumber?.toLowerCase().includes(s) ||
+      card.plantDescription?.toLowerCase().includes(s) ||
+      card.issuedTo?.toLowerCase().includes(s);
+
     const statusMatch = statusFilter === 'All' || card.status === statusFilter;
     const priorityMatch = priorityFilter === 'All' || card.priority === priorityFilter;
-    return statusMatch && priorityMatch;
+    
+    // Check for section in multiple possible places (fitting, electrical, etc are booleans in types but we might want a simpler check)
+    // Actually, JobCard has 'fitting', 'tooling', etc. Let's assume sectionFilter is one of those or 'All'
+    const sectionMatch = sectionFilter === 'All' || (card as any)[sectionFilter.toLowerCase()] === true;
+
+    const dateMatch = (!dateFrom || card.dateRaised >= dateFrom) && 
+                     (!dateTo || card.dateRaised <= dateTo);
+
+    return searchMatch && statusMatch && priorityMatch && sectionMatch && dateMatch;
   });
 
   return (
@@ -58,33 +80,44 @@ const JobCards: React.FC = () => {
         </div>
       </div>
 
-      <div className={styles.filtersGlass} style={{ display: 'flex', gap: '1rem', marginBottom: '1.5rem', padding: '1rem', borderRadius: '12px', background: 'rgba(30, 41, 59, 0.5)', border: '1px solid rgba(255,255,255,0.1)' }}>
-        <div className="flex items-center gap-2">
-          <label className="text-sm text-slate-400">Status:</label>
+      <div className={styles.filtersGlass} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem', marginBottom: '1.5rem', padding: '1.5rem', borderRadius: '12px', background: 'rgba(30, 41, 59, 0.5)', border: '1px solid rgba(255,255,255,0.1)' }}>
+        <div className="relative group">
+          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 group-hover:text-blue-400 transition-colors" />
+          <input 
+            type="text" 
+            placeholder="Search #, plant, requester..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full bg-slate-900 border border-white/10 rounded-lg pl-10 pr-4 py-2 text-white text-sm outline-none focus:border-blue-500/50"
+          />
+        </div>
+
+        <div className="flex flex-col gap-1">
+          <label className="text-[10px] uppercase font-bold text-slate-500 ml-1">Status</label>
           <select 
             value={statusFilter} 
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="bg-slate-800 border-white/10 rounded px-2 py-1 text-white text-sm"
+            className="bg-slate-900 border border-white/10 rounded-lg px-3 py-2 text-white text-sm outline-none"
           >
             <option value="All">All Statuses</option>
             <option value="Draft">Draft</option>
-            <option value="Pending_Supervisor">Pending Supervisor</option>
+            <option value="Pending_Supervisor">Pending Approval</option>
             <option value="Approved">Approved</option>
             <option value="Registered">Registered</option>
             <option value="Assigned">Assigned</option>
             <option value="InProgress">In Progress</option>
             <option value="Awaiting_SignOff">Awaiting Sign-off</option>
-            <option value="SignedOff">Signed Off (Orig)</option>
+            <option value="SignedOff">Signed Off</option>
             <option value="Closed">Closed</option>
-            <option value="Rejected">Rejected</option>
           </select>
         </div>
-        <div className="flex items-center gap-2">
-          <label className="text-sm text-slate-400">Priority:</label>
+
+        <div className="flex flex-col gap-1">
+          <label className="text-[10px] uppercase font-bold text-slate-500 ml-1">Priority</label>
           <select 
             value={priorityFilter} 
             onChange={(e) => setPriorityFilter(e.target.value)}
-            className="bg-slate-800 border-white/10 rounded px-2 py-1 text-white text-sm"
+            className="bg-slate-900 border border-white/10 rounded-lg px-3 py-2 text-white text-sm outline-none"
           >
             <option value="All">All Priorities</option>
             <option value="Low">Low</option>
@@ -92,6 +125,40 @@ const JobCards: React.FC = () => {
             <option value="High">High</option>
             <option value="Critical">Critical</option>
           </select>
+        </div>
+
+        <div className="flex flex-col gap-1">
+          <label className="text-[10px] uppercase font-bold text-slate-500 ml-1">Section</label>
+          <select 
+            value={sectionFilter} 
+            onChange={(e) => setSectionFilter(e.target.value)}
+            className="bg-slate-900 border border-white/10 rounded-lg px-3 py-2 text-white text-sm outline-none"
+          >
+            <option value="All">All Sections</option>
+            <option value="Fitting">Fitting</option>
+            <option value="Electrical">Electrical</option>
+            <option value="Tooling">Tooling</option>
+            <option value="InstAndControl">Inst & Control</option>
+            <option value="MachineShop">Machine Shop</option>
+          </select>
+        </div>
+
+        <div className="flex flex-col gap-1">
+          <label className="text-[10px] uppercase font-bold text-slate-500 ml-1">Date Range</label>
+          <div className="flex gap-2">
+            <input 
+              type="date" 
+              value={dateFrom}
+              onChange={(e) => setDateFrom(e.target.value)}
+              className="w-1/2 bg-slate-900 border border-white/10 rounded-lg px-2 py-2 text-white text-xs outline-none"
+            />
+            <input 
+              type="date" 
+              value={dateTo}
+              onChange={(e) => setDateTo(e.target.value)}
+              className="w-1/2 bg-slate-900 border border-white/10 rounded-lg px-2 py-2 text-white text-xs outline-none"
+            />
+          </div>
         </div>
       </div>
 
