@@ -1,13 +1,14 @@
 import React, { useState } from 'react';
 import { useJobCards } from '../context/JobCardContext';
 import { useAuth } from '../context/AuthContext';
-import { Search, Filter, ShieldCheck } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Search, ShieldCheck } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import styles from './JobCards.module.css';
 
 const Approvals: React.FC = () => {
   const { jobCards } = useJobCards();
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
 
   const pendingCards = jobCards.filter(card => {
@@ -20,31 +21,29 @@ const Approvals: React.FC = () => {
   });
 
   return (
-    <div className={styles.container}>
-      <header className={styles.header}>
+    <div className={styles.pageContainer}>
+      <header className={styles.tableHeader}>
         <div>
-          <h1 className={styles.title}>Approval Queue</h1>
-          <p className={styles.subtitle}>Review and authorize maintenance requests</p>
+          <h1 className={styles.pageTitle}>Approval Queue</h1>
+          <p className={styles['text-muted']}>Review and authorize maintenance requests awaiting your signature</p>
         </div>
       </header>
 
-      <div className={styles.filtersGlass}>
-        <div className={styles.searchBox}>
-          <Search size={18} className={styles.searchIcon} />
+      <div className={styles.filtersGlass} style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '1rem', marginBottom: '1.5rem', padding: '1.5rem', borderRadius: '12px', background: 'rgba(15, 23, 42, 0.4)', border: '1px solid rgba(255,255,255,0.05)' }}>
+        <div className="relative group">
+          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 group-hover:text-blue-400 transition-colors" />
           <input 
             type="text" 
-            placeholder="Search by ticket or asset..." 
+            placeholder="Search pending requests..." 
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full bg-slate-900 border border-white/10 rounded-lg pl-10 pr-4 py-2 text-white text-sm outline-none focus:border-blue-500/50"
           />
-        </div>
-        <div className={styles.filterBadge}>
-          <Filter size={16} /> Filters
         </div>
       </div>
 
       {pendingCards.length > 0 ? (
-        <div className={styles.tableCard}>
+        <div className={styles.tableWrapper}>
           <table className={styles.table}>
             <thead>
               <tr>
@@ -59,8 +58,11 @@ const Approvals: React.FC = () => {
             <tbody>
               {pendingCards.map(card => (
                 <tr key={card.id}>
-                  <td className={styles.ticketNo}>{card.ticketNumber}</td>
-                  <td>{card.plantDescription}</td>
+                  <td className={styles.ticketNumber}>{card.ticketNumber}</td>
+                  <td>
+                    <div className={styles.equipment}>{card.plantDescription}</div>
+                    <div className={styles.location}>ID: {card.plantNumber}</div>
+                  </td>
                   <td>{card.requestedBy}</td>
                   <td>{card.dateRaised}</td>
                   <td>
@@ -69,9 +71,12 @@ const Approvals: React.FC = () => {
                     </span>
                   </td>
                   <td>
-                    <Link to={`/job-cards/view/${card.id}`} className="btn btn-primary btn-sm">
+                    <button 
+                      onClick={() => navigate(`/job-cards/view/${card.id}`)}
+                      className="btn btn-primary btn-sm px-4"
+                    >
                       {card.status === 'SignedOff' ? 'Review & Close' : 'Review & Approve'}
-                    </Link>
+                    </button>
                   </td>
                 </tr>
               ))}
@@ -79,10 +84,10 @@ const Approvals: React.FC = () => {
           </table>
         </div>
       ) : (
-        <div className={styles.emptyState}>
-          <ShieldCheck size={48} className="text-slate-600 mb-4" />
-          <h3>All caught up!</h3>
-          <p>No job cards are currently pending your approval.</p>
+        <div className="flex flex-col items-center justify-center py-24 glass-panel border-dashed border-2 border-white/5 opacity-50">
+          <ShieldCheck size={64} className="text-slate-700 mb-4" />
+          <h3 className="text-xl font-bold text-white">All caught up!</h3>
+          <p className="text-slate-400">No job cards are currently pending your approval.</p>
         </div>
       )}
     </div>

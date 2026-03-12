@@ -75,13 +75,15 @@ const Sidebar: React.FC = () => {
           {user?.name?.charAt(0) || 'U'}
         </div>
         <div className={styles.userInfo}>
-          <div className={styles.userName}>{user?.name}</div>
-          <div className={styles.userRole}>{user?.role}</div>
+          <span className={styles.userName}>{user?.name}</span>
+          <span className={styles.userRole}>{user?.role}</span>
         </div>
-        <button className="btn-ghost" onClick={logout} title="Logout" style={{padding: '0.5rem', borderRadius: '50%'}}>
-          <LogOut size={18} />
-        </button>
       </div>
+
+      <button className={styles.logoutBtn} onClick={logout}>
+        <LogOut size={16} />
+        <span>Logout</span>
+      </button>
     </aside>
   );
 };

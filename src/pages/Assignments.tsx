@@ -60,30 +60,31 @@ const Assignments: React.FC = () => {
   };
 
   return (
-    <div className={styles.container}>
-      <header className={styles.header}>
+    <div className={styles.pageContainer}>
+      <header className={styles.tableHeader}>
         <div>
-          <h1 className={styles.title}>Job Assignment</h1>
-          <p className={styles.subtitle}>Assign registered job cards to technicians/artisans</p>
+          <h1 className={styles.pageTitle}>Daily Work Planning</h1>
+          <p className={styles['text-muted']}>Allocate registered maintenance task cards to technical teams</p>
         </div>
       </header>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left Column: Registered Jobs Queue */}
         <div className="lg:col-span-2">
-          <div className={styles.filtersGlass}>
-            <div className={styles.searchBox}>
-              <Search size={18} className={styles.searchIcon} />
-              <input 
-                type="text" 
-                placeholder="Search registered jobs..." 
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
-            </div>
-          </div>
+      <div className={styles.filtersGlass} style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '1rem', marginBottom: '1.5rem', padding: '1.5rem', borderRadius: '12px', background: 'rgba(15, 23, 42, 0.4)', border: '1px solid rgba(255,255,255,0.05)' }}>
+        <div className="relative group">
+          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 group-hover:text-blue-400 transition-colors" />
+          <input 
+            type="text" 
+            placeholder="Search registered jobs..." 
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full bg-slate-900 border border-white/10 rounded-lg pl-10 pr-4 py-2 text-white text-sm outline-none focus:border-blue-500/50"
+          />
+        </div>
+      </div>
 
-          <div className={styles.tableCard}>
+          <div className={styles.tableWrapper}>
             <table className={styles.table}>
               <thead>
                 <tr>
@@ -96,7 +97,7 @@ const Assignments: React.FC = () => {
               <tbody>
                 {registeredCards.map(card => (
                   <tr key={card.id} className={selectedCard === card.id ? 'bg-blue-600/10' : ''}>
-                    <td className={styles.ticketNo}>{card.ticketNumber}</td>
+                    <td className={styles.ticketNumber}>{card.ticketNumber}</td>
                     <td>{card.plantDescription}</td>
                     <td>
                       <span className={`badge badge-${card.priority.toLowerCase()}`}>

@@ -81,14 +81,14 @@ const JobCards: React.FC = () => {
       </div>
 
       <div className={styles.filtersGlass} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem', marginBottom: '1.5rem', padding: '1.5rem', borderRadius: '12px', background: 'rgba(30, 41, 59, 0.5)', border: '1px solid rgba(255,255,255,0.1)' }}>
-        <div className="relative group">
-          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 group-hover:text-blue-400 transition-colors" />
+        <div className="search-container">
+          <Search size={16} className="search-icon" />
           <input 
             type="text" 
             placeholder="Search #, plant, requester..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full bg-slate-900 border border-white/10 rounded-lg pl-10 pr-4 py-2 text-white text-sm outline-none focus:border-blue-500/50"
+            className="search-input"
           />
         </div>
 
@@ -97,7 +97,7 @@ const JobCards: React.FC = () => {
           <select 
             value={statusFilter} 
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="bg-slate-900 border border-white/10 rounded-lg px-3 py-2 text-white text-sm outline-none"
+            className="form-select"
           >
             <option value="All">All Statuses</option>
             <option value="Draft">Draft</option>
@@ -117,7 +117,7 @@ const JobCards: React.FC = () => {
           <select 
             value={priorityFilter} 
             onChange={(e) => setPriorityFilter(e.target.value)}
-            className="bg-slate-900 border border-white/10 rounded-lg px-3 py-2 text-white text-sm outline-none"
+            className="form-select"
           >
             <option value="All">All Priorities</option>
             <option value="Low">Low</option>
@@ -132,7 +132,7 @@ const JobCards: React.FC = () => {
           <select 
             value={sectionFilter} 
             onChange={(e) => setSectionFilter(e.target.value)}
-            className="bg-slate-900 border border-white/10 rounded-lg px-3 py-2 text-white text-sm outline-none"
+            className="form-select"
           >
             <option value="All">All Sections</option>
             <option value="Fitting">Fitting</option>
@@ -150,13 +150,15 @@ const JobCards: React.FC = () => {
               type="date" 
               value={dateFrom}
               onChange={(e) => setDateFrom(e.target.value)}
-              className="w-1/2 bg-slate-900 border border-white/10 rounded-lg px-2 py-2 text-white text-xs outline-none"
+              className="form-input"
+              style={{ padding: '0.5rem' }}
             />
             <input 
               type="date" 
               value={dateTo}
               onChange={(e) => setDateTo(e.target.value)}
-              className="w-1/2 bg-slate-900 border border-white/10 rounded-lg px-2 py-2 text-white text-xs outline-none"
+              className="form-input"
+              style={{ padding: '0.5rem' }}
             />
           </div>
         </div>

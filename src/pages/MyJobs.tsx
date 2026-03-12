@@ -40,96 +40,113 @@ const MyJobs: React.FC = () => {
   };
 
   return (
-    <div className={styles.container}>
-      <header className={styles.header}>
+    <div className={styles.pageContainer}>
+      <header className={styles.tableHeader}>
         <div>
-          <h1 className={styles.title}>My Assigned Work</h1>
-          <p className={styles.subtitle}>Manage your active job cards and track progress</p>
+          <h1 className={styles.pageTitle}>My Assigned Work</h1>
+          <p className={styles['text-muted']}>Manage your active job cards and track progress</p>
         </div>
       </header>
 
-      <div className={styles.filtersGlass}>
-        <div className={styles.searchBox}>
-          <Search size={18} className={styles.searchIcon} />
+      <div className={styles.filtersGlass} style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '1rem', marginBottom: '2.5rem', padding: '1.5rem', borderRadius: '16px', background: 'rgba(15, 23, 42, 0.4)', border: '1px solid rgba(255,255,255,0.05)' }}>
+        <div className="relative group">
+          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 group-hover:text-blue-400 transition-colors" />
           <input 
             type="text" 
-            placeholder="Search my jobs..." 
+            placeholder="Search my active jobs..." 
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full bg-slate-900 border border-white/10 rounded-lg pl-10 pr-4 py-2.5 text-white text-sm outline-none focus:border-blue-500/50 transition-all shadow-inner"
           />
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
         {myAssignedJobs.map(card => (
-          <div key={card.id} className="glass-panel p-5 flex flex-col justify-between hover:border-blue-500/50 transition-all group">
-            <div>
-              <div className="flex justify-between items-start mb-4">
-                <span className="bg-blue-600/20 text-blue-400 px-2 py-1 rounded text-xs font-bold font-mono border border-blue-500/20">
-                  {card.ticketNumber}
-                </span>
-                <span className={`badge badge-${card.priority.toLowerCase()}`}>
-                  {card.priority}
-                </span>
-              </div>
-              
-              <h3 className="text-white font-bold text-lg mb-1">{card.plantDescription}</h3>
-              <p className="text-slate-400 text-sm mb-4 flex items-center gap-1">
-                <FileText size={14} /> ID: {card.plantNumber}
-              </p>
-
-              <div className="space-y-3 mb-6">
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-slate-500">Status</span>
-                  <span className={`px-2 py-0.5 rounded text-xs font-medium ${
-                    card.status === 'Assigned' ? 'bg-slate-700 text-slate-300' :
-                    card.status === 'InProgress' ? 'bg-yellow-600/20 text-yellow-400 border border-yellow-500/20' :
-                    'bg-green-600/20 text-green-400 border border-green-500/20'
-                  }`}>
-                    {card.status.replace('_', ' ')}
+          <div key={card.id} className="relative group">
+            <div className="absolute -inset-0.5 bg-gradient-to-r from-blue-500 to-purple-600 rounded-2xl blur opacity-10 group-hover:opacity-30 transition duration-1000 group-hover:duration-200"></div>
+            <div className="relative glass-panel p-6 flex flex-col justify-between h-full border border-white/5 group-hover:border-white/10 transition-all duration-300">
+              <div>
+                <div className="flex justify-between items-start mb-6">
+                  <span className="bg-blue-500/10 text-blue-400 px-3 py-1 rounded-full text-[10px] font-bold tracking-widest border border-blue-500/20 uppercase">
+                    {card.ticketNumber}
+                  </span>
+                  <span className={`badge badge-${card.priority.toLowerCase()} shadow-lg`}>
+                    {card.priority}
                   </span>
                 </div>
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-slate-500">Required By</span>
-                  <span className="text-slate-300 font-medium">{card.requiredCompletionDate}</span>
+                
+                <h3 className="text-white font-bold text-xl mb-2 group-hover:text-blue-400 transition-colors">{card.plantDescription}</h3>
+                <p className="text-slate-400 text-xs mb-6 flex items-center gap-1.5 font-medium">
+                  <FileText size={12} className="text-slate-500" /> Plant ID: {card.plantNumber}
+                </p>
+
+                <div className="space-y-4 mb-8">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-slate-500 font-bold uppercase tracking-wider">Status</span>
+                    <span className={`px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wide ${
+                      card.status === 'Assigned' ? 'bg-slate-700 text-slate-300' :
+                      card.status === 'InProgress' ? 'bg-amber-500/20 text-amber-400 border border-amber-500/20 shadow-[0_0_15px_rgba(245,158,11,0.1)]' :
+                      'bg-emerald-500/20 text-emerald-400 border border-emerald-500/20'
+                    }`}>
+                      {card.status.replace('_', ' ')}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-slate-500 font-bold uppercase tracking-wider">Target Date</span>
+                    <span className="text-slate-300 font-bold">{card.requiredCompletionDate}</span>
+                  </div>
+                  {card.status === 'InProgress' && (
+                    <div className="pt-2">
+                      <div className="flex justify-between text-[9px] text-slate-500 uppercase font-bold mb-1">
+                        <span>Progress</span>
+                        <span className="animate-pulse text-amber-500">Active</span>
+                      </div>
+                      <div className="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden">
+                        <div className="h-full bg-amber-500 shadow-[0_0_10px_rgba(245,158,11,0.5)] w-1/2 rounded-full"></div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
-            </div>
 
-            <div className="space-y-2">
-              <button 
-                onClick={() => navigate(`/job-cards/view/${card.id}`)}
-                className="w-full btn btn-ghost btn-sm flex items-center justify-center gap-2 border-white/5"
-              >
-                View Details <ChevronRight size={14} />
-              </button>
-              
-              {card.status === 'Assigned' && (
+              <div className="grid grid-cols-1 gap-3">
                 <button 
-                  onClick={() => handleStatusUpdate(card.id, 'InProgress')}
-                  className="w-full btn btn-primary py-2.5 flex items-center justify-center gap-2"
+                  onClick={() => navigate(`/job-cards/view/${card.id}`)}
+                  className="w-full px-4 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-white text-sm font-bold flex items-center justify-center gap-2 border border-white/5 transition-all"
                 >
-                  <Play size={16} /> Start Job
+                  View Documentation <ChevronRight size={16} />
                 </button>
-              )}
+                
+                {card.status === 'Assigned' && (
+                  <button 
+                    onClick={() => handleStatusUpdate(card.id, 'InProgress')}
+                    className="w-full px-4 py-3 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-sm font-bold flex items-center justify-center gap-2 shadow-lg shadow-blue-500/20 transition-all transform hover:-translate-y-1"
+                  >
+                    <Play size={18} fill="currentColor" /> Start Work Order
+                  </button>
+                )}
 
-              {card.status === 'InProgress' && (
-                <button 
-                  onClick={() => handleStatusUpdate(card.id, 'Completed')}
-                  className="w-full btn btn-success py-2.5 flex items-center justify-center gap-2"
-                >
-                  <CheckCircle2 size={16} /> Mark as Complete
-                </button>
-              )}
+                {card.status === 'InProgress' && (
+                  <button 
+                    onClick={() => handleStatusUpdate(card.id, 'Completed')}
+                    className="w-full px-4 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-bold flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/20 transition-all transform hover:-translate-y-1"
+                  >
+                    <CheckCircle2 size={18} /> Submit for Sign-off
+                  </button>
+                )}
+              </div>
             </div>
           </div>
         ))}
 
         {myAssignedJobs.length === 0 && (
-          <div className="col-span-full py-20 text-center flex flex-col items-center glass-panel">
-            <Clock size={48} className="text-slate-600 mb-4" />
-            <h3 className="text-white font-bold text-xl">No Assigned Jobs</h3>
-            <p className="text-slate-400 mt-2">You don't have any job cards assigned to you at the moment.</p>
+          <div className="col-span-full py-32 text-center flex flex-col items-center glass-panel border-dashed border-2 border-white/5">
+            <div className="w-20 h-20 bg-slate-800/50 rounded-full flex items-center justify-center mb-6">
+              <Clock size={40} className="text-slate-600" />
+            </div>
+            <h3 className="text-white font-bold text-2xl tracking-tight">Zero Active Assignments</h3>
+            <p className="text-slate-400 mt-2 max-w-sm mx-auto">You've cleared your queue. New maintenance tasks will appear here once assigned by the supervisor.</p>
           </div>
         )}
       </div>
