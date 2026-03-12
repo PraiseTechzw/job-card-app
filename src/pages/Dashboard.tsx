@@ -1,5 +1,5 @@
 import React from 'react';
-import { ClipboardList, Clock, CheckCircle, AlertOctagon, Plus, FileText } from 'lucide-react';
+import { ClipboardList, Clock, CheckCircle, AlertOctagon, Plus, FileText, AlertCircle } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import styles from './Dashboard.module.css';
 import { useAuth } from '../context/AuthContext';
@@ -83,6 +83,37 @@ const Dashboard: React.FC = () => {
           </div>
         </div>
       </header>
+ 
+      {/* URGENT ALERTS SECTION */}
+      {((jobCards.filter(c => ['Pending_Supervisor', 'Pending_HOD'].includes(c.status)).length > 0 && ['Supervisor', 'HOD', 'Admin'].includes(user?.role || '')) || 
+        jobCards.filter(c => c.requiredCompletionDate && new Date(c.requiredCompletionDate) < new Date() && !['Closed', 'Rejected'].includes(c.status)).length > 0) && (
+        <div className="mb-8 grid grid-cols-1 md:grid-cols-2 gap-4 no-print">
+          {jobCards.filter(c => c.requiredCompletionDate && new Date(c.requiredCompletionDate) < new Date() && !['Closed', 'Rejected'].includes(c.status)).length > 0 && (
+            <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-4 flex items-center gap-4 border-l-4 border-l-red-500">
+              <div className="w-10 h-10 bg-red-500 rounded-full flex items-center justify-center text-white">
+                <AlertCircle size={24} />
+              </div>
+              <div className="flex-1">
+                <h3 className="text-red-400 font-bold m-0 text-sm">Action Needed: Overdue Tasks</h3>
+                <p className="text-red-300/80 text-xs">There are {jobCards.filter(c => c.requiredCompletionDate && new Date(c.requiredCompletionDate) < new Date() && !['Closed', 'Rejected'].includes(c.status)).length} jobs past their required completion date.</p>
+              </div>
+              <Link to="/job-cards" className="text-red-400 font-bold text-[10px] uppercase hover:underline">View All</Link>
+            </div>
+          )}
+          {jobCards.filter(c => (user?.role === 'Supervisor' && c.status === 'Pending_Supervisor') || (user?.role === 'HOD' && c.status === 'Pending_HOD')).length > 0 && (
+            <div className="bg-amber-500/10 border border-amber-500/30 rounded-xl p-4 flex items-center gap-4 border-l-4 border-l-amber-500">
+              <div className="w-10 h-10 bg-amber-500 rounded-full flex items-center justify-center text-white">
+                <Clock size={24} />
+              </div>
+              <div className="flex-1">
+                <h3 className="text-amber-400 font-bold m-0 text-sm">Tasks Awaiting Approval</h3>
+                <p className="text-amber-300/80 text-xs">You have {jobCards.filter(c => (user?.role === 'Supervisor' && c.status === 'Pending_Supervisor') || (user?.role === 'HOD' && c.status === 'Pending_HOD')).length} requests waiting for your authorization.</p>
+              </div>
+              <Link to="/approvals" className="text-amber-400 font-bold text-[10px] uppercase hover:underline">Review Now</Link>
+            </div>
+          )}
+        </div>
+      )}
 
       <div className={styles.statsGrid}>
         {stats.map((stat, idx) => (

@@ -8,6 +8,7 @@ interface JobCardContextType {
   jobCards: JobCard[];
   allocationSheets: AllocationSheet[];
   isLoading: boolean;
+  error: string | null;
   addJobCard: (jobCard: Partial<JobCard>) => Promise<void>;
   updateJobCard: (id: string, updates: Partial<JobCard>) => Promise<void>;
   getJobCard: (id: string) => JobCard | undefined;
@@ -31,10 +32,12 @@ export const JobCardProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const [allocationSheets, setAllocationSheets] = useState<AllocationSheet[]>([]);
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const fetchData = async () => {
     try {
       setIsLoading(true);
+      setError(null);
       const [cardsRes, sheetsRes, assignRes] = await Promise.all([
         axios.get(`${API_BASE}/job-cards`),
         axios.get(`${API_BASE}/allocation-sheets`),
@@ -43,8 +46,9 @@ export const JobCardProvider: React.FC<{ children: React.ReactNode }> = ({ child
       setJobCards(Array.isArray(cardsRes.data) ? cardsRes.data : []);
       setAllocationSheets(Array.isArray(sheetsRes.data) ? sheetsRes.data : []);
       setAssignments(Array.isArray(assignRes.data) ? assignRes.data : []);
-    } catch (err) {
+    } catch (err: any) {
       console.error('Failed to fetch data from API:', err);
+      setError(err.response?.data?.error || 'Failed to sync with server');
     } finally {
       setIsLoading(false);
     }
@@ -139,6 +143,7 @@ export const JobCardProvider: React.FC<{ children: React.ReactNode }> = ({ child
       jobCards, 
       allocationSheets, 
       isLoading,
+      error,
       addJobCard, 
       updateJobCard, 
       getJobCard,

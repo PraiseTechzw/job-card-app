@@ -7,21 +7,27 @@
 .paperForm {
   background: white;
   color: #1e293b;
-  padding: 4rem;
-  border-radius: 4px;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+  padding: 5rem 6rem;
+  border-radius: 8px;
+  box-shadow: 
+    0 30px 60px -12px rgba(0, 0, 0, 0.45),
+    0 18px 36px -18px rgba(0, 0, 0, 0.5),
+    0 -12px 36px -8px rgba(0, 0, 0, 0.025);
   position: relative;
   overflow: hidden;
-  border-top: 6px solid var(--accent-primary);
+  border-top: 8px solid #0f172a;
+  min-height: 1200px;
+  display: flex;
+  flex-direction: column;
 }
 
 .header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  border-bottom: 2px solid #e2e8f0;
-  padding-bottom: 2rem;
-  margin-bottom: 3rem;
+  border-bottom: 3px double #e2e8f0;
+  padding-bottom: 2.5rem;
+  margin-bottom: 4rem;
 }
 
 .ticketBox {

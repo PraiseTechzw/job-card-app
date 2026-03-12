@@ -18,11 +18,17 @@ import Assignments from './pages/Assignments';
 import MyJobs from './pages/MyJobs';
 import SignOffs from './pages/SignOffs';
 
-const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
+const ProtectedRoute = ({ children, allowedRoles }: { children: React.ReactNode; allowedRoles?: string[] }) => {
   const { user } = useAuth();
+  
   if (!user) {
     return <Navigate to="/login" replace />;
   }
+
+  if (allowedRoles && !allowedRoles.includes(user.role)) {
+    return <Navigate to="/dashboard" replace />;
+  }
+
   return <>{children}</>;
 };
 
@@ -34,19 +40,20 @@ const AppContent = () => {
       
       {/* Job Card Module */}
       <Route path="/job-cards" element={<ProtectedRoute><MainLayout><JobCards /></MainLayout></ProtectedRoute>} />
-      <Route path="/job-cards/new" element={<ProtectedRoute><MainLayout><NewJobCard /></MainLayout></ProtectedRoute>} />
-      <Route path="/job-cards/edit/:id" element={<ProtectedRoute><MainLayout><EditJobCard /></MainLayout></ProtectedRoute>} />
+      <Route path="/job-cards/new" element={<ProtectedRoute allowedRoles={['Initiator', 'Admin']}><MainLayout><NewJobCard /></MainLayout></ProtectedRoute>} />
+      <Route path="/job-cards/edit/:id" element={<ProtectedRoute allowedRoles={['Initiator', 'Admin', 'Supervisor']}><MainLayout><EditJobCard /></MainLayout></ProtectedRoute>} />
       <Route path="/job-cards/view/:id" element={<ProtectedRoute><MainLayout><JobCardDetail /></MainLayout></ProtectedRoute>} />
       
-      <Route path="/allocations" element={<ProtectedRoute><MainLayout><Allocations /></MainLayout></ProtectedRoute>} />
-      <Route path="/allocations/new" element={<ProtectedRoute><MainLayout><AllocationForm /></MainLayout></ProtectedRoute>} />
-      <Route path="/allocations/edit/:id" element={<ProtectedRoute><MainLayout><AllocationForm /></MainLayout></ProtectedRoute>} />
-      <Route path="/approvals" element={<ProtectedRoute><MainLayout><Approvals /></MainLayout></ProtectedRoute>} />
-      <Route path="/planning" element={<ProtectedRoute><MainLayout><Planning /></MainLayout></ProtectedRoute>} />
-      <Route path="/assignments" element={<ProtectedRoute><MainLayout><Assignments /></MainLayout></ProtectedRoute>} />
-      <Route path="/sign-offs" element={<ProtectedRoute><MainLayout><SignOffs /></MainLayout></ProtectedRoute>} />
-      <Route path="/my-jobs" element={<ProtectedRoute><MainLayout><MyJobs /></MainLayout></ProtectedRoute>} />
-      <Route path="/reports" element={<ProtectedRoute><MainLayout><Reports /></MainLayout></ProtectedRoute>} />
+      <Route path="/allocations" element={<ProtectedRoute allowedRoles={['Supervisor', 'EngSupervisor', 'Admin', 'PlanningOffice']}><MainLayout><Allocations /></MainLayout></ProtectedRoute>} />
+      <Route path="/allocations/new" element={<ProtectedRoute allowedRoles={['Supervisor', 'EngSupervisor', 'Admin']}><MainLayout><AllocationForm /></MainLayout></ProtectedRoute>} />
+      <Route path="/allocations/edit/:id" element={<ProtectedRoute allowedRoles={['Supervisor', 'EngSupervisor', 'Admin']}><MainLayout><AllocationForm /></MainLayout></ProtectedRoute>} />
+      
+      <Route path="/approvals" element={<ProtectedRoute allowedRoles={['Supervisor', 'HOD', 'Admin']}><MainLayout><Approvals /></MainLayout></ProtectedRoute>} />
+      <Route path="/planning" element={<ProtectedRoute allowedRoles={['PlanningOffice', 'Admin']}><MainLayout><Planning /></MainLayout></ProtectedRoute>} />
+      <Route path="/assignments" element={<ProtectedRoute allowedRoles={['EngSupervisor', 'Admin']}><MainLayout><Assignments /></MainLayout></ProtectedRoute>} />
+      <Route path="/sign-offs" element={<ProtectedRoute allowedRoles={['Initiator', 'Admin']}><MainLayout><SignOffs /></MainLayout></ProtectedRoute>} />
+      <Route path="/my-jobs" element={<ProtectedRoute allowedRoles={['Artisan', 'Admin']}><MainLayout><MyJobs /></MainLayout></ProtectedRoute>} />
+      <Route path="/reports" element={<ProtectedRoute allowedRoles={['Admin', 'Supervisor', 'HOD', 'EngSupervisor']}><MainLayout><Reports /></MainLayout></ProtectedRoute>} />
       <Route path="/login" element={<Login />} />
     </Routes>
   );

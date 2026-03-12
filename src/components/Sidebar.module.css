@@ -68,6 +68,24 @@
   height: 20px;
 }
 
+.badge {
+  background: var(--danger);
+  color: white;
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 0.1rem 0.4rem;
+  border-radius: 100px;
+  margin-left: auto;
+  box-shadow: 0 0 10px rgba(239, 68, 68, 0.3);
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+  100% { transform: scale(1); }
+}
+
 .userProfile {
   padding: 1.5rem;
   border-top: 1px solid var(--border-subtle);
