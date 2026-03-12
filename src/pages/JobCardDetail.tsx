@@ -32,16 +32,20 @@ const JobCardDetail: React.FC = () => {
     window.print();
   };
 
-  const handleStatusTransition = (newStatus: JobCardStatus, extraFields = {}) => {
+  const handleStatusTransition = async (newStatus: JobCardStatus, extraFields = {}) => {
     if (card) {
-      const updates = { 
-        status: newStatus, 
-        ...extraFields,
-        ...backData 
-      };
-      updateJobCard(card.id, updates);
-      setCard({ ...card, ...updates });
-      setIsEditingBack(false);
+      try {
+        const updates = { 
+          status: newStatus, 
+          ...extraFields,
+          ...backData 
+        };
+        await updateJobCard(card.id, updates);
+        setCard({ ...card, ...updates });
+        setIsEditingBack(false);
+      } catch (err) {
+        console.error('Failed to update status:', err);
+      }
     }
   };
 

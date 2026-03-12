@@ -9,15 +9,16 @@ const NewJobCard: React.FC = () => {
   const { addJobCard } = useJobCards();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSave = (data: Partial<JobCard>) => {
-    setIsSubmitting(true);
-    
-    // Simulate API delay
-    setTimeout(() => {
-      addJobCard(data);
-      setIsSubmitting(false);
+  const handleSave = async (data: Partial<JobCard>) => {
+    try {
+      setIsSubmitting(true);
+      await addJobCard(data);
       navigate('/job-cards');
-    }, 800);
+    } catch (err) {
+      console.error('Failed to save job card:', err);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (

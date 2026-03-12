@@ -20,9 +20,9 @@ const Allocations: React.FC = () => {
     actualTimeTaken: ''
   });
 
-  const handleAdd = (e: React.FormEvent) => {
+  const handleAdd = async (e: React.FormEvent) => {
     e.preventDefault();
-    addWorkAllocation(newEntry);
+    await addWorkAllocation(newEntry);
     setNewEntry({
       ...newEntry,
       artisanName: '',
