@@ -32,7 +32,7 @@ const getPriorityBadgeClass = (priority: JobCard['priority']) => {
   }
 };
 
-import { Search, Filter, Calendar, MapPin, ClipboardList, Briefcase } from 'lucide-react';
+import { Search } from 'lucide-react';
 
 const JobCards: React.FC = () => {
   const { jobCards: cards } = useJobCards();

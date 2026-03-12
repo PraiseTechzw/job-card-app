@@ -42,7 +42,7 @@
 
 .statCard.warning { border-left-color: var(--warning); }
 .statCard.success { border-left-color: var(--success); }
-.statCard.urgent { border-left-color: var(--danger); }
+.statCard.urgent, .statCard.danger { border-left-color: var(--danger); }
 
 .iconWrapper {
   width: 48px;
@@ -57,7 +57,7 @@
 
 .warning .iconWrapper { background: var(--warning-bg); color: var(--warning); }
 .success .iconWrapper { background: var(--success-bg); color: var(--success); }
-.urgent .iconWrapper { background: var(--danger-bg); color: var(--danger); }
+.urgent .iconWrapper, .danger .iconWrapper { background: var(--danger-bg); color: var(--danger); }
 
 .statInfo {
   flex: 1;

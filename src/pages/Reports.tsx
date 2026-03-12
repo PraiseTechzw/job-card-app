@@ -1,7 +1,7 @@
 import React from 'react';
 import { useJobCards } from '../context/JobCardContext';
 import styles from './Reports.module.css';
-import { BarChart3, PieChart, Activity, HardHat, FileText, Download, Printer, ChevronRight, Search } from 'lucide-react';
+import { BarChart3, PieChart, Activity, HardHat, Printer, Search } from 'lucide-react';
 
 const Reports: React.FC = () => {
   const { jobCards, allocationSheets } = useJobCards();
