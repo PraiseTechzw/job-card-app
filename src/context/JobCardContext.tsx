@@ -31,8 +31,8 @@ export const JobCardProvider: React.FC<{ children: React.ReactNode }> = ({ child
         axios.get(`${API_BASE}/job-cards`),
         axios.get(`${API_BASE}/allocations`)
       ]);
-      setJobCards(cardsRes.data);
-      setWorkAllocations(allocRes.data);
+      setJobCards(Array.isArray(cardsRes.data) ? cardsRes.data : []);
+      setWorkAllocations(Array.isArray(allocRes.data) ? allocRes.data : []);
     } catch (err) {
       console.error('Failed to fetch data from API, using local fallback:', err);
       // Fallback to local storage if API fails (e.g. during dev without DB)

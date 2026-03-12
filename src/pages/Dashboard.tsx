@@ -13,6 +13,8 @@ const Dashboard: React.FC = () => {
   });
 
   const getStats = () => {
+    if (!jobCards || !Array.isArray(jobCards)) return [];
+    
     switch (user?.role) {
       case 'Artisan':
         return [
@@ -42,7 +44,7 @@ const Dashboard: React.FC = () => {
   };
 
   const stats = getStats();
-  const recentCards = [...jobCards].reverse().slice(0, 5);
+  const recentCards = Array.isArray(jobCards) ? [...jobCards].reverse().slice(0, 5) : [];
 
   return (
     <div className={styles.dashboard}>
