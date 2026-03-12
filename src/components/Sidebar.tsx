@@ -1,6 +1,6 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { LayoutDashboard, ClipboardList, PenTool, CheckSquare, LogOut, FileText } from 'lucide-react';
+import { LayoutDashboard, ClipboardList, PenTool, CheckSquare, LogOut, FileText, ShieldCheck, Clock, UserPlus, Briefcase } from 'lucide-react';
 import styles from './Sidebar.module.css';
 import { useAuth } from '../context/AuthContext';
 
@@ -10,9 +10,18 @@ const Sidebar: React.FC = () => {
   const navItems = [
     { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { to: '/job-cards', label: 'Job Cards', icon: ClipboardList },
+    { to: '/approvals', label: 'Pending Approvals', icon: ShieldCheck, roles: ['Supervisor', 'HOD', 'Admin'] },
+    { to: '/planning', label: 'Planning Queue', icon: Clock, roles: ['PlanningOffice', 'Admin'] },
+    { to: '/assignments', label: 'Job Assignments', icon: UserPlus, roles: ['EngSupervisor', 'Admin'] },
+    { to: '/sign-offs', label: 'Pending Sign-off', icon: PenTool, roles: ['Initiator', 'Admin'] },
+    { to: '/my-jobs', label: 'My Jobs', icon: Briefcase, roles: ['Artisan', 'Admin'] },
     { to: '/allocations', label: 'Allocations', icon: CheckSquare },
     { to: '/reports', label: 'Reports', icon: FileText },
   ];
+
+  const filteredItems = navItems.filter(item => 
+    !item.roles || (user && item.roles.includes(user.role))
+  );
 
   return (
     <aside className={styles.sidebar}>
@@ -22,7 +31,7 @@ const Sidebar: React.FC = () => {
       </div>
 
       <nav className={styles.nav}>
-        {navItems.map((item) => (
+        {filteredItems.map((item) => (
           <NavLink
             key={item.to}
             to={item.to}

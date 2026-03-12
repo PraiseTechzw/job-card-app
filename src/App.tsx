@@ -10,6 +10,13 @@ import NewJobCard from './pages/NewJobCard';
 import EditJobCard from './pages/EditJobCard';
 import JobCardDetail from './pages/JobCardDetail';
 import Allocations from './pages/Allocations';
+import AllocationForm from './pages/AllocationForm';
+import Reports from './pages/Reports';
+import Approvals from './pages/Approvals';
+import Planning from './pages/Planning';
+import Assignments from './pages/Assignments';
+import MyJobs from './pages/MyJobs';
+import SignOffs from './pages/SignOffs';
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { user } = useAuth();
@@ -32,7 +39,14 @@ const AppContent = () => {
       <Route path="/job-cards/view/:id" element={<ProtectedRoute><MainLayout><JobCardDetail /></MainLayout></ProtectedRoute>} />
       
       <Route path="/allocations" element={<ProtectedRoute><MainLayout><Allocations /></MainLayout></ProtectedRoute>} />
-      <Route path="/reports" element={<ProtectedRoute><MainLayout><div style={{padding: '2rem', color: 'white'}}>Reports (WIP)</div></MainLayout></ProtectedRoute>} />
+      <Route path="/allocations/new" element={<ProtectedRoute><MainLayout><AllocationForm /></MainLayout></ProtectedRoute>} />
+      <Route path="/allocations/edit/:id" element={<ProtectedRoute><MainLayout><AllocationForm /></MainLayout></ProtectedRoute>} />
+      <Route path="/approvals" element={<ProtectedRoute><MainLayout><Approvals /></MainLayout></ProtectedRoute>} />
+      <Route path="/planning" element={<ProtectedRoute><MainLayout><Planning /></MainLayout></ProtectedRoute>} />
+      <Route path="/assignments" element={<ProtectedRoute><MainLayout><Assignments /></MainLayout></ProtectedRoute>} />
+      <Route path="/sign-offs" element={<ProtectedRoute><MainLayout><SignOffs /></MainLayout></ProtectedRoute>} />
+      <Route path="/my-jobs" element={<ProtectedRoute><MainLayout><MyJobs /></MainLayout></ProtectedRoute>} />
+      <Route path="/reports" element={<ProtectedRoute><MainLayout><Reports /></MainLayout></ProtectedRoute>} />
       <Route path="/login" element={<Login />} />
     </Routes>
   );

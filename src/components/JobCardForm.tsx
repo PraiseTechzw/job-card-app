@@ -39,8 +39,30 @@ const JobCardForm: React.FC<JobCardFormProps> = ({ initialData, onSave, isSubmit
     ...initialData
   });
 
+  const [errors, setErrors] = useState<Record<string, string>>({});
+
+  const validate = () => {
+    const newErrors: Record<string, string> = {};
+    if (!formData.requestedBy) newErrors.requestedBy = 'Required';
+    if (!formData.plantNumber) newErrors.plantNumber = 'Required';
+    if (!formData.plantDescription) newErrors.plantDescription = 'Required';
+    if (!formData.defect) newErrors.defect = 'Required';
+    if (!formData.workRequest) newErrors.workRequest = 'Required';
+    if (!formData.requiredCompletionDate) newErrors.requiredCompletionDate = 'Required';
+    
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
   const handleChange = (field: keyof JobCard, value: any) => {
     setFormData(prev => ({ ...prev, [field]: value }));
+    if (errors[field]) {
+      setErrors(prev => {
+        const next = { ...prev };
+        delete next[field];
+        return next;
+      });
+    }
   };
 
   const toggleTrade = (trade: Trade) => {
@@ -54,6 +76,10 @@ const JobCardForm: React.FC<JobCardFormProps> = ({ initialData, onSave, isSubmit
 
   const handleSubmit = (status: JobCardStatus) => (e: React.FormEvent) => {
     e.preventDefault();
+    if (status !== 'Draft' && !validate()) {
+      alert('Please fill in all required fields.');
+      return;
+    }
     onSave({ ...formData, status });
   };
 
@@ -83,7 +109,7 @@ const JobCardForm: React.FC<JobCardFormProps> = ({ initialData, onSave, isSubmit
         <div className={styles.section}>
           <h2 className={styles.sectionHeader}>1. GENERATION / ORIGINATOR DETAILS</h2>
           <div className={styles.grid}>
-            <FormField label="Requested By" required>
+            <FormField label="Requested By" required error={errors.requestedBy}>
               <Input 
                 value={formData.requestedBy} 
                 onChange={e => handleChange('requestedBy', e.target.value)} 
@@ -92,10 +118,10 @@ const JobCardForm: React.FC<JobCardFormProps> = ({ initialData, onSave, isSubmit
             </FormField>
             <div className={styles.subGrid}>
               <FormField label="Date Raised">
-                <Input type="date" value={formData.dateRaised} onChange={e => handleChange('dateRaised', e.target.value)} />
+                <Input type="date" value={formData.dateRaised} readOnly />
               </FormField>
               <FormField label="Time Raised">
-                <Input type="time" value={formData.timeRaised} onChange={e => handleChange('timeRaised', e.target.value)} />
+                <Input type="time" value={formData.timeRaised} readOnly />
               </FormField>
             </div>
             <FormField label="Priority" required>
@@ -110,7 +136,7 @@ const JobCardForm: React.FC<JobCardFormProps> = ({ initialData, onSave, isSubmit
                 ]}
               />
             </FormField>
-            <FormField label="Required Completion Date" required>
+            <FormField label="Required Completion Date" required error={errors.requiredCompletionDate}>
               <Input 
                 type="date" 
                 value={formData.requiredCompletionDate} 
@@ -124,14 +150,14 @@ const JobCardForm: React.FC<JobCardFormProps> = ({ initialData, onSave, isSubmit
         <div className={styles.section}>
           <h2 className={styles.sectionHeader}>2. PLANT & ASSET INFORMATION</h2>
           <div className={styles.grid}>
-            <FormField label="Plant Number" required>
+            <FormField label="Plant Number" required error={errors.plantNumber}>
               <Input 
                 value={formData.plantNumber} 
                 onChange={e => handleChange('plantNumber', e.target.value)} 
                 placeholder="Asset ID"
               />
             </FormField>
-            <FormField label="Plant Description" required>
+            <FormField label="Plant Description" required error={errors.plantDescription}>
               <Input 
                 value={formData.plantDescription} 
                 onChange={e => handleChange('plantDescription', e.target.value)} 
@@ -156,14 +182,14 @@ const JobCardForm: React.FC<JobCardFormProps> = ({ initialData, onSave, isSubmit
         <div className={styles.section}>
           <h2 className={styles.sectionHeader}>3. DEFECT & WORK REQUEST</h2>
           <div className={styles.fullGrid}>
-            <FormField label="Defect / Problem observed" required>
+            <FormField label="Defect / Problem observed" required error={errors.defect}>
               <TextArea 
                 value={formData.defect} 
                 onChange={e => handleChange('defect', e.target.value)} 
                 placeholder="Describe the failure or observation..."
               />
             </FormField>
-            <FormField label="Work Request / Instruction" required>
+            <FormField label="Work Request / Instruction" required error={errors.workRequest}>
               <TextArea 
                 value={formData.workRequest} 
                 onChange={e => handleChange('workRequest', e.target.value)} 
@@ -190,7 +216,7 @@ const JobCardForm: React.FC<JobCardFormProps> = ({ initialData, onSave, isSubmit
           />
         </div>
 
-        {/* Sign-offs Section (Disabled/Read-only for Initiator) */}
+        {/* Official Section */}
         <div className={styles.section}>
           <h2 className={styles.sectionHeader}>5. OFFICIAL USE / SIGN-OFFS</h2>
           <div className={styles.signOffGrid}>
@@ -209,6 +235,10 @@ const JobCardForm: React.FC<JobCardFormProps> = ({ initialData, onSave, isSubmit
             <div className={styles.signOffItem}>
               <span className={styles.signOffLabel}>Reg Planning</span>
               <div className={styles.signOffLine}>{formData.registrationPlanning || '________________'}</div>
+            </div>
+            <div className={styles.signOffItem}>
+              <span className={styles.signOffLabel}>Orig Sign Off</span>
+              <div className={styles.signOffLine}>{formData.originatorSignOff || '________________'}</div>
             </div>
           </div>
         </div>
@@ -233,6 +263,7 @@ const JobCardForm: React.FC<JobCardFormProps> = ({ initialData, onSave, isSubmit
         </div>
       </form>
     </div>
+
   );
 };
 

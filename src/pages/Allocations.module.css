@@ -7,201 +7,323 @@
 .header {
   display: flex;
   justify-content: space-between;
-  align-items: flex-start;
+  align-items: center;
   margin-bottom: 2rem;
 }
 
 .title {
   font-size: 1.875rem;
   font-weight: 700;
-  color: #f8fafc;
-  margin-bottom: 0.5rem;
+  color: white;
+  margin: 0;
 }
 
 .subtitle {
   color: #94a3b8;
+  font-size: 0.875rem;
+  margin: 0.25rem 0 0 0;
 }
 
-.content {
+.filtersGlass {
+  background: rgba(30, 41, 59, 0.4);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 1rem;
+  margin-bottom: 2rem;
   display: flex;
-  flex-direction: column;
-  gap: 2rem;
-}
-
-.card {
-  background: rgba(30, 41, 59, 0.7);
-  backdrop-filter: blur(8px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 1rem;
-  padding: 1.5rem;
-}
-
-.listCard {
-  background: rgba(30, 41, 59, 0.7);
-  backdrop-filter: blur(8px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 1rem;
-  overflow: hidden;
-}
-
-.cardTitle {
-  font-size: 1.25rem;
-  font-weight: 600;
-  color: #f1f5f9;
-  margin-bottom: 1.5rem;
-}
-
-.addForm {
-  display: flex;
-  flex-direction: column;
   gap: 1.5rem;
-}
-
-.formGrid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 1rem;
-}
-
-.formGroup {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.formGroup label {
-  font-size: 0.875rem;
-  font-weight: 500;
-  color: #94a3b8;
-}
-
-.formGroup input {
-  background: rgba(15, 23, 42, 0.6);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 0.5rem;
-  padding: 0.625rem;
-  color: #f1f5f9;
-  font-size: 0.875rem;
-}
-
-.formGroup input:focus {
-  outline: none;
-  border-color: #3b82f6;
-  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
-}
-
-.listHeader {
-  padding: 1.5rem;
-  display: flex;
-  justify-content: space-between;
   align-items: center;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .searchBox {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  background: rgba(15, 23, 42, 0.6);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 0.5rem;
-  padding: 0.5rem 0.75rem;
-  color: #94a3b8;
-  width: 300px;
+  position: relative;
+  flex: 0 0 300px;
+}
+
+.searchIcon {
+  position: absolute;
+  left: 0.75rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #64748b;
 }
 
 .searchBox input {
-  background: transparent;
-  border: none;
-  outline: none;
-  color: #f1f5f9;
   width: 100%;
+  background: rgba(15, 23, 42, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  padding: 0.5rem 0.75rem 0.5rem 2.5rem;
+  color: white;
   font-size: 0.875rem;
 }
 
-.tableWrapper {
-  overflow-x: auto;
+.filterGroup {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: rgba(15, 23, 42, 0.4);
+  padding: 0.25rem 0.75rem;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  flex: 1;
 }
 
-.table {
+.filterInput {
+  background: transparent;
+  border: none;
+  color: white;
+  font-size: 0.75rem;
+  outline: none;
+  width: 100%;
+}
+
+/* Register Grid */
+.sheetGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 1.5rem;
+}
+
+.sheetCard {
+  background: rgba(30, 41, 59, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  padding: 1.25rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.sheetCard:hover {
+  transform: translateY(-4px);
+  background: rgba(30, 41, 59, 0.6);
+  border-color: rgba(59, 130, 246, 0.3);
+}
+
+.cardHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.cardDate {
+  font-size: 0.75rem;
+  color: #3b82f6;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.cardSupervisor {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: white;
+  margin: 0.25rem 0;
+}
+
+.cardSection {
+  font-size: 0.75rem;
+  color: #94a3b8;
+}
+
+.rowCount {
+  font-size: 0.75rem;
+  color: #64748b;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  background: rgba(255, 255, 255, 0.03);
+  padding: 0.25rem 0.5rem;
+  border-radius: 100px;
+}
+
+.cardPreview {
+  padding: 0.75rem;
+  background: rgba(15, 23, 42, 0.3);
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.previewRow {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.75rem;
+}
+
+.pName { color: #cbd5e1; font-weight: 500; }
+.pTask { 
+  color: #64748b; 
+  font-style: italic; 
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 150px;
+}
+
+.moreCount {
+  font-size: 0.7rem;
+  color: #475569;
+  text-align: center;
+  margin-top: 0.25rem;
+}
+
+.cardFooter {
+  display: flex;
+  justify-content: space-between;
+  margin-top: auto;
+  padding-top: 0.5rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+/* Paper Sheet Detail */
+.paperSheet {
+  background: #f8fafc;
+  color: #0f172a;
+  border-radius: 8px;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3), 0 8px 10px -6px rgba(0, 0, 0, 0.3);
+  padding: 3rem;
+  max-width: 1000px;
+  margin: 0 auto;
+}
+
+.sheetHeader {
+  border-bottom: 2px solid #0f172a;
+  padding-bottom: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.headerTitle {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.headerGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 2rem;
+}
+
+.inputGroup label {
+  display: block;
+  font-size: 0.65rem;
+  font-weight: 800;
+  color: #64748b;
+  margin-bottom: 0.25rem;
+}
+
+.inputGroup input {
+  width: 100%;
+  background: transparent;
+  border: none;
+  border-bottom: 1px dashed #cbd5e1;
+  font-size: 1rem;
+  font-weight: 600;
+  padding: 0.25rem 0;
+  outline: none;
+  color: #0f172a;
+}
+
+.sheetBody {
+  margin-top: 2rem;
+}
+
+.allocationTable {
   width: 100%;
   border-collapse: collapse;
 }
 
-.table th {
+.allocationTable th {
   text-align: left;
-  padding: 1rem 1.5rem;
-  background: rgba(15, 23, 42, 0.4);
-  color: #94a3b8;
-  font-size: 0.75rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
+  font-size: 0.7rem;
+  background: #f1f5f9;
+  padding: 0.75rem;
+  border: 1px solid #e2e8f0;
+  color: #475569;
 }
 
-.table td {
-  padding: 1rem 1.5rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-  color: #e2e8f0;
-  font-size: 0.875rem;
+.allocationTable td {
+  padding: 0.25rem;
+  border: 1px solid #e2e8f0;
 }
 
-.table tr:last-child td {
-  border-bottom: none;
-}
-
-.inlineInput {
-  background: rgba(15, 23, 42, 0.4);
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  border-radius: 0.25rem;
-  padding: 0.25rem 0.5rem;
-  color: #f1f5f9;
-  width: 80px;
-}
-
-.deleteBtn {
-  color: #ef4444;
+.allocationTable input, .allocationTable textarea {
+  width: 100%;
   background: transparent;
   border: none;
+  font-size: 0.875rem;
+  outline: none;
+  padding: 0.5rem;
+  color: #0f172a;
+}
+
+.removeRowBtn {
+  background: transparent;
+  border: none;
+  color: #ef4444;
   cursor: pointer;
-  padding: 0.25rem;
-  border-radius: 0.25rem;
-  transition: all 0.2s;
+  opacity: 0.3;
+  transition: opacity 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
 }
 
-.deleteBtn:hover {
-  background: rgba(239, 68, 68, 0.1);
-  transform: scale(1.1);
+.removeRowBtn:hover {
+  opacity: 1;
 }
 
-.empty {
+.sheetFooter {
+  margin-top: 4rem;
+}
+
+.footerSignoff {
+  display: flex;
+  justify-content: space-around;
+  gap: 4rem;
+}
+
+.signBox {
+  flex: 1;
   text-align: center;
-  color: #94a3b8;
-  padding: 3rem !important;
+}
+
+.signLine {
+  border-bottom: 1px solid #0f172a;
+  height: 3rem;
+  margin-bottom: 0.5rem;
+}
+
+.signLabel {
+  font-size: 0.65rem;
+  font-weight: 800;
+  color: #64748b;
 }
 
 @media print {
-  .headerActions, .card, .searchBox, .deleteBtn, .inlineInput, .btn {
-    display: none !important;
+  .no-print { display: none !important; }
+  body { background: white !important; padding: 0 !important; }
+  .container { padding: 0 !important; margin: 0 !important; max-width: 100% !important; }
+  .paperSheet { 
+    box-shadow: none !important; 
+    border: 1px solid #000 !important; 
+    color: black !important;
+    margin: 0 !important;
+    width: 100% !important;
+    padding: 1rem !important;
   }
-  
-  .container {
-    padding: 0;
-    max-width: 100%;
+  input, textarea { 
+    border: none !important; 
+    color: black !important;
+    background: transparent !important;
+    padding: 2px !important;
   }
-
-  .listCard {
-    border: 1px solid #ccc;
-    background: white;
-    color: black;
-  }
-
-  .table th, .table td {
-    color: black;
-    border-bottom: 1px solid #ccc;
-  }
-
-  .title {
-    color: black;
-  }
+  th { background: #eee !important; color: black !important; border: 1px solid #000 !important; }
+  td { border: 1px solid #000 !important; }
+  .signLine { border-color: black !important; }
 }

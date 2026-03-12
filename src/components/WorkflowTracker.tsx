@@ -13,7 +13,7 @@ const STEPS: { status: JobCardStatus; label: string }[] = [
   { status: 'Registered', label: 'Registered' },
   { status: 'Assigned', label: 'Assigned' },
   { status: 'InProgress', label: 'In Progress' },
-  { status: 'Completed', label: 'Completed' },
+  { status: 'Awaiting_SignOff', label: 'Await Sign-off' },
   { status: 'SignedOff', label: 'Signed Off' },
   { status: 'Closed', label: 'Closed' }
 ];

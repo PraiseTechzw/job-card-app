@@ -6,7 +6,7 @@ export type JobCardStatus =
   | 'Registered'
   | 'Assigned' 
   | 'InProgress' 
-  | 'Completed' 
+  | 'Awaiting_SignOff' 
   | 'SignedOff' 
   | 'Closed'
   | 'Rejected';
@@ -30,11 +30,28 @@ export interface User {
   department: string;
 }
 
+export interface SpareOrdered {
+  id: string;
+  qty: string;
+  description: string;
+  prNo: string;
+  date: string;
+}
+
 export interface ResourceUsage {
   id: string;
   date: string;
   artisanName: string;
   hoursWorked: number;
+}
+
+export interface SpareWithdrawn {
+  id: string;
+  qty: string;
+  sivNo: string;
+  description: string;
+  cost: string;
+  date: string;
 }
 
 export interface JobCard {
@@ -68,7 +85,7 @@ export interface JobCard {
   originatorSignOff?: string;
   closedBy?: string;
   
-  // Back Form Fields (New)
+  // Back Form Fields
   workDoneDetails?: string;
   isBreakdown?: boolean;
   resourceUsage?: ResourceUsage[];
@@ -82,23 +99,51 @@ export interface JobCard {
   hasHistory?: boolean;
   furtherWorkRequired?: string;
   supervisorComments?: string;
-  sparesOrdered?: string;
-  sparesWithdrawn?: string;
+  sparesOrdered?: SpareOrdered[];
+  sparesWithdrawn?: SpareWithdrawn[];
+  originatorComment?: string;
+  originatorSignOffDate?: string;
+  originatorSignOffTime?: string;
+  closureComment?: string;
+  closedByDate?: string;
+  closedByTime?: string;
   
   // Metadata
   createdAt: string;
   updatedAt: string;
 }
 
-export interface DailyWorkAllocation {
+export interface AllocationRow {
   id: string;
-  supervisor: string;
-  section: string;
-  date: string;
+  sheetId: string;
   artisanName: string;
   allocatedTask: string;
   jobCardNumber: string;
   estimatedTime: string;
   actualTimeTaken?: string;
+}
+
+export interface AllocationSheet {
+  id: string;
+  supervisor: string;
+  section: string;
+  date: string;
+  rows: AllocationRow[];
+  createdAt: string;
+}
+export interface Assignment {
+  id: string;
+  jobCardId: string;
+  artisanName: string;
+  section?: string;
+  assignedBy: string;
+  assignedDate: string;
+  expectedStartDate?: string;
+  expectedCompletionDate?: string;
+  actualStartTime?: string;
+  actualCompletionTime?: string;
+  notes?: string;
+  status: 'Assigned' | 'InProgress' | 'Completed';
+  createdAt: string;
 }
 

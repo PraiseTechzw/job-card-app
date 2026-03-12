@@ -1,5 +1,5 @@
 import React from 'react';
-import { Eye, Edit3, Filter, Plus } from 'lucide-react';
+import { Eye, Edit3, Plus } from 'lucide-react';
 import { useNavigate, Link } from 'react-router-dom';
 import styles from './JobCards.module.css';
 import type { JobCard } from '../types';
@@ -14,9 +14,9 @@ const getStatusBadgeClass = (status: JobCard['status']) => {
     case 'Registered':
     case 'Assigned': return 'badge-success';
     case 'InProgress': return 'badge-warning';
-    case 'Completed': 
+    case 'Awaiting_SignOff': return 'badge-info';
     case 'SignedOff': return 'badge-success';
-    case 'Closed': return 'badge-info';
+    case 'Closed': return 'badge-ghost';
     case 'Rejected': return 'badge-danger';
     default: return 'badge-info';
   }
@@ -35,6 +35,14 @@ const getPriorityBadgeClass = (priority: JobCard['priority']) => {
 const JobCards: React.FC = () => {
   const { jobCards: cards } = useJobCards();
   const navigate = useNavigate();
+  const [statusFilter, setStatusFilter] = React.useState<string>('All');
+  const [priorityFilter, setPriorityFilter] = React.useState<string>('All');
+
+  const filteredCards = cards.filter(card => {
+    const statusMatch = statusFilter === 'All' || card.status === statusFilter;
+    const priorityMatch = priorityFilter === 'All' || card.priority === priorityFilter;
+    return statusMatch && priorityMatch;
+  });
 
   return (
     <div className={styles.pageContainer}>
@@ -44,12 +52,46 @@ const JobCards: React.FC = () => {
           <p className="text-muted">Manage and track all maintenance requests.</p>
         </div>
         <div className="flex gap-2">
-          <button className="btn btn-ghost">
-            <Filter size={18} /> Filter
-          </button>
           <Link to="/job-cards/new" className="btn btn-primary" style={{ textDecoration: 'none' }}>
             <Plus size={18} /> New Job Card
           </Link>
+        </div>
+      </div>
+
+      <div className={styles.filtersGlass} style={{ display: 'flex', gap: '1rem', marginBottom: '1.5rem', padding: '1rem', borderRadius: '12px', background: 'rgba(30, 41, 59, 0.5)', border: '1px solid rgba(255,255,255,0.1)' }}>
+        <div className="flex items-center gap-2">
+          <label className="text-sm text-slate-400">Status:</label>
+          <select 
+            value={statusFilter} 
+            onChange={(e) => setStatusFilter(e.target.value)}
+            className="bg-slate-800 border-white/10 rounded px-2 py-1 text-white text-sm"
+          >
+            <option value="All">All Statuses</option>
+            <option value="Draft">Draft</option>
+            <option value="Pending_Supervisor">Pending Supervisor</option>
+            <option value="Approved">Approved</option>
+            <option value="Registered">Registered</option>
+            <option value="Assigned">Assigned</option>
+            <option value="InProgress">In Progress</option>
+            <option value="Awaiting_SignOff">Awaiting Sign-off</option>
+            <option value="SignedOff">Signed Off (Orig)</option>
+            <option value="Closed">Closed</option>
+            <option value="Rejected">Rejected</option>
+          </select>
+        </div>
+        <div className="flex items-center gap-2">
+          <label className="text-sm text-slate-400">Priority:</label>
+          <select 
+            value={priorityFilter} 
+            onChange={(e) => setPriorityFilter(e.target.value)}
+            className="bg-slate-800 border-white/10 rounded px-2 py-1 text-white text-sm"
+          >
+            <option value="All">All Priorities</option>
+            <option value="Low">Low</option>
+            <option value="Medium">Medium</option>
+            <option value="High">High</option>
+            <option value="Critical">Critical</option>
+          </select>
         </div>
       </div>
 
@@ -67,7 +109,7 @@ const JobCards: React.FC = () => {
             </tr>
           </thead>
           <tbody>
-            {[...cards].reverse().map(card => (
+            {[...filteredCards].reverse().map(card => (
               <tr key={card.id}>
                 <td className={styles.ticketNumber}>{card.ticketNumber}</td>
                 <td>
@@ -108,7 +150,7 @@ const JobCards: React.FC = () => {
                 </td>
               </tr>
             ))}
-            {cards.length === 0 && (
+            {filteredCards.length === 0 && (
               <tr>
                 <td colSpan={7} style={{ textAlign: 'center', padding: '3rem', color: '#94a3b8' }}>
                   No job cards found.

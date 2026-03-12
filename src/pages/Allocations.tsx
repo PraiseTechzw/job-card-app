@@ -1,171 +1,133 @@
 import React, { useState } from 'react';
 import { useJobCards } from '../context/JobCardContext';
-import { useAuth } from '../context/AuthContext';
-import { Plus, Trash2, Printer, Search } from 'lucide-react';
+import { Plus, Eye, History, Search, Filter, Calendar, MapPin, HardHat } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import styles from './Allocations.module.css';
 
 const Allocations: React.FC = () => {
-  const { user } = useAuth();
-  const { workAllocations, addWorkAllocation, deleteWorkAllocation, updateWorkAllocation } = useJobCards();
-  const [searchTerm, setSearchTerm] = useState('');
+  const navigate = useNavigate();
+  const { allocationSheets, deleteAllocationSheet } = useJobCards();
   
-  const [newEntry, setNewEntry] = useState({
-    supervisor: user?.name || '',
-    section: user?.department || '',
-    date: new Date().toISOString().split('T')[0],
-    artisanName: '',
-    allocatedTask: '',
-    jobCardNumber: '',
-    estimatedTime: '',
-    actualTimeTaken: ''
+  const [dateFilter, setDateFilter] = useState('');
+  const [supervisorFilter, setSupervisorFilter] = useState('');
+  const [sectionFilter, setSectionFilter] = useState('');
+  const [searchTerm, setSearchTerm] = useState('');
+
+  const filteredSheets = allocationSheets.filter(sheet => {
+    const matchesSearch = sheet.supervisor.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                        sheet.section.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesDate = !dateFilter || sheet.date === dateFilter;
+    const matchesSupervisor = !supervisorFilter || sheet.supervisor.toLowerCase().includes(supervisorFilter.toLowerCase());
+    const matchesSection = !sectionFilter || sheet.section.toLowerCase().includes(sectionFilter.toLowerCase());
+
+    return matchesSearch && matchesDate && matchesSupervisor && matchesSection;
   });
-
-  const handleAdd = async (e: React.FormEvent) => {
-    e.preventDefault();
-    await addWorkAllocation(newEntry);
-    setNewEntry({
-      ...newEntry,
-      artisanName: '',
-      allocatedTask: '',
-      jobCardNumber: '',
-      estimatedTime: '',
-      actualTimeTaken: ''
-    });
-  };
-
-  const filteredAllocations = workAllocations.filter(a => 
-    a.artisanName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    a.jobCardNumber.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
-  const handlePrint = () => {
-    window.print();
-  };
 
   return (
     <div className={styles.container}>
-      <div className={styles.header}>
+      <header className={styles.header}>
         <div>
           <h1 className={styles.title}>Daily Work Allocation Register</h1>
-          <p className={styles.subtitle}>Maintenance & Engineering Operations</p>
+          <p className={styles.subtitle}>Unified log of maintenance assignments</p>
         </div>
-        <div className={styles.headerActions}>
-          <button onClick={handlePrint} className="btn btn-secondary">
-            <Printer size={18} /> Print Register
-          </button>
+        <button onClick={() => navigate('/allocations/new')} className="btn btn-primary">
+          <Plus size={18} /> New Daily Sheet
+        </button>
+      </header>
+
+      <div className={styles.filtersGlass}>
+        <div className={styles.searchBox}>
+          <Search size={18} className={styles.searchIcon} />
+          <input 
+            type="text" 
+            placeholder="Quick search..." 
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+        </div>
+        
+        <div className="flex gap-4 flex-1">
+          <div className={styles.filterGroup}>
+            <Calendar size={14} className="text-blue-400" />
+            <input 
+              type="date" 
+              value={dateFilter} 
+              onChange={e => setDateFilter(e.target.value)}
+              className={styles.filterInput}
+            />
+          </div>
+          <div className={styles.filterGroup}>
+            <HardHat size={14} className="text-amber-400" />
+            <input 
+              type="text" 
+              placeholder="Supervisor..." 
+              value={supervisorFilter} 
+              onChange={e => setSupervisorFilter(e.target.value)}
+              className={styles.filterInput}
+            />
+          </div>
+          <div className={styles.filterGroup}>
+            <MapPin size={14} className="text-emerald-400" />
+            <input 
+              type="text" 
+              placeholder="Section..." 
+              value={sectionFilter} 
+              onChange={e => setSectionFilter(e.target.value)}
+              className={styles.filterInput}
+            />
+          </div>
         </div>
       </div>
 
-      <div className={styles.content}>
-        {/* Form to add new allocation */}
-        <div className={styles.card}>
-          <h2 className={styles.cardTitle}>New Allocation Entry</h2>
-          <form className={styles.addForm} onSubmit={handleAdd}>
-            <div className={styles.formGrid}>
-              <div className={styles.formGroup}>
-                <label>Artisan Name</label>
-                <input 
-                  type="text" 
-                  required 
-                  value={newEntry.artisanName}
-                  onChange={e => setNewEntry({...newEntry, artisanName: e.target.value})}
-                />
+      <div className={styles.sheetGrid}>
+        {filteredSheets.map(sheet => (
+          <div key={sheet.id} className={styles.sheetCard} onClick={() => navigate(`/allocations/edit/${sheet.id}`)}>
+            <div className={styles.cardHeader}>
+              <div className={styles.cardInfo}>
+                <span className={styles.cardDate}>{new Date(sheet.date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric'})}</span>
+                <h3 className={styles.cardSupervisor}>{sheet.supervisor}</h3>
+                <span className={styles.cardSection}>{sheet.section}</span>
               </div>
-              <div className={styles.formGroup}>
-                <label>Job Card #</label>
-                <input 
-                  type="text" 
-                  value={newEntry.jobCardNumber}
-                  onChange={e => setNewEntry({...newEntry, jobCardNumber: e.target.value})}
-                />
-              </div>
-              <div className={styles.formGroup}>
-                <label>Allocated Task</label>
-                <input 
-                  type="text" 
-                  required 
-                  value={newEntry.allocatedTask}
-                  onChange={e => setNewEntry({...newEntry, allocatedTask: e.target.value})}
-                />
-              </div>
-              <div className={styles.formGroup}>
-                <label>Est. Time</label>
-                <input 
-                  type="text" 
-                  placeholder="e.g. 2 hrs" 
-                  value={newEntry.estimatedTime}
-                  onChange={e => setNewEntry({...newEntry, estimatedTime: e.target.value})}
-                />
+              <div className={styles.rowCount}>
+                <History size={14} /> {sheet.rows?.length || 0} entries
               </div>
             </div>
-            <button type="submit" className="btn btn-primary">
-              <Plus size={18} /> Add to Register
-            </button>
-          </form>
-        </div>
+            
+            <div className={styles.cardPreview}>
+              {sheet.rows?.slice(0, 3).map(row => (
+                <div key={row.id} className={styles.previewRow}>
+                  <span className={styles.pName}>{row.artisanName}</span>
+                  <span className={styles.pTask}>{row.allocatedTask.slice(0, 30)}...</span>
+                </div>
+              ))}
+              {sheet.rows?.length > 3 && (
+                <div className={styles.moreCount}>+ {sheet.rows.length - 3} more entries</div>
+              )}
+            </div>
 
-        {/* List of allocations */}
-        <div className={styles.listCard}>
-          <div className={styles.listHeader}>
-            <h2 className={styles.cardTitle}>Register Entries</h2>
-            <div className={styles.searchBox}>
-              <Search size={18} />
-              <input 
-                type="text" 
-                placeholder="Search by artisan or job card..." 
-                value={searchTerm}
-                onChange={e => setSearchTerm(e.target.value)}
-              />
+            <div className={styles.cardFooter}>
+              <button className="btn btn-sm btn-ghost" onClick={(e) => {
+                e.stopPropagation();
+                navigate(`/allocations/edit/${sheet.id}`);
+              }}>
+                <Eye size={14} /> View / Edit
+              </button>
+              <button className="btn btn-sm btn-ghost text-red-500 hover:bg-red-500/10" onClick={(e) => {
+                e.stopPropagation();
+                if (confirm('Delete this record?')) deleteAllocationSheet(sheet.id);
+              }}>
+                Delete
+              </button>
             </div>
           </div>
-          
-          <div className={styles.tableWrapper}>
-            <table className={styles.table}>
-              <thead>
-                <tr>
-                  <th>Date</th>
-                  <th>Artisan</th>
-                  <th>Task</th>
-                  <th>Job Card #</th>
-                  <th>Est. Time</th>
-                  <th>Actual Time</th>
-                  <th>Action</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredAllocations.length > 0 ? (
-                  filteredAllocations.map(alloc => (
-                    <tr key={alloc.id}>
-                      <td>{alloc.date}</td>
-                      <td>{alloc.artisanName}</td>
-                      <td>{alloc.allocatedTask}</td>
-                      <td>{alloc.jobCardNumber || 'N/A'}</td>
-                      <td>{alloc.estimatedTime}</td>
-                      <td>
-                        <input 
-                          type="text" 
-                          className={styles.inlineInput}
-                          value={alloc.actualTimeTaken || ''} 
-                          onChange={e => updateWorkAllocation(alloc.id, { actualTimeTaken: e.target.value })}
-                          placeholder="Set..."
-                        />
-                      </td>
-                      <td>
-                        <button onClick={() => deleteWorkAllocation(alloc.id)} className={styles.deleteBtn}>
-                          <Trash2 size={16} />
-                        </button>
-                      </td>
-                    </tr>
-                  ))
-                ) : (
-                  <tr>
-                    <td colSpan={7} className={styles.empty}>No entries found for today.</td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
+        ))}
+
+        {filteredSheets.length === 0 && (
+          <div className="col-span-full py-20 text-center opacity-50">
+            <Filter size={48} className="mx-auto mb-4" />
+            <p>No allocation registers found matching your filters.</p>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );
