@@ -1,6 +1,6 @@
 -- Database Schema for Job Card System
 -- Use this to set up your PostgreSQL database (Supabase, Vercel Postgres, etc.)
-CREATE TABLE job_cards (
+CREATE TABLE IF NOT EXISTS job_cards (
     id TEXT PRIMARY KEY,
     ticket_number TEXT UNIQUE NOT NULL,
     requested_by TEXT NOT NULL,
@@ -9,6 +9,7 @@ CREATE TABLE job_cards (
     priority TEXT NOT NULL,
     required_completion_date TEXT,
     plant_number TEXT,
+    plant_number_text TEXT,
     plant_description TEXT,
     plant_status TEXT,
     defect TEXT,
@@ -31,7 +32,7 @@ CREATE TABLE job_cards (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
-CREATE TABLE allocations (
+CREATE TABLE IF NOT EXISTS allocations (
     id TEXT PRIMARY KEY,
     supervisor TEXT NOT NULL,
     section TEXT NOT NULL,

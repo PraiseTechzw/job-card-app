@@ -142,3 +142,11 @@ app.delete('/api/allocations/:id', async (req, res) => {
 
 module.exports = app;
 
+if (process.env.NODE_ENV !== 'production' && require.main === module) {
+  const PORT = process.env.PORT || 3001;
+  app.listen(PORT, () => {
+    console.log(`Backend server running on port ${PORT}`);
+  });
+}
+
+
