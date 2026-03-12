@@ -1,6 +1,5 @@
--- Database Schema for CardFlow
+-- Database Schema for Job Card System
 -- Use this to set up your PostgreSQL database (Supabase, Vercel Postgres, etc.)
-
 CREATE TABLE job_cards (
     id TEXT PRIMARY KEY,
     ticket_number TEXT UNIQUE NOT NULL,
@@ -17,7 +16,6 @@ CREATE TABLE job_cards (
     work_request TEXT,
     allocated_trades JSONB,
     status TEXT NOT NULL DEFAULT 'Draft',
-    
     -- Back form fields
     work_done_details TEXT,
     is_breakdown BOOLEAN DEFAULT FALSE,
@@ -30,11 +28,9 @@ CREATE TABLE job_cards (
     num_assistants INTEGER DEFAULT 0,
     spares_ordered TEXT,
     spares_withdrawn TEXT,
-    
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
-
 CREATE TABLE allocations (
     id TEXT PRIMARY KEY,
     supervisor TEXT NOT NULL,

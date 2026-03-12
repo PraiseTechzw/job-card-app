@@ -1,10 +1,10 @@
 # Backend & Cloud Architecture Documentation
 
-This document provides a detailed technical breakdown of the CardFlow system's data architecture, cloud synchronization, and PostgreSQL integration.
+This document provides a detailed technical breakdown of the Job Card System's data architecture, cloud synchronization, and PostgreSQL integration.
 
 ## 1. System Architecture
 
-CardFlow utilizes a **Serverless Full-Stack Architecture** designed for high availability and zero-maintenance scaling on Vercel.
+The Job Card System utilizes a **Serverless Full-Stack Architecture** designed for high availability and zero-maintenance scaling on Vercel.
 
 - **Data Layer**: Cloud-native PostgreSQL (Neon).
 - **Compute Layer**: Node.js Serverless Functions (`api/` directory).
@@ -61,6 +61,7 @@ The project includes an intelligent migration tool `init-db.mjs`.
 ## 6. Secure Hosting on Vercel
 
 The `vercel.json` configuration file ensures:
+
 1. All client-side routing is handled by the React SPA.
 2. All `/api/*` requests are correctly routed to the serverless function in `api/index.js`.
 3. Serverless functions are optimized for the specified runtime environment.

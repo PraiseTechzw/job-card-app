@@ -22,7 +22,7 @@ const Login: React.FC = () => {
       <div className={`glass-panel ${styles.loginCard}`}>
         <div className={styles.brand}>
           <PenTool className={styles.logoIcon} size={40} />
-          <span className={styles.brandText}>CardFlow</span>
+          <span className={styles.brandText}>Job Card System</span>
         </div>
         <p className={styles.subtitle}>Industrial Job Card Management</p>
         

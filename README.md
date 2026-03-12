@@ -1,6 +1,6 @@
-# CardFlow: Factory Job Card Management System
+# Job Card System: Factory Management Solution
 
-CardFlow is a complete web-based Job Card Management System designed to digitize paper-based factory maintenance procedures. It maintains the original workflow and forms precisely, ensuring a seamless transition from manual to digital operations.
+The Job Card System is a complete web-based Job Card Management System designed to digitize paper-based factory maintenance procedures. It maintains the original workflow and forms precisely, ensuring a seamless transition from manual to digital operations.
 
 ## 🚀 Project Overview
 

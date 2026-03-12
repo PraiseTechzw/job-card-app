@@ -18,7 +18,7 @@ const Sidebar: React.FC = () => {
     <aside className={styles.sidebar}>
       <div className={styles.brand}>
         <PenTool className={styles.logoIcon} size={28} />
-        <span className={styles.brandText}>CardFlow</span>
+        <span className={styles.brandText}>Job Card System</span>
       </div>
 
       <nav className={styles.nav}>
