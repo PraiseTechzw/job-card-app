@@ -1,113 +1,66 @@
-# Backend & System Architecture Documentation
+# Backend & Cloud Architecture Documentation
 
-This document provides a detailed technical breakdown of the CardFlow system's data architecture, state management, and the projected backend implementation requirements.
+This document provides a detailed technical breakdown of the CardFlow system's data architecture, cloud synchronization, and PostgreSQL integration.
 
 ## 1. System Architecture
 
-CardFlow currently follows a **Single Page Application (SPA)** architecture with a decoupled data layer.
+CardFlow utilizes a **Serverless Full-Stack Architecture** designed for high availability and zero-maintenance scaling on Vercel.
 
-- **Storage Layer**: `localStorage` for persistent browser storage.
-- **State Management**: React Context API (`JobCardContext`) acting as the "Controller".
-- **Views**: React components for Front/Back forms and registers.
+- **Data Layer**: Cloud-native PostgreSQL (Neon).
+- **Compute Layer**: Node.js Serverless Functions (`api/` directory).
+- **Frontend Sync**: Axios-based asynchronous communication with local persistence fail-safes.
 
-## 2. Data Models (Schema)
+## 2. Advanced Data Mapping
 
-### Job Card Object
-```typescript
-interface JobCard {
-  id: string;               // PK
-  ticketNumber: string;     // Unique formatted ID
-  requestedBy: string;      // User reference
-  dateRaised: string;
-  timeRaised: string;
-  priority: 'Low' | 'Medium' | 'High' | 'Critical';
-  requiredCompletionDate: string;
-  
-  // Plant Information
-  plantNumber: string;      // Asset ID
-  plantDescription: string;
-  plantStatus: 'Run' | 'Shut';
-  
-  // Work Scope
-  defect: string;
-  maintenanceSchedule: string;
-  workRequest: string;
-  allocatedTrades: Trade[]; // Array of categories
-  
-  // Workflow Progress
-  status: JobCardStatus;
-  approvedBySupervisor?: string;
-  approvedByHOD?: string;
-  issuedTo?: string;        // Artisan reference
-  registrationPlanning?: string;
-  originatorSignOff?: string;
-  closedBy?: string;
-  
-  // Back Form (Work Completion)
-  workDoneDetails?: string;
-  isBreakdown?: boolean;
-  resourceUsage: ResourceUsage[]; // Sub-collection
-  dateFinished?: string;
-  causeOfFailure?: string;
-  machineDowntime?: string;
-  numArtisans?: number;
-  numApprentices?: number;
-  numAssistants?: number;
-  sparesOrdered?: string;
-  sparesWithdrawn?: string;
-  
-  // Metadata
-  createdAt: string;
-  updatedAt: string;
-}
-```
+To bridge the gap between Frontend conventions (**camelCase**) and Database conventions (**snake\_case**), the API implements a custom middleware layer:
 
-### Daily Work Allocation Object
-```typescript
-interface DailyWorkAllocation {
-  id: string;
-  supervisor: string;
-  section: string;
-  date: string;
-  artisanName: string;
-  allocatedTask: string;
-  jobCardNumber: string;
-  estimatedTime: string;
-  actualTimeTaken?: string;
-}
-```
+- **Automatic Translation**: All incoming requests are converted to `snake_case` before hitting SQL queries.
+- **Reverse Mapping**: All database results are converted back to `camelCase` before being sent to the React frontend.
+- **Consistency**: This ensures that developers can use standard JavaScript naming conventions without compromising database best practices.
 
-## 3. Recommended Production Backend Stack
+## 3. Database Schema (PostgreSQL)
 
-To move from the current demo state to a multi-user production environment, the following stack is recommended:
+### Job Cards Table (`job_cards`)
 
-- **Database**: PostgreSQL (Relational integrity is crucial for workflow transitions).
-- **API**: Node.js with Express or NestJS.
-- **Auth**: JWT (JSON Web Tokens) for role-based session management.
-- **File Storage**: AWS S3 or Supabase Storage (if attachment support for photos/manuals is added).
+| Column | Type | Description |
+| :--- | :--- | :--- |
+| `id` | `TEXT (PK)` | Unique system ID. |
+| `ticket_number` | `TEXT (Unique)` | Formatted reference (e.g., JC-2024-001). |
+| `requested_by` | `TEXT` | Name of originator. |
+| `priority` | `TEXT` | Low, Medium, High, Critical. |
+| `plant_number` | `TEXT` | Asset identification code. |
+| `allocated_trades` | `JSONB` | Array of trade categories. |
+| `resource_usage` | `JSONB` | Complex array of labour tracking records. |
+| `status` | `TEXT` | Current stage in the 9-stage workflow. |
 
-### 4. Proposed REST API Endpoints
+### Allocations Table (`allocations`)
 
-| Method | Endpoint | Description | Role Required |
-| :--- | :--- | :--- | :--- |
-| `GET` | `/api/job-cards` | List all job cards with filters | All |
-| `POST` | `/api/job-cards` | Create a new request | Initiator/Admin |
-| `GET` | `/api/job-cards/:id` | Get full details including back form | All |
-| `PATCH` | `/api/job-cards/:id` | Update status or fill work details | Role Specific |
-| `GET` | `/api/allocations` | Get today's work register | Supervisor/Admin |
-| `POST` | `/api/allocations` | Add new artisan allocation | Supervisor |
-| `POST` | `/api/auth/login` | Roles-based authentication | All |
+| Column | Type | Description |
+| :--- | :--- | :--- |
+| `id` | `TEXT (PK)` | Unique record ID. |
+| `supervisor` | `TEXT` | Supervisor making the allocation. |
+| `artisan_name` | `TEXT` | Technician assigned to the task. |
+| `estimated_time` | `TEXT` | Planned duration. |
+| `actual_time_taken` | `TEXT` | Final logged duration. |
 
-## 5. Security & Access Control
+## 4. Environment Configuration
 
-The backend must enforce **Row-Level Security (RLS)** or Middleware-based checks to ensure:
-- Only **Supervisors** can hit the `Approved` endpoint.
-- Only **Artisans** assigned to a job can edit the `ResourceUsage` sub-collection.
-- **Sign-offs** cannot be edited once the status is `Closed`.
+The backend is configured via a single `DATABASE_URL` environment variable.
 
-## 6. Audit Trail Plan
-For factory compliance (ISO 9001), a production backend should implement an `AuditLogs` table:
-- `timestamp`: Date/Time of change.
-- `userId`: Who made the change.
-- `action`: `STATUS_CHANGE`, `FIELD_UPDATE`, etc.
-- `oldValue` / `newValue`: JSON snapshots of the changes.
+- **Local Development**: Stored in `.env` (Ignored by Git).
+- **Production**: Configured in the **Vercel Project Dashboard** ➔ Settings ➔ Environment Variables.
+
+## 5. Schema Synchronization
+
+The project includes an intelligent migration tool `init-db.mjs`.
+
+- **Usage**: `node init-db.mjs`
+- **Function**: Reads `schema.sql`, connects to your live cloud database, and ensures all tables and relationships are created correctly.
+- **Safe Execution**: Can be run multiple times; it will create tables only if they don't exist.
+
+## 6. Secure Hosting on Vercel
+
+The `vercel.json` configuration file ensures:
+1. All client-side routing is handled by the React SPA.
+2. All `/api/*` requests are correctly routed to the serverless function in `api/index.js`.
+3. Serverless functions are optimized for the specified runtime environment.
