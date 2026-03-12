@@ -1,0 +1,322 @@
+.formContainer {
+  padding: 3rem 2rem;
+  max-width: 1000px;
+  margin: 0 auto;
+}
+
+.paperForm {
+  background: white;
+  color: #1e293b;
+  padding: 4rem;
+  border-radius: 4px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+  position: relative;
+  overflow: hidden;
+  border-top: 6px solid var(--accent-primary);
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 2px solid #e2e8f0;
+  padding-bottom: 2rem;
+  margin-bottom: 3rem;
+}
+
+.ticketBox {
+  display: flex;
+  flex-direction: column;
+  padding: 0.5rem 1rem;
+  border: 1px solid #e2e8f0;
+  background: #f8fafc;
+  border-radius: 4px;
+}
+
+.ticketLabel {
+  font-size: 0.75rem;
+  color: #64748b;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.ticketValue {
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: var(--accent-primary);
+  font-family: 'Courier New', Courier, monospace;
+}
+
+.headerTitle {
+  text-align: center;
+  flex: 1;
+}
+
+.titleText {
+  font-size: 1.75rem;
+  font-weight: 900;
+  color: #0f172a;
+  letter-spacing: -0.5px;
+  margin-bottom: 0.25rem;
+}
+
+.subtitle {
+  font-size: 0.8rem;
+  color: #64748b;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+}
+
+.section {
+  margin-bottom: 2.5rem;
+  padding: 2rem;
+  background: #fbfcfe;
+  border: 1px solid #f1f5f9;
+  border-radius: 8px;
+}
+
+.sectionHeader {
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: #334155;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid #e2e8f0;
+  margin-bottom: 1.5rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 2rem;
+}
+
+.subGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.fullGrid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.5rem;
+}
+
+/* Override input styles for paper form look */
+.paperForm :global(.formGroup) { margin-bottom: 0; }
+.paperForm input, .paperForm select, .paperForm textarea {
+  background: transparent !important;
+  border: none !important;
+  border-bottom: 1px solid #cbd5e1 !important;
+  border-radius: 0 !important;
+  padding: 0.5rem 0 !important;
+  color: #0f172a !important;
+  font-weight: 500 !important;
+}
+
+.paperForm input:focus, .paperForm select:focus, .paperForm textarea:focus {
+  border-bottom-color: var(--accent-primary) !important;
+  box-shadow: none !important;
+}
+
+.signOffGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 2.5rem;
+  padding-top: 1rem;
+}
+
+.signOffItem {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.signOffLabel {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #64748b;
+  text-transform: uppercase;
+}
+
+.signOffLine {
+  font-size: 0.95rem;
+  color: #94a3b8;
+  font-style: italic;
+  padding-top: 0.5rem;
+  border-top: 1px dotted #e2e8f0;
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 1.5rem;
+  margin-top: 3rem;
+  padding-top: 2rem;
+  border-top: 1px solid #f1f5f9;
+}
+
+.displayGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.val {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #0f172a;
+  border-bottom: 1px dotted #e2e8f0;
+  padding-bottom: 0.25rem;
+  min-height: 1.5rem;
+}
+
+.valText {
+  font-size: 0.95rem;
+  color: #1e293b;
+  line-height: 1.5;
+  padding: 0.75rem 0;
+  border-bottom: 1px dotted #e2e8f0;
+}
+
+.tradeList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.tradeBadge {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.4rem 0.8rem;
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  border-radius: 4px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #334155;
+}
+
+.statusBadge {
+  position: absolute;
+  top: 100px;
+  right: -30px;
+  transform: rotate(45deg);
+  background: var(--accent-primary);
+  color: white;
+  padding: 0.5rem 4rem;
+  font-weight: 800;
+  font-size: 0.8rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+}
+
+/* Resource Table Styles */
+.tableContainer {
+  margin-top: 1rem;
+  overflow-x: auto;
+}
+
+.resourceTable {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 1.5rem;
+}
+
+.resourceTable th {
+  text-align: left;
+  padding: 0.75rem;
+  background: #f8fafc;
+  border-bottom: 2px solid #e2e8f0;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #64748b;
+  text-transform: uppercase;
+}
+
+.resourceTable td {
+  padding: 0.75rem;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.resourceTable input {
+  width: 100%;
+  border-bottom: 1px dotted #cbd5e1 !important;
+}
+
+.addBtn, .removeBtn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.addBtn {
+  background: #f1f5f9;
+  color: #334155;
+  border: 1px solid #e2e8f0;
+}
+
+.addBtn:hover {
+  background: #e2e8f0;
+}
+
+.removeBtn {
+  background: transparent;
+  color: #ef4444;
+  border: none;
+  padding: 0.25rem;
+}
+
+.removeBtn:hover {
+  transform: scale(1.1);
+}
+
+.statusBadgeDetail {
+  background: var(--accent-primary);
+  color: white;
+  padding: 0.5rem 1.5rem;
+  border-radius: 9999px;
+  font-weight: 800;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+}
+
+.disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+@media print {
+  .actions, .headerRight, .paperForm :global(.btn-ghost), .no-print, .addBtn, .removeBtn {
+    display: none !important;
+  }
+  .formContainer {
+    padding: 0;
+    margin: 0;
+    max-width: 100%;
+  }
+  .paperForm {
+    box-shadow: none !important;
+    padding: 0 !important;
+    border: none !important;
+  }
+  .section {
+    page-break-inside: avoid;
+    background: transparent !important;
+    border: 1px solid #eee !important;
+  }
+  @page {
+    margin: 1cm;
+  }
+}
+
