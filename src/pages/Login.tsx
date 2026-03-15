@@ -37,6 +37,7 @@ const Login: React.FC = () => {
               <option value="Admin">Admin (Full Access)</option>
               <option value="Initiator">Initiator / Requester</option>
               <option value="Supervisor">Supervisor</option>
+              <option value="HOD">HOD (Head of Department)</option>
               <option value="EngSupervisor">Engineering Supervisor</option>
               <option value="Artisan">Artisan / Technician</option>
               <option value="PlanningOffice">Planning Office</option>

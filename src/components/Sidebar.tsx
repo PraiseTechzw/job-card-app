@@ -1,6 +1,9 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { LayoutDashboard, ClipboardList, PenTool, CheckSquare, LogOut, FileText, ShieldCheck, Clock, UserPlus, Briefcase } from 'lucide-react';
+import { 
+  LayoutDashboard, ClipboardList, PenTool, CheckSquare, LogOut, 
+  FileText, ShieldCheck, Clock, UserPlus, Briefcase, Settings
+} from 'lucide-react';
 import styles from './Sidebar.module.css';
 import { useAuth } from '../context/AuthContext';
 import { useJobCards } from '../context/JobCardContext';
@@ -12,16 +15,16 @@ const Sidebar: React.FC = () => {
   const getBadgeCount = (label: string) => {
     if (!jobCards) return 0;
     switch (label) {
-      case 'Pending Approvals':
-        if (user?.role === 'Supervisor') return jobCards.filter(c => c.status === 'Pending_Supervisor').length;
+      case 'Approval Queue':
+        if (user?.role === 'Supervisor') return jobCards.filter(c => c.status === 'Pending_Supervisor' || c.status === 'SignedOff').length;
         if (user?.role === 'HOD') return jobCards.filter(c => c.status === 'Pending_HOD').length;
-        if (user?.role === 'Admin') return jobCards.filter(c => ['Pending_Supervisor', 'Pending_HOD'].includes(c.status)).length;
+        if (user?.role === 'Admin') return jobCards.filter(c => ['Pending_Supervisor', 'Pending_HOD', 'SignedOff'].includes(c.status)).length;
         return 0;
       case 'Planning Queue':
         return jobCards.filter(c => c.status === 'Approved').length;
       case 'Job Assignments':
         return jobCards.filter(c => c.status === 'Registered').length;
-      case 'Pending Sign-off':
+      case 'Sign-off Queue':
         return jobCards.filter(c => c.status === 'Awaiting_SignOff' && (user?.role === 'Admin' || c.requestedBy === user?.name)).length;
       case 'My Jobs':
         return jobCards.filter(c => ['Assigned', 'InProgress'].includes(c.status) && c.issuedTo === user?.name).length;
@@ -30,21 +33,100 @@ const Sidebar: React.FC = () => {
     }
   };
 
+  // Role-based navigation items — each has clear roles defined  
   const navItems = [
+    // ALL roles see Dashboard
     { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+    
+    // ALL roles see Job Card Register (read-only for some)
     { to: '/job-cards', label: 'Job Cards', icon: ClipboardList },
-    { to: '/approvals', label: 'Pending Approvals', icon: ShieldCheck, roles: ['Supervisor', 'HOD', 'Admin'] },
-    { to: '/planning', label: 'Planning Queue', icon: Clock, roles: ['PlanningOffice', 'Admin'] },
-    { to: '/assignments', label: 'Job Assignments', icon: UserPlus, roles: ['EngSupervisor', 'Admin'] },
-    { to: '/sign-offs', label: 'Pending Sign-off', icon: PenTool, roles: ['Initiator', 'Admin'] },
-    { to: '/my-jobs', label: 'My Jobs', icon: Briefcase, roles: ['Artisan', 'Admin'] },
-    { to: '/allocations', label: 'Allocations', icon: CheckSquare },
-    { to: '/reports', label: 'Reports', icon: FileText },
+    
+    // Only Supervisors, HOD, and Admin see the Approval Queue
+    { 
+      to: '/approvals', 
+      label: 'Approval Queue', 
+      icon: ShieldCheck, 
+      roles: ['Supervisor', 'HOD', 'Admin'] 
+    },
+    
+    // Only PlanningOffice & Admin see Planning Queue
+    { 
+      to: '/planning', 
+      label: 'Planning Queue', 
+      icon: Clock, 
+      roles: ['PlanningOffice', 'Admin'] 
+    },
+    
+    // Only EngSupervisor & Admin do Job Assignments
+    { 
+      to: '/assignments', 
+      label: 'Job Assignments', 
+      icon: UserPlus, 
+      roles: ['EngSupervisor', 'Admin'] 
+    },
+    
+    // Initiators and Admin can sign off completed work
+    { 
+      to: '/sign-offs', 
+      label: 'Sign-off Queue', 
+      icon: PenTool, 
+      roles: ['Initiator', 'Admin'] 
+    },
+    
+    // Only Artisans (and Admin) see My Jobs
+    { 
+      to: '/my-jobs', 
+      label: 'My Jobs', 
+      icon: Briefcase, 
+      roles: ['Artisan', 'Admin'] 
+    },
+    
+    // Allocations — Supervisors, EngSupervisors, PlanningOffice, Admin
+    { 
+      to: '/allocations', 
+      label: 'Allocations', 
+      icon: CheckSquare, 
+      roles: ['Supervisor', 'EngSupervisor', 'PlanningOffice', 'Admin'] 
+    },
+    
+    // Reports — Management & Supervisory roles only
+    { 
+      to: '/reports', 
+      label: 'Reports & Analytics', 
+      icon: FileText, 
+      roles: ['Admin', 'Supervisor', 'HOD', 'EngSupervisor'] 
+    },
   ];
 
   const filteredItems = navItems.filter(item => 
     !item.roles || (user && item.roles.includes(user.role))
   );
+
+  const getRoleLabel = (role: string) => {
+    const labels: Record<string, string> = {
+      Admin: 'System Admin',
+      Initiator: 'Initiator',
+      Supervisor: 'Supervisor',
+      HOD: 'Head of Dept.',
+      EngSupervisor: 'Eng. Supervisor',
+      Artisan: 'Artisan',
+      PlanningOffice: 'Planning Office',
+    };
+    return labels[role] || role;
+  };
+
+  const getRoleBadgeColor = (role: string) => {
+    const colors: Record<string, string> = {
+      Admin: '#4f46e5',
+      Initiator: '#0ea5e9',
+      Supervisor: '#f59e0b',
+      HOD: '#ef4444',
+      EngSupervisor: '#8b5cf6',
+      Artisan: '#10b981',
+      PlanningOffice: '#06b6d4',
+    };
+    return colors[role] || '#64748b';
+  };
 
   return (
     <aside className={styles.sidebar}>
@@ -76,7 +158,15 @@ const Sidebar: React.FC = () => {
         </div>
         <div className={styles.userInfo}>
           <span className={styles.userName}>{user?.name}</span>
-          <span className={styles.userRole}>{user?.role}</span>
+          <span 
+            className={styles.userRole}
+            style={{ 
+              color: getRoleBadgeColor(user?.role || ''),
+              fontWeight: 600,
+            }}
+          >
+            {getRoleLabel(user?.role || '')}
+          </span>
         </div>
       </div>
 
