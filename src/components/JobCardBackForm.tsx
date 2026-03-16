@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import styles from './JobCardForm.module.css';
 import { FormField, Input, TextArea, RadioGroup } from '../components/Form';
 import type { JobCard, ResourceUsage, SpareOrdered, SpareWithdrawn } from '../types';
