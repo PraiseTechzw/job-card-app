@@ -1,7 +1,9 @@
-const express = require('express');
-const cors = require('cors');
-const { Pool } = require('pg');
-require('dotenv').config();
+import express from 'express';
+import cors from 'cors';
+import pg from 'pg';
+const { Pool } = pg;
+import 'dotenv/config';
+import { fileURLToPath } from 'url';
 
 const app = express();
 app.use(cors());
@@ -303,11 +305,9 @@ app.patch('/api/assignments/:id', async (req, res) => {
   }
 });
 
-module.exports = app;
+export default app;
 
-
-
-if (process.env.NODE_ENV !== 'production' && require.main === module) {
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const PORT = process.env.PORT || 3001;
   app.listen(PORT, () => {
     console.log(`Backend server running on port ${PORT}`);

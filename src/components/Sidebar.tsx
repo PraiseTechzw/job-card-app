@@ -2,7 +2,7 @@ import React from 'react';
 import { NavLink } from 'react-router-dom';
 import { 
   LayoutDashboard, ClipboardList, PenTool, CheckSquare, LogOut, 
-  FileText, ShieldCheck, Clock, UserPlus, Briefcase, Settings
+  FileText, ShieldCheck, Clock, UserPlus, Briefcase
 } from 'lucide-react';
 import styles from './Sidebar.module.css';
 import { useAuth } from '../context/AuthContext';

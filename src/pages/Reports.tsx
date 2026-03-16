@@ -4,8 +4,9 @@ import styles from './Reports.module.css';
 import { BarChart3, PieChart, Activity, HardHat, Printer, Search } from 'lucide-react';
 
 const Reports: React.FC = () => {
-  const { jobCards, allocationSheets } = useJobCards();
+  const { jobCards } = useJobCards();
   const [activeTab, setActiveTab] = React.useState<'overview' | 'completed' | 'outstanding' | 'machine' | 'artisan' | 'downtime'>('overview');
+
   const [reportSearch, setReportSearch] = React.useState('');
 
   const totalCards = jobCards.length || 1;

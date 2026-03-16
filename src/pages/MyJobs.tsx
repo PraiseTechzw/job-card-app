@@ -14,26 +14,26 @@ const MyJobs: React.FC = () => {
   // Filtering for jobs assigned specifically to this user
   const myAssignedJobs = jobCards.filter(card => 
     (card.issuedTo?.toLowerCase() === user?.name?.toLowerCase()) &&
-    ['Assigned', 'InProgress', 'Completed'].includes(card.status) &&
+    ['Assigned', 'InProgress', 'Awaiting_SignOff'].includes(card.status) &&
     (card.ticketNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
      card.plantDescription.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
-  const handleStatusUpdate = async (id: string, newStatus: 'InProgress' | 'Completed') => {
+  const handleStatusUpdate = async (id: string, newStatus: 'InProgress' | 'Awaiting_SignOff') => {
     try {
       const updates: any = { status: newStatus };
-      if (newStatus === 'Completed') {
+      if (newStatus === 'Awaiting_SignOff') {
         updates.dateFinished = new Date().toISOString().split('T')[0];
       }
 
       await updateJobCard(id, updates);
       await addAuditLog({
         jobCardId: id,
-        action: newStatus === 'InProgress' ? 'Work Started' : 'Work Completed',
+        action: newStatus === 'InProgress' ? 'Work Started' : 'Work Completed — Awaiting Sign-off',
         performedBy: user?.name || 'Unknown',
         details: `Updated status to ${newStatus}`
       });
-      alert(`Job updated to ${newStatus}`);
+      alert(newStatus === 'Awaiting_SignOff' ? 'Job submitted for sign-off!' : `Job updated to ${newStatus}`);
     } catch (err) {
       console.error('Update failed:', err);
     }
@@ -129,7 +129,7 @@ const MyJobs: React.FC = () => {
 
                 {card.status === 'InProgress' && (
                   <button 
-                    onClick={() => handleStatusUpdate(card.id, 'Completed')}
+                    onClick={() => handleStatusUpdate(card.id, 'Awaiting_SignOff')}
                     className="w-full px-4 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-bold flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/20 transition-all transform hover:-translate-y-1"
                   >
                     <CheckCircle2 size={18} /> Submit for Sign-off

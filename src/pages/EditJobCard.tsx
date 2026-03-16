@@ -1,44 +1,43 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import JobCardForm from '../components/JobCardForm';
+import { useJobCards } from '../context/JobCardContext';
 import type { JobCard } from '../types';
 
 const EditJobCard: React.FC = () => {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
+  const { getJobCard, updateJobCard } = useJobCards();
   const [initialData, setInitialData] = useState<Partial<JobCard> | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
-    // Mock fetching data
-    setTimeout(() => {
-      setInitialData({
-        id,
-        ticketNumber: `JC-2026-00${id === 'jc1' ? '1' : 'X'}`,
-        requestedBy: 'John Doe',
-        plantNumber: 'P-9901',
-        plantDescription: 'Main Conveyor Motor',
-        defect: 'Excessive heat and noise.',
-        workRequest: 'Check bearings and lubrication.',
-        status: 'Draft',
-        allocatedTrades: ['Fitting', 'Electrical'],
-        priority: 'High'
-      });
-    }, 500);
-  }, [id]);
+    const card = getJobCard(id || '');
+    if (card) {
+      setInitialData(card);
+    }
+  }, [id, getJobCard]);
 
-  const handleSave = (data: Partial<JobCard>) => {
-    setIsSubmitting(true);
-    console.log('Updating Job Card:', data);
-    
-    // Simulate API call
-    setTimeout(() => {
-      setIsSubmitting(false);
+  const handleSave = async (data: Partial<JobCard>) => {
+    if (!id) return;
+    try {
+      setIsSubmitting(true);
+      await updateJobCard(id, data);
       navigate('/job-cards');
-    }, 1000);
+    } catch (err) {
+      console.error('Failed to update job card:', err);
+      alert('Failed to update job card. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
-  if (!initialData) return <div style={{ padding: '4rem', color: 'white' }}>Loading Job Card...</div>;
+  if (!initialData) return (
+    <div className="flex flex-col items-center justify-center p-20 gap-4">
+      <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+      <p className="text-slate-400">Loading Job Card...</p>
+    </div>
+  );
 
   return (
     <div className="animate-fade-in">
@@ -48,3 +47,4 @@ const EditJobCard: React.FC = () => {
 };
 
 export default EditJobCard;
+
