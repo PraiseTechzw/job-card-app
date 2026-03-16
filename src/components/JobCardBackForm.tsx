@@ -11,9 +11,9 @@ interface JobCardBackFormProps {
 }
 
 const JobCardBackForm: React.FC<JobCardBackFormProps> = ({ data, onChange, readOnly }) => {
-  const [resources, setResources] = useState<ResourceUsage[]>(data.resourceUsage || []);
-  const [sparesOrdered, setSparesOrdered] = useState<SpareOrdered[]>(data.sparesOrdered || []);
-  const [sparesWithdrawn, setSparesWithdrawn] = useState<SpareWithdrawn[]>(data.sparesWithdrawn || []);
+  const resources = data.resourceUsage || [];
+  const sparesOrdered = data.sparesOrdered || [];
+  const sparesWithdrawn = data.sparesWithdrawn || [];
 
   const updateField = (field: keyof JobCard, value: any) => {
     onChange({ [field]: value });
@@ -22,7 +22,6 @@ const JobCardBackForm: React.FC<JobCardBackFormProps> = ({ data, onChange, readO
   // Labours management
   const handleResourceChange = (id: string, field: keyof ResourceUsage, value: any) => {
     const updated = resources.map(r => r.id === id ? { ...r, [field]: value } : r);
-    setResources(updated);
     updateField('resourceUsage', updated);
   };
 
@@ -33,15 +32,11 @@ const JobCardBackForm: React.FC<JobCardBackFormProps> = ({ data, onChange, readO
       artisanName: '',
       hoursWorked: 0
     };
-    const updated = [...resources, newRes];
-    setResources(updated);
-    updateField('resourceUsage', updated);
+    updateField('resourceUsage', [...resources, newRes]);
   };
 
   const removeResource = (id: string) => {
-    const updated = resources.filter(r => r.id !== id);
-    setResources(updated);
-    updateField('resourceUsage', updated);
+    updateField('resourceUsage', resources.filter(r => r.id !== id));
   };
 
   // Spares Ordered management
@@ -53,21 +48,16 @@ const JobCardBackForm: React.FC<JobCardBackFormProps> = ({ data, onChange, readO
       prNo: '',
       date: new Date().toISOString().split('T')[0]
     };
-    const updated = [...sparesOrdered, newSpare];
-    setSparesOrdered(updated);
-    updateField('sparesOrdered', updated);
+    updateField('sparesOrdered', [...sparesOrdered, newSpare]);
   };
 
   const updateSpareOrdered = (id: string, field: keyof SpareOrdered, value: any) => {
     const updated = sparesOrdered.map(s => s.id === id ? { ...s, [field]: value } : s);
-    setSparesOrdered(updated);
     updateField('sparesOrdered', updated);
   };
 
   const removeSpareOrdered = (id: string) => {
-    const updated = sparesOrdered.filter(s => s.id !== id);
-    setSparesOrdered(updated);
-    updateField('sparesOrdered', updated);
+    updateField('sparesOrdered', sparesOrdered.filter(s => s.id !== id));
   };
 
   // Spares Withdrawn management
@@ -80,21 +70,16 @@ const JobCardBackForm: React.FC<JobCardBackFormProps> = ({ data, onChange, readO
       cost: '',
       date: new Date().toISOString().split('T')[0]
     };
-    const updated = [...sparesWithdrawn, newSpare];
-    setSparesWithdrawn(updated);
-    updateField('sparesWithdrawn', updated);
+    updateField('sparesWithdrawn', [...sparesWithdrawn, newSpare]);
   };
 
   const updateSpareWithdrawn = (id: string, field: keyof SpareWithdrawn, value: any) => {
     const updated = sparesWithdrawn.map(s => s.id === id ? { ...s, [field]: value } : s);
-    setSparesWithdrawn(updated);
     updateField('sparesWithdrawn', updated);
   };
 
   const removeSpareWithdrawn = (id: string) => {
-    const updated = sparesWithdrawn.filter(s => s.id !== id);
-    setSparesWithdrawn(updated);
-    updateField('sparesWithdrawn', updated);
+    updateField('sparesWithdrawn', sparesWithdrawn.filter(s => s.id !== id));
   };
 
   return (
