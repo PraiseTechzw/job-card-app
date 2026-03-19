@@ -5,7 +5,7 @@ import { Search, UserPlus } from 'lucide-react';
 import styles from './JobCards.module.css';
 
 const Assignments: React.FC = () => {
-  const { jobCards, addAssignment, updateJobCard, addAuditLog } = useJobCards();
+  const { jobCards, addAssignment, updateJobCard } = useJobCards();
   const { user } = useAuth();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCard, setSelectedCard] = useState<string | null>(null);
@@ -36,15 +36,12 @@ const Assignments: React.FC = () => {
         status: 'Assigned'
       });
 
-      await updateJobCard(selectedCard, { status: 'Assigned', issuedTo: assignmentData.artisanName });
-      
-      await addAuditLog({
-        jobCardId: selectedCard,
-        action: 'Job Assigned',
-        performedBy: user?.name || 'Unknown',
-        details: `Job assigned to ${assignmentData.artisanName}`
+      await updateJobCard(selectedCard, { 
+        status: 'Assigned', 
+        issuedTo: assignmentData.artisanName,
+        performedBy: user?.name || 'Unknown'
       });
-
+      
       setSelectedCard(null);
       setAssignmentData({
         artisanName: '',
@@ -54,8 +51,9 @@ const Assignments: React.FC = () => {
         notes: ''
       });
       alert('Job successfully assigned.');
-    } catch (err) {
+    } catch (err: any) {
       console.error('Assignment failed:', err);
+      alert(err.response?.data?.error || 'Assignment failed. Check workflow constraints.');
     }
   };
 

@@ -2,12 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import JobCardForm from '../components/JobCardForm';
 import { useJobCards } from '../context/JobCardContext';
+import { useAuth } from '../context/AuthContext';
 import type { JobCard } from '../types';
 
 const EditJobCard: React.FC = () => {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
   const { getJobCard, updateJobCard } = useJobCards();
+  const { user } = useAuth();
   const [initialData, setInitialData] = useState<Partial<JobCard> | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -22,7 +24,7 @@ const EditJobCard: React.FC = () => {
     if (!id) return;
     try {
       setIsSubmitting(true);
-      await updateJobCard(id, data);
+      await updateJobCard(id, { ...data, performedBy: user?.name || 'Unknown' });
       navigate('/job-cards');
     } catch (err) {
       console.error('Failed to update job card:', err);

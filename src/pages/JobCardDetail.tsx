@@ -4,9 +4,10 @@ import styles from '../components/JobCardForm.module.css';
 import type { JobCard, JobCardStatus } from '../types';
 import { useJobCards } from '../context/JobCardContext';
 import { useAuth } from '../context/AuthContext';
-import { Printer, Edit3, ArrowLeft, CheckCircle, Save, ShieldCheck, UserCheck, Play, CheckCircle2 } from 'lucide-react';
+import { Printer, Edit3, ArrowLeft, CheckCircle, Save, ShieldCheck, UserCheck, Play, CheckCircle2, History } from 'lucide-react';
 import WorkflowTracker from '../components/WorkflowTracker';
 import JobCardBackForm from '../components/JobCardBackForm';
+import AuditTimeline from '../components/AuditTimeline';
 
 const JobCardDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -455,22 +456,12 @@ const JobCardDetail: React.FC = () => {
             readOnly={!isEditingBack}
           />
         ) : (
-          <div className="glass-panel p-6">
-            <h2 className="text-xl font-bold mb-6 text-white">Full Audit Trail & History</h2>
-            <div className="flex flex-col gap-4">
-              {history.length > 0 ? history.map((log) => (
-                <div key={log.id} className="border-l-2 border-blue-500 pl-4 py-2 bg-slate-800/30 rounded-r-lg">
-                  <div className="flex justify-between items-start mb-1">
-                    <span className="font-bold text-blue-400">{log.action}</span>
-                    <span className="text-xs text-slate-500">{new Date(log.createdAt).toLocaleString()}</span>
-                  </div>
-                  <div className="text-sm text-white">Performed by: <span className="text-slate-300 font-medium">{log.performedBy}</span></div>
-                  <div className="text-sm text-slate-400 mt-1 italic">{log.details}</div>
-                </div>
-              )) : (
-                <div className="text-center py-12 text-slate-500 italic">No history records yet for this Job Card.</div>
-              )}
+          <div className="glass-panel p-8">
+            <div className="flex items-center gap-3 mb-8">
+              <History size={24} className="text-blue-500" />
+              <h2 className="text-2xl font-bold text-white">Action History & Traceability</h2>
             </div>
+            <AuditTimeline logs={history} />
           </div>
         )}
       </div>

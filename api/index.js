@@ -105,7 +105,7 @@ app.post('/api/job-cards', async (req, res) => {
 });
 
 app.patch('/api/job-cards/:id', async (req, res) => {
-  const { performedBy, ...updateData } = req.body;
+  const { performedBy, userRole, ...updateData } = req.body;
   const updates = toSnake(updateData);
   const fields = Object.keys(updates);
   
@@ -127,10 +127,10 @@ app.patch('/api/job-cards/:id', async (req, res) => {
     
     // 2. Validate transition if status is being updated
     if (nextStatus && nextStatus !== currentStatus) {
-      if (!isValidTransition(currentStatus, nextStatus)) {
+      if (!isValidTransition(currentStatus, nextStatus, userRole)) {
         await client.query('ROLLBACK');
         return res.status(400).json({ 
-          error: `Invalid status transition from ${currentStatus} to ${nextStatus}` 
+          error: `Invalid status transition from ${currentStatus} to ${nextStatus} for role ${userRole || 'Unknown'}` 
         });
       }
     }

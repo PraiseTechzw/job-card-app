@@ -6,7 +6,7 @@ import { useNavigate } from 'react-router-dom';
 import styles from './JobCards.module.css';
 
 const MyJobs: React.FC = () => {
-  const { jobCards, updateJobCard, addAuditLog } = useJobCards();
+  const { jobCards, updateJobCard } = useJobCards();
   const { user } = useAuth();
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
@@ -21,21 +21,20 @@ const MyJobs: React.FC = () => {
 
   const handleStatusUpdate = async (id: string, newStatus: 'InProgress' | 'Awaiting_SignOff') => {
     try {
-      const updates: any = { status: newStatus };
+      const updates: any = { 
+        status: newStatus,
+        performedBy: user?.name || 'Unknown'
+      };
+      
       if (newStatus === 'Awaiting_SignOff') {
         updates.dateFinished = new Date().toISOString().split('T')[0];
       }
 
       await updateJobCard(id, updates);
-      await addAuditLog({
-        jobCardId: id,
-        action: newStatus === 'InProgress' ? 'Work Started' : 'Work Completed — Awaiting Sign-off',
-        performedBy: user?.name || 'Unknown',
-        details: `Updated status to ${newStatus}`
-      });
       alert(newStatus === 'Awaiting_SignOff' ? 'Job submitted for sign-off!' : `Job updated to ${newStatus}`);
-    } catch (err) {
+    } catch (err: any) {
       console.error('Update failed:', err);
+      alert(err.response?.data?.error || 'Update failed. Check workflow constraints.');
     }
   };
 

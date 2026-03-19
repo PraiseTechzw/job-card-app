@@ -108,6 +108,9 @@ export interface JobCard {
   closedByDate?: string;
   closedByTime?: string;
   
+  // API Operations Metadata
+  performedBy?: string;
+  
   // Metadata
   createdAt: string;
   updatedAt: string;
