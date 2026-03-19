@@ -26,6 +26,7 @@ CREATE TABLE IF NOT EXISTS job_cards (
     maintenance_schedule TEXT,
     work_request TEXT,
     allocated_trades JSONB,
+    issued_to TEXT,
     status TEXT NOT NULL DEFAULT 'Draft',
     -- Back form fields
     work_done_details TEXT,

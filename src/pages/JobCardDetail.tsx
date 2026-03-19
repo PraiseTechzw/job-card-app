@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import styles from '../components/JobCardForm.module.css';
 import type { JobCard, JobCardStatus } from '../types';
 import { useJobCards } from '../context/JobCardContext';
 import { useAuth } from '../context/AuthContext';
-import { Printer, Edit3, ArrowLeft, CheckCircle, Save, ShieldCheck, UserCheck, Play, CheckCircle2, History } from 'lucide-react';
+import { Printer, Edit3, ArrowLeft, CheckCircle, Save, ShieldCheck, UserCheck, Play, CheckCircle2, History, ClipboardList } from 'lucide-react';
 import WorkflowTracker from '../components/WorkflowTracker';
 import JobCardBackForm from '../components/JobCardBackForm';
 import AuditTimeline from '../components/AuditTimeline';
@@ -12,13 +12,19 @@ import AuditTimeline from '../components/AuditTimeline';
 const JobCardDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
   const { user } = useAuth();
   const { getJobCard, updateJobCard, getAuditLogs, getAssignments } = useJobCards();
   const [card, setCard] = useState<JobCard | null>(null);
-  const [activeTab, setActiveTab] = useState<'front' | 'back' | 'history'>('front');
+  
+  const queryParams = new URLSearchParams(location.search);
+  const initialTab = (queryParams.get('tab') as 'front' | 'back' | 'history') || 'front';
+  const initialEditing = queryParams.get('edit') === 'true';
+  
+  const [activeTab, setActiveTab] = useState<'front' | 'back' | 'history'>(initialTab);
   const [history, setHistory] = useState<any[]>([]);
   const [assignment, setAssignment] = useState<any>(null);
-  const [isEditingBack, setIsEditingBack] = useState(false);
+  const [isEditingBack, setIsEditingBack] = useState(initialEditing);
   const [backData, setBackData] = useState<Partial<JobCard>>({});
 
   useEffect(() => {
@@ -39,7 +45,7 @@ const JobCardDetail: React.FC = () => {
     window.print();
   };
 
-  const handleStatusTransition = async (newStatus: JobCardStatus, extraFields = {}) => {
+  const handleStatusTransition = async (newStatus: JobCardStatus, extraFields = {}, _actionName?: string) => {
     if (card) {
       try {
         const updates = { 
@@ -159,22 +165,41 @@ const JobCardDetail: React.FC = () => {
 
             {activeTab === 'back' && (card.status === 'InProgress' || card.status === 'Awaiting_SignOff') && !isEditingBack && (
               <button onClick={() => setIsEditingBack(true)} className="btn btn-secondary">
-                <Edit3 size={18} /> Update Feedback
+                <Edit3 size={18} /> Edit Feedback
               </button>
             )}
 
             {isEditingBack && (
-              <button onClick={() => handleStatusTransition(card.status)} className="btn btn-primary">
-                <Save size={18} /> Save Feedback
-              </button>
+              <div className="flex gap-2">
+                <button onClick={() => handleStatusTransition(card.status)} className="btn btn-secondary">
+                  <Save size={18} /> Save Draft
+                </button>
+                {canCompleteWork && (
+                  <button 
+                    onClick={() => {
+                      if (!backData.workDoneDetails || !backData.causeOfFailure) {
+                        alert("Please fill out 'Details of Work Done' and 'Cause of Failure' before submitting.");
+                        return;
+                      }
+                      handleStatusTransition('Awaiting_SignOff', { dateFinished: new Date().toISOString().split('T')[0] })
+                    }}
+                    className="btn btn-success font-bold"
+                  >
+                    <CheckCircle2 size={18} /> Complete & Submit Job
+                  </button>
+                )}
+              </div>
             )}
 
-            {canCompleteWork && (
+            {canCompleteWork && !isEditingBack && activeTab !== 'back' && (
               <button 
-                onClick={() => handleStatusTransition('Awaiting_SignOff', { dateFinished: new Date().toISOString().split('T')[0] })}
-                className="btn btn-success"
+                onClick={() => {
+                  setActiveTab('back');
+                  setIsEditingBack(true);
+                }}
+                className="btn btn-primary animate-pulse shadow-blue-500/50 shadow-lg"
               >
-                <CheckCircle2 size={18} /> Complete Work
+                <ClipboardList size={18} /> Fill Feedback & Complete
               </button>
             )}
 

@@ -2,7 +2,7 @@ import React from 'react';
 import { NavLink } from 'react-router-dom';
 import { 
   LayoutDashboard, ClipboardList, PenTool, CheckSquare, LogOut, 
-  FileText, ShieldCheck, Clock, UserPlus, Briefcase
+  FileText, ShieldCheck, Clock, UserPlus, History, Wrench
 } from 'lucide-react';
 import styles from './Sidebar.module.css';
 import { useAuth } from '../context/AuthContext';
@@ -26,7 +26,7 @@ const Sidebar: React.FC = () => {
         return jobCards.filter(c => c.status === 'Registered').length;
       case 'Sign-off Queue':
         return jobCards.filter(c => c.status === 'Awaiting_SignOff' && (user?.role === 'Admin' || c.requestedBy === user?.name)).length;
-      case 'My Jobs':
+      case 'My Active Jobs':
         return jobCards.filter(c => ['Assigned', 'InProgress'].includes(c.status) && c.issuedTo === user?.name).length;
       default:
         return 0;
@@ -73,11 +73,17 @@ const Sidebar: React.FC = () => {
       roles: ['Initiator', 'Admin'] 
     },
     
-    // Only Artisans (and Admin) see My Jobs
+    // Artisan Module — scoped exclusively to Artisan and Admin
     { 
-      to: '/my-jobs', 
-      label: 'My Jobs', 
-      icon: Briefcase, 
+      to: '/artisan/dashboard', 
+      label: 'Artisan Board', 
+      icon: Wrench, 
+      roles: ['Artisan', 'Admin'] 
+    },
+    { 
+      to: '/artisan/history', 
+      label: 'My Work History', 
+      icon: History, 
       roles: ['Artisan', 'Admin'] 
     },
     

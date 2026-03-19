@@ -26,12 +26,12 @@ async function generateMasterSQL() {
   // 1.5. Seed Default Users
   sql += '-- Seed Default System Users\n';
   const passHash = await bcrypt.hash('admin123', 10);
-  sql += `INSERT INTO users (id, name, username, password_hash, role) VALUES ('admin-1', 'Praise Masunga', 'pmasunga', '${passHash}', 'Admin');\n`;
-  sql += `INSERT INTO users (id, name, username, password_hash, role) VALUES ('super-1', 'Production Supervisor', 'production_super', '${passHash}', 'Supervisor');\n`;
-  sql += `INSERT INTO users (id, name, username, password_hash, role) VALUES ('plan-1', 'Planning Officer', 'planning_office', '${passHash}', 'PlanningOffice');\n`;
-  sql += `INSERT INTO users (id, name, username, password_hash, role) VALUES ('init-1', 'Maintenance Initiator', 'initiator', '${passHash}', 'Initiator');\n`;
-  sql += `INSERT INTO users (id, name, username, password_hash, role) VALUES ('art-1', 'Lead Artisan', 'artisan', '${passHash}', 'Artisan');\n`;
-  sql += `INSERT INTO users (id, name, username, password_hash, role) VALUES ('hod-1', 'Dept. Manager', 'manager', '${passHash}', 'HOD');\n`;
+  sql += `INSERT INTO users (id, name, username, password_hash, role) VALUES ('admin-1', 'Praise Masunga', 'pmasunga', '${passHash}', 'Admin') ON CONFLICT (username) DO NOTHING;\n`;
+  sql += `INSERT INTO users (id, name, username, password_hash, role) VALUES ('super-1', 'Production Supervisor', 'production_super', '${passHash}', 'Supervisor') ON CONFLICT (username) DO NOTHING;\n`;
+  sql += `INSERT INTO users (id, name, username, password_hash, role) VALUES ('plan-1', 'Planning Officer', 'planning_office', '${passHash}', 'PlanningOffice') ON CONFLICT (username) DO NOTHING;\n`;
+  sql += `INSERT INTO users (id, name, username, password_hash, role) VALUES ('init-1', 'Maintenance Initiator', 'initiator', '${passHash}', 'Initiator') ON CONFLICT (username) DO NOTHING;\n`;
+  sql += `INSERT INTO users (id, name, username, password_hash, role) VALUES ('art-1', 'Lead Artisan', 'artisan', '${passHash}', 'Artisan') ON CONFLICT (username) DO NOTHING;\n`;
+  sql += `INSERT INTO users (id, name, username, password_hash, role) VALUES ('hod-1', 'Dept. Manager', 'manager', '${passHash}', 'HOD') ON CONFLICT (username) DO NOTHING;\n`;
   sql += '\n';
 
   // 2. Parse Artisans & Assign SMS Numbers
@@ -118,7 +118,7 @@ async function generateMasterSQL() {
               const artisanPhone = matchingArtisan ? matchingArtisan.phone : (artisanDetails[i % artisanDetails.length]?.phone || '');
               
               sql += `INSERT INTO job_cards (id, ticket_number, requested_by, date_raised, time_raised, priority, plant_description, defect, work_done_details, status, issued_to, date_finished, machine_downtime)
-  VALUES ('${id}', '${jcNumber}', 'Historical Import', '${dateStr}', '08:00', 'Medium', '${(safeDesc.substring(0, 50))}', '${safeDesc}', '${safeWork}', 'Closed', '${artisanName}', '${dateStr}', '${timeTaken || '1.0'}');\n`;
+  VALUES ('${id}', '${jcNumber}', 'Historical Import', '${dateStr}', '08:00', 'Medium', '${(safeDesc.substring(0, 50))}', '${safeDesc}', '${safeWork}', 'Closed', '${artisanName}', '${dateStr}', '${timeTaken || '1.0'}') ON CONFLICT (ticket_number) DO NOTHING;\n`;
               
               // Assignment link with Phone
               const assignId = Math.random().toString(36).substr(2, 9);
@@ -143,7 +143,7 @@ async function generateMasterSQL() {
      const a = artisanDetails[i % artisanDetails.length];
      
      sql += `INSERT INTO job_cards (id, ticket_number, requested_by, date_raised, time_raised, priority, plant_description, plant_status, defect, status)
-VALUES ('${id}', '${ticket}', 'Supervisor J.', '2026-03-18', '10:00', 'High', '${m.name.replace(/'/g, "''")}', 'Breakdown', 'Urgent fault in electronics', 'Pending_Supervisor');\n`;
+VALUES ('${id}', '${ticket}', 'Supervisor J.', '2026-03-18', '10:00', 'High', '${m.name.replace(/'/g, "''")}', 'Breakdown', 'Urgent fault in electronics', 'Pending_Supervisor') ON CONFLICT (ticket_number) DO NOTHING;\n`;
   }
 
   sql += '\nCOMMIT;';

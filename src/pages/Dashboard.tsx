@@ -1,17 +1,25 @@
 import React from 'react';
+import { Navigate } from 'react-router-dom';
 import { 
   TrendingUp, Clock, AlertCircle, CheckCircle2, 
-  BarChart3, Settings, Users, Activity
+  Settings, Users, Activity
 } from 'lucide-react';
 import { 
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, 
+  Bar, XAxis, YAxis, CartesianGrid, 
   Tooltip, ResponsiveContainer, AreaChart, Area 
 } from 'recharts';
 import styles from './Dashboard.module.css';
+import { useAuth } from '../context/AuthContext';
 import { useJobCards } from '../context/JobCardContext';
 
 const Dashboard: React.FC = () => {
   const { jobCards } = useJobCards();
+  const { user } = useAuth();
+
+  // Artisan users are redirected to the dedicated Artisan Module
+  if (user?.role === 'Artisan') {
+    return <Navigate to="/artisan/dashboard" replace />;
+  }
 
   const stats = [
     { 

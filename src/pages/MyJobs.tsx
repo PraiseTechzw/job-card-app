@@ -129,10 +129,10 @@ const MyJobs: React.FC = () => {
 
                 {card.status === 'InProgress' && (
                   <button 
-                    onClick={() => handleStatusUpdate(card.id, 'Awaiting_SignOff')}
+                    onClick={() => navigate(`/job-cards/view/${card.id}?tab=back&edit=true`)}
                     className="w-full px-4 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-bold flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/20 transition-all transform hover:-translate-y-1"
                   >
-                    <CheckCircle2 size={18} /> Submit for Sign-off
+                    <CheckCircle2 size={18} /> Fill Feedback & Complete
                   </button>
                 )}
               </div>
