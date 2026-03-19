@@ -1,7 +1,6 @@
 import express from 'express';
 import cors from 'cors';
-import pg from 'pg';
-const { Pool } = pg;
+import { Pool } from '@neondatabase/serverless';
 import 'dotenv/config';
 import { fileURLToPath } from 'url';
 import bcrypt from 'bcryptjs';
@@ -16,17 +15,16 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+// --- Bypassing Port 5432 Blocks via Neon WebSocket Driver ---
 const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: {
-    rejectUnauthorized: false
-  }
+  connectionString: process.env.DATABASE_URL
 });
 
 pool.on('error', (err) => {
   console.error('Unexpected error on idle client', err);
 });
 
+// Replacement query function that uses the secure WebSocket driver
 const query = (text, params) => pool.query(text, params);
 
 app.get('/api/health', async (req, res) => {
@@ -142,29 +140,21 @@ app.post('/api/job-cards', async (req, res) => {
 
   const client = await pool.connect();
   try {
-    await client.query('BEGIN');
-    
-    const result = await client.query(
+    const result = await query(
       `INSERT INTO job_cards (${fields.join(', ')}) VALUES (${placeholders}) RETURNING *`,
       values
     );
     
-    // Record Audit Log
-    await createAuditLog(
-      client, 
-      id, 
-      'Initial Creation', 
-      performedBy || 'System', 
-      { ticketNumber }
+    // Record Audit Log (using query directly)
+    await query(
+      'INSERT INTO audit_logs (id, job_card_id, action, performed_by, details) VALUES ($1, $2, $3, $4, $5)',
+      [Math.random().toString(36).substr(2, 9), id, 'Initial Creation', performedBy || 'System', JSON.stringify({ ticketNumber })]
     );
 
-    await client.query('COMMIT');
     res.status(201).json(toCamel(result.rows[0]));
   } catch (err) {
-    await client.query('ROLLBACK');
+    console.error('Create failed:', err);
     res.status(500).json({ error: err.message });
-  } finally {
-    client.release();
   }
 });
 
@@ -176,14 +166,10 @@ app.patch('/api/job-cards/:id', async (req, res) => {
   
   if (fields.length === 0) return res.status(400).json({ error: 'No fields to update' });
 
-  const client = await pool.connect();
   try {
-    await client.query('BEGIN');
-    
     // 1. Fetch current job card to check status
-    const currentResult = await client.query('SELECT status FROM job_cards WHERE id = $1', [req.params.id]);
+    const currentResult = await query('SELECT status FROM job_cards WHERE id = $1', [req.params.id]);
     if (currentResult.rows.length === 0) {
-      await client.query('ROLLBACK');
       return res.status(404).json({ error: 'Card not found' });
     }
     
@@ -193,7 +179,6 @@ app.patch('/api/job-cards/:id', async (req, res) => {
     // 2. Validate transition if status is being updated
     if (nextStatus && nextStatus !== currentStatus) {
       if (!isValidTransition(currentStatus, nextStatus, userRole)) {
-        await client.query('ROLLBACK');
         return res.status(400).json({ 
           error: `Invalid status transition from ${currentStatus} to ${nextStatus} for role ${userRole || 'Unknown'}` 
         });
@@ -202,35 +187,30 @@ app.patch('/api/job-cards/:id', async (req, res) => {
 
     // 3. Perform update
     const setQuery = fields.map((f, i) => `${f} = $${i + 2}`).join(', ');
-    const updateResult = await client.query(
+    const updateResult = await query(
       `UPDATE job_cards SET ${setQuery}, updated_at = NOW() WHERE id = $1 RETURNING *`,
       [req.params.id, ...Object.values(updates)]
     );
     
-    // 4. Record Audit Log
-    const action = nextStatus && nextStatus !== currentStatus ? 'Status Update' : 'Fields Update';
-    const auditDetails = {
-      fromStatus: currentStatus,
-      toStatus: nextStatus || currentStatus,
-      changedFields: fields
-    };
-    
-    await createAuditLog(
-      client, 
-      req.params.id, 
-      action, 
-      performedBy || 'System', 
-      auditDetails
-    );
+    // 4. Record Audit Log (using query directly)
+    if (updateResult.rows.length > 0) {
+      const action = nextStatus && nextStatus !== currentStatus ? 'Status Update' : 'Fields Update';
+      const auditDetails = {
+        fromStatus: currentStatus,
+        toStatus: nextStatus || currentStatus,
+        changedFields: fields
+      };
+      
+      await query(
+        'INSERT INTO audit_logs (id, job_card_id, action, performed_by, details) VALUES ($1, $2, $3, $4, $5)',
+        [Math.random().toString(36).substr(2, 9), req.params.id, action, performedBy || 'System', JSON.stringify(auditDetails)]
+      );
+    }
 
-    await client.query('COMMIT');
     res.json(toCamel(updateResult.rows[0]));
   } catch (err) {
-    await client.query('ROLLBACK');
     console.error('Patch failed:', err);
     res.status(500).json({ error: err.message });
-  } finally {
-    client.release();
   }
 });
 
@@ -261,12 +241,9 @@ app.post('/api/allocation-sheets', async (req, res) => {
   const { supervisor, section, date, rows } = req.body;
   const sheetId = Math.random().toString(36).substr(2, 9);
   
-  const client = await pool.connect();
   try {
-    await client.query('BEGIN');
-    
     // 1. Insert Sheet
-    await client.query(
+    await query(
       'INSERT INTO allocation_sheets (id, supervisor, section, date) VALUES ($1, $2, $3, $4)',
       [sheetId, supervisor, section, date]
     );
@@ -276,7 +253,7 @@ app.post('/api/allocation-sheets', async (req, res) => {
     if (rows && Array.isArray(rows)) {
       for (const row of rows) {
         const rowId = Math.random().toString(36).substr(2, 9);
-        const rResult = await client.query(
+        const rResult = await query(
           'INSERT INTO allocation_rows (id, sheet_id, artisan_name, allocated_task, job_card_number, estimated_time, actual_time_taken) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *',
           [rowId, sheetId, row.artisanName, row.allocatedTask, row.jobCardNumber, row.estimatedTime, row.actualTimeTaken]
         );
@@ -284,7 +261,6 @@ app.post('/api/allocation-sheets', async (req, res) => {
       }
     }
     
-    await client.query('COMMIT');
     res.status(201).json({ 
       id: sheetId, 
       supervisor, 
@@ -293,10 +269,8 @@ app.post('/api/allocation-sheets', async (req, res) => {
       rows: insertedRows 
     });
   } catch (err) {
-    await client.query('ROLLBACK');
+    console.error('Allocation create failed:', err);
     res.status(500).json({ error: err.message });
-  } finally {
-    client.release();
   }
 });
 
@@ -304,24 +278,21 @@ app.patch('/api/allocation-sheets/:id', async (req, res) => {
   const { supervisor, section, date, rows } = req.body;
   const sheetId = req.params.id;
   
-  const client = await pool.connect();
   try {
-    await client.query('BEGIN');
-    
     // Update header
-    await client.query(
+    await query(
       'UPDATE allocation_sheets SET supervisor = $1, section = $2, date = $3 WHERE id = $4',
       [supervisor, section, date, sheetId]
     );
     
     // Simpler approach: delete existing rows and re-insert
-    await client.query('DELETE FROM allocation_rows WHERE sheet_id = $1', [sheetId]);
+    await query('DELETE FROM allocation_rows WHERE sheet_id = $1', [sheetId]);
     
     const insertedRows = [];
     if (rows && Array.isArray(rows)) {
       for (const row of rows) {
         const rowId = Math.random().toString(36).substr(2, 9);
-        const rResult = await client.query(
+        const rResult = await query(
           'INSERT INTO allocation_rows (id, sheet_id, artisan_name, allocated_task, job_card_number, estimated_time, actual_time_taken) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *',
           [rowId, sheetId, row.artisanName, row.allocatedTask, row.jobCardNumber, row.estimatedTime, row.actualTimeTaken]
         );
@@ -329,13 +300,10 @@ app.patch('/api/allocation-sheets/:id', async (req, res) => {
       }
     }
     
-    await client.query('COMMIT');
     res.json({ id: sheetId, supervisor, section, date, rows: insertedRows });
   } catch (err) {
-    await client.query('ROLLBACK');
+    console.error('Allocation update failed:', err);
     res.status(500).json({ error: err.message });
-  } finally {
-    client.release();
   }
 });
 
