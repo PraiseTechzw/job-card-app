@@ -181,7 +181,7 @@ export default function PreventiveMaintenancePlanning() {
               <ShieldCheck size={16} color="#10b981" />
               <h3 style={{ fontSize: 12, fontWeight: 800, textTransform: 'uppercase', color: '#475569' }}>Policy Rules</h3>
             </div>
-            <ul style={{ padding: 0, margin: 0, listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 10 }}>
+            <ul style={{ padding: 0, listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 10 }}>
               {[
                 'High-priority plant requires Monthly PM minimum.',
                 'Safety equipment requires Quarterly inspections.',

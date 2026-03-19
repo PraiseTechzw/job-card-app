@@ -2,8 +2,8 @@ import React, { useState } from 'react';
 import { useJobCards } from '../context/JobCardContext';
 import styles from './Reports.module.css';
 import { 
-  BarChart3, PieChart, Activity, HardHat, Printer, 
-  Search, ShieldAlert, Zap, History, ClipboardList
+  BarChart3, Activity, HardHat, Printer, 
+  Search, ShieldAlert, Zap, History
 } from 'lucide-react';
 import { 
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, 
@@ -15,7 +15,7 @@ const Reports: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'overview' | 'completed' | 'outstanding' | 'machine' | 'artisan' | 'downtime'>('overview');
   const [reportSearch, setReportSearch] = useState('');
 
-  const totalCards = jobCards.length || 1;
+
 
   // Data helpers
   const getStatusCounts = () => jobCards.reduce((acc: any, card) => {
@@ -40,7 +40,7 @@ const Reports: React.FC = () => {
     { name: 'Low', value: jobCards.filter(c => c.priority === 'Low').length, color: '#10b981' },
   ].filter(d => d.value > 0);
 
-  const COLORS = ['#6366f1', '#0ea5e9', '#8b5cf6', '#10b981', '#64748b'];
+
 
   const handlePrint = () => window.print();
 

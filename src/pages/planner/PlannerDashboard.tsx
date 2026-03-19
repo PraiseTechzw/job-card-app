@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   BarChart2, AlertTriangle, CheckCircle2, Clock,
-  TrendingUp, Activity, Database, FileText,
+  TrendingUp, Activity, Database,
   Archive, Calendar, Filter, RefreshCw, Eye
 } from 'lucide-react';
 import { useJobCards } from '../../context/JobCardContext';

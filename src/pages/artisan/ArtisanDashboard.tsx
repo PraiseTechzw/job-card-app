@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, Clock, Play, CheckCircle2, FileText, ChevronRight, AlertCircle, Filter } from 'lucide-react';
+import { Search, Clock, Play, CheckCircle2, FileText, AlertCircle } from 'lucide-react';
 import { useJobCards } from '../../context/JobCardContext';
 import { useAuth } from '../../context/AuthContext';
 import styles from '../JobCards.module.css';

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Save, CheckCircle2, Pause, Play, AlertCircle, ArrowLeft, PenTool, ArrowRight } from 'lucide-react';
+import { Save, Pause, Play, ArrowLeft, PenTool, ArrowRight, Clock } from 'lucide-react';
 import { useJobCards } from '../../context/JobCardContext';
 import styles from '../JobCards.module.css';
 
@@ -21,7 +21,6 @@ const WorkExecution: React.FC = () => {
     hasHistory: false,
     furtherWorkRequired: '',
     failureType: '',
-    rootCauseCategory: '',
     maintenanceType: '',
     safetyNotes: ''
   });
@@ -42,7 +41,6 @@ const WorkExecution: React.FC = () => {
         // These might not be strictly typed in JobCard yet but we can store them if backend handles custom keys 
         // or just local state. For now, matching to the back-form fields of JobCard
         failureType: '',
-        rootCauseCategory: '',
         maintenanceType: '',
         safetyNotes: ''
       });
@@ -59,13 +57,7 @@ const WorkExecution: React.FC = () => {
     setFormData(prev => ({ ...prev, [name]: val }));
   };
 
-  const calculateHours = () => {
-    // Simple mock calculation if end time exists
-    if (!formData.startHours || !formData.dateFinished) return 'N/A';
-    // Logic to calculate hours based on start time and current time / dateFinished time can be complex
-    // Here we'll just mock it or leave it as "Auto-calculated on completion"
-    return 'Pending completion';
-  };
+
 
   const handleSaveDraft = async () => {
     try {
@@ -93,7 +85,6 @@ const WorkExecution: React.FC = () => {
     }
 
     try {
-      const endTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
       await updateJobCard(job.id, {
         ...formData,
         dateFinished: new Date().toISOString().split('T')[0],

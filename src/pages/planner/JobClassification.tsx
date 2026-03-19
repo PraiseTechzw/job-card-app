@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
 import {
   ArrowLeft, Tag, Save, AlertTriangle, CheckCircle2,
-  FileText, Wrench, Package, Clock, User, Activity,
+  FileText, Wrench, Package, User,
   StickyNote, ShieldCheck
 } from 'lucide-react';
 import { useJobCards } from '../../context/JobCardContext';
@@ -327,7 +327,7 @@ export default function JobClassification() {
                   </select>
                 </div>
                 <div>
-                  <label style={{ fontSize: 11, fontWeight: 700, color: '#475569', display: 'block', marginBottom: 6, textTransform: 'uppercase', display: 'flex', gap: 5, alignItems: 'center' }}>
+                  <label style={{ fontSize: 11, fontWeight: 700, color: '#475569', marginBottom: 6, textTransform: 'uppercase', display: 'flex', gap: 5, alignItems: 'center' }}>
                     <StickyNote size={10} /> Planner Notes
                   </label>
                   <textarea className="form-textarea" rows={3} style={{ fontSize: 12, resize: 'vertical' }}

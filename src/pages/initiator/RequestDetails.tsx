@@ -1,6 +1,6 @@
 import { useParams, useNavigate } from 'react-router-dom';
 import {
-  ArrowLeft, Clock, User, Building2, CheckCircle2,
+  ArrowLeft, Clock, User, CheckCircle2,
   AlertTriangle, FileText, Edit2, RefreshCw, Wrench,
   Package, MessageSquare, ChevronRight
 } from 'lucide-react';
@@ -237,7 +237,6 @@ export default function RequestDetails() {
                 const stepIdx = WORKFLOW_STEPS.findIndex(s => s.status === step.status);
                 const isDone = !isTerminated && stepIdx <= pastIdx && stepIdx !== currentIdx;
                 const isActive = step.status === job.status && !isTerminated;
-                const isFuture = stepIdx > pastIdx || isTerminated;
 
                 return (
                   <div key={step.status} style={{ display: 'flex', gap: 12, alignItems: 'flex-start', paddingBottom: i < WORKFLOW_STEPS.length - 2 ? 14 : 0 }}>

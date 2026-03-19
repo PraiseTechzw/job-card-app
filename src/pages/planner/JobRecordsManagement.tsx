@@ -1,7 +1,7 @@
 import { useState, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  Search, Filter, Download, Eye, Tag, StickyNote,
+  Search, Filter, Download, Eye, Tag,
   ChevronDown, ChevronUp, X, AlertTriangle, Database
 } from 'lucide-react';
 import { useJobCards } from '../../context/JobCardContext';

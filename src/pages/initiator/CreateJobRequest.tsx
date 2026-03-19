@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
   ArrowLeft, Save, Send, AlertTriangle, CheckCircle2,
-  Building2, MapPin, ShieldAlert, Activity, RefreshCw,
+  MapPin, Activity, RefreshCw,
   ClipboardList, Info
 } from 'lucide-react';
 import { useJobCards } from '../../context/JobCardContext';

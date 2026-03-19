@@ -32,8 +32,6 @@ export default function ReportingAnalytics() {
   // Generators for different types of reports
   const data = useMemo(() => {
     const res: Record<string, number> = {};
-    const total = filtered.length;
-
     if (reportType === 'status') {
       filtered.forEach(c => { res[c.status] = (res[c.status] || 0) + 1; });
     } else if (reportType === 'plant') {
@@ -186,7 +184,7 @@ export default function ReportingAnalytics() {
                 <p>Try adjusting your filters.</p>
               </div>
             ) : (
-              data.map(([label, val], idx) => {
+              data.map(([label, val]) => {
                 const percentage = Math.round((val / maxVal) * 100);
                 return (
                   <div key={label} style={{ position: 'relative' }}>

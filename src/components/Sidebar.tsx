@@ -3,7 +3,7 @@ import { NavLink } from 'react-router-dom';
 import { 
   LayoutDashboard, ClipboardList, PenTool, CheckSquare, LogOut, 
   FileText, ShieldCheck, Clock, UserPlus, History, Wrench,
-  Activity, TrendingUp, FilePlus
+  Activity, TrendingUp, FilePlus, Archive, Database, BarChart2
 } from 'lucide-react';
 import styles from './Sidebar.module.css';
 import { useAuth } from '../context/AuthContext';
@@ -42,6 +42,8 @@ const Sidebar: React.FC = () => {
         return 0;
       case 'Awaiting Review':
         return jobCards.filter(c => c.status === 'Awaiting_SignOff').length;
+      case 'Job Records':
+        return jobCards.filter(c => c.status === 'Approved').length; // Highlighting new jobs to classify
       default:
         return 0;
     }
@@ -139,6 +141,44 @@ const Sidebar: React.FC = () => {
       label: 'Sup. Reports',
       icon: TrendingUp,
       roles: ['Supervisor', 'EngSupervisor', 'Admin', 'HOD'],
+    },
+    
+    // Planning Office Module — scoped to PlanningOffice and Admin
+    {
+      to: '/planner/dashboard',
+      label: 'Planner Board',
+      icon: LayoutDashboard,
+      roles: ['PlanningOffice', 'Admin'],
+    },
+    {
+      to: '/planner/jobs',
+      label: 'Job Records',
+      icon: Database,
+      roles: ['PlanningOffice', 'Admin'],
+    },
+    {
+      to: '/planner/history',
+      label: 'Asset History',
+      icon: Activity,
+      roles: ['PlanningOffice', 'Admin'],
+    },
+    {
+      to: '/planner/reports',
+      label: 'Analytics',
+      icon: BarChart2,
+      roles: ['PlanningOffice', 'Admin'],
+    },
+    {
+      to: '/planner/preventive',
+      label: 'PM Planning',
+      icon: TrendingUp,
+      roles: ['PlanningOffice', 'Admin'],
+    },
+    {
+      to: '/planner/archive',
+      label: 'Cold Storage',
+      icon: Archive,
+      roles: ['PlanningOffice', 'Admin'],
     },
     
     // Allocations — Supervisors, EngSupervisors, PlanningOffice, Admin

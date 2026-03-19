@@ -1,9 +1,7 @@
 import { useState, useMemo } from 'react';
 import {
-  Archive, Search, SearchCode, Database, 
-  Trash2, Download, RefreshCw, Eye, 
-  Calendar, CheckCircle2, ShieldAlert,
-  ArrowRight
+  Archive, Search, Database, 
+  Download, ShieldAlert, ArrowRight
 } from 'lucide-react';
 import { useJobCards } from '../../context/JobCardContext';
 import styles from '../JobCards.module.css';
