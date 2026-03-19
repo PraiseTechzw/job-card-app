@@ -23,7 +23,8 @@ const MyJobs: React.FC = () => {
     try {
       const updates: any = { 
         status: newStatus,
-        performedBy: user?.name || 'Unknown'
+        performedBy: user?.name || 'Unknown',
+        userRole: user?.role
       };
       
       if (newStatus === 'Awaiting_SignOff') {

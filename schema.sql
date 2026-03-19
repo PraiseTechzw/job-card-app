@@ -1,5 +1,15 @@
 -- Database Schema for Job Card System
 -- Use this to set up your PostgreSQL database (Supabase, Vercel Postgres, etc.)
+CREATE TABLE IF NOT EXISTS users (
+    id TEXT PRIMARY KEY,
+    name TEXT NOT NULL,
+    username TEXT UNIQUE NOT NULL,
+    password_hash TEXT NOT NULL,
+    role TEXT NOT NULL,
+    department TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
 CREATE TABLE IF NOT EXISTS job_cards (
     id TEXT PRIMARY KEY,
     ticket_number TEXT UNIQUE NOT NULL,
@@ -61,6 +71,15 @@ CREATE TABLE IF NOT EXISTS allocation_rows (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
+CREATE TABLE IF NOT EXISTS artisans (
+    id TEXT PRIMARY KEY,
+    name TEXT NOT NULL UNIQUE,
+    phone TEXT,
+    trade TEXT,
+    status TEXT DEFAULT 'Active',
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
 CREATE TABLE IF NOT EXISTS audit_logs (
     id TEXT PRIMARY KEY,
     job_card_id TEXT NOT NULL,
@@ -74,6 +93,7 @@ CREATE TABLE IF NOT EXISTS assignments (
     id TEXT PRIMARY KEY,
     job_card_id TEXT NOT NULL,
     artisan_name TEXT NOT NULL,
+    artisan_phone TEXT,
     section TEXT,
     assigned_by TEXT NOT NULL,
     assigned_date TEXT NOT NULL,

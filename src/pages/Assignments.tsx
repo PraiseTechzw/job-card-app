@@ -39,7 +39,8 @@ const Assignments: React.FC = () => {
       await updateJobCard(selectedCard, { 
         status: 'Assigned', 
         issuedTo: assignmentData.artisanName,
-        performedBy: user?.name || 'Unknown'
+        performedBy: user?.name || 'Unknown',
+        userRole: user?.role
       });
       
       setSelectedCard(null);

@@ -1,141 +1,123 @@
 .pageContainer {
-  padding: 2rem;
-  animation: fadeIn 0.4s ease-out;
-  max-width: 1600px;
-  margin: 0 auto;
+  padding: 40px;
+  animation: fadeIn 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 .tableHeader {
   display: flex;
   justify-content: space-between;
   align-items: flex-end;
-  margin-bottom: 2.5rem;
-  padding-bottom: 1rem;
-  border-bottom: 1px solid var(--border-subtle);
+  margin-bottom: 32px;
 }
 
 .pageTitle {
-  font-size: 2rem;
+  font-size: 1.875rem;
   font-weight: 800;
   color: white;
-  letter-spacing: -1px;
+  letter-spacing: -0.025em;
+  margin-bottom: 4px;
 }
 
-.text-muted {
-  color: var(--text-muted);
-  font-size: 0.95rem;
-  margin-top: 0.25rem;
+.filtersGlass {
+  background: rgba(30, 41, 59, 0.4) !important;
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.05) !important;
+  border-radius: 20px !important;
+  padding: 24px !important;
+  margin-bottom: 32px !important;
 }
 
 .tableWrapper {
-  background: rgba(15, 23, 42, 0.4);
+  background: rgba(30, 41, 59, 0.3);
+  backdrop-filter: blur(16px);
   border: 1px solid rgba(255, 255, 255, 0.05);
-  border-radius: 16px;
+  border-radius: 24px;
   overflow: hidden;
-  backdrop-filter: blur(12px);
-  box-shadow: 
-    0 20px 25px -5px rgba(0, 0, 0, 0.1),
-    0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  box-shadow: 0 20px 50px -12px rgba(0, 0, 0, 0.5);
 }
 
 .table {
   width: 100%;
-  border-collapse: separate;
-  border-spacing: 0;
-}
-
-.table th, .table td {
-  padding: 1.25rem 1.5rem;
-  text-align: left;
+  border-collapse: collapse;
+  color: #f1f5f9;
 }
 
 .table th {
-  background: rgba(30, 41, 59, 0.5);
-  font-weight: 700;
+  text-align: left;
+  padding: 18px 24px;
   font-size: 0.75rem;
-  color: var(--text-muted);
+  font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.1em;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  color: #64748b;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+  background: rgba(255, 255, 255, 0.01);
 }
 
 .table tr {
-  transition: all 0.3s ease;
+  transition: all 0.2s;
 }
 
-.table tbody tr:hover {
+.table tr:hover:not(:last-child) {
   background: rgba(255, 255, 255, 0.02);
-  transform: scale(1.002);
 }
 
 .table td {
-  font-size: 0.9rem;
-  color: var(--text-main);
-  vertical-align: middle;
+  padding: 16px 24px;
+  font-size: 0.875rem;
   border-bottom: 1px solid rgba(255, 255, 255, 0.03);
 }
 
 .ticketNumber {
+  font-family: 'JetBrains Mono', monospace;
   font-weight: 700;
-  color: var(--accent-primary);
-  font-family: var(--font-mono);
-  font-size: 0.85rem;
+  color: #6366f1;
 }
 
 .equipment {
   font-weight: 600;
-  color: white;
+  color: #f8fafc;
+  margin-bottom: 2px;
 }
 
 .location {
-  font-size: 0.8rem;
-  color: var(--text-muted);
-  margin-top: 0.125rem;
+  font-size: 0.75rem;
+  color: #64748b;
 }
 
 .actionCell {
   display: flex;
-  gap: 0.75rem;
+  gap: 8px;
 }
 
 .iconBtn {
-  background: rgba(255, 255, 255, 0.03);
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
   border: 1px solid rgba(255, 255, 255, 0.05);
-  color: var(--text-muted);
-  cursor: pointer;
-  padding: 0.5rem;
-  border-radius: 8px;
-  transition: all 0.2s;
+  background: rgba(255, 255, 255, 0.03);
+  color: #94a3b8;
   display: flex;
   align-items: center;
   justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
 }
 
 .iconBtn:hover {
-  color: white;
   background: rgba(255, 255, 255, 0.1);
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-}
-
-.iconBtn.primary:hover {
   color: white;
-  background: var(--accent-primary);
-  border-color: var(--accent-primary);
-  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+  transform: translateY(-2px);
 }
 
-.filtersGlass {
-  transition: all 0.3s ease;
-}
-
-.filtersGlass:focus-within {
-  background: rgba(30, 41, 59, 0.7) !important;
-  border-color: rgba(59, 130, 246, 0.3) !important;
-  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.3) !important;
-}
-
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
+.primary:hover {
+  background: #6366f1;
+  color: white;
+  border-color: #6366f1;
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);
 }

@@ -63,10 +63,8 @@ body {
 
 /* Base Layout Config */
 #root {
-  display: flex;
-  height: 100vh;
-  width: 100vw;
-  overflow: hidden;
+  min-height: 100vh;
+  width: 100%;
 }
 
 /* Typography */

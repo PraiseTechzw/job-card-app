@@ -24,7 +24,7 @@ const EditJobCard: React.FC = () => {
     if (!id) return;
     try {
       setIsSubmitting(true);
-      await updateJobCard(id, { ...data, performedBy: user?.name || 'Unknown' });
+      await updateJobCard(id, { ...data, performedBy: user?.name || 'Unknown', userRole: user?.role });
       navigate('/job-cards');
     } catch (err) {
       console.error('Failed to update job card:', err);

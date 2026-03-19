@@ -14,7 +14,7 @@ const NewJobCard: React.FC = () => {
   const handleSave = async (data: Partial<JobCard>) => {
     try {
       setIsSubmitting(true);
-      await addJobCard({ ...data, performedBy: user?.name || 'Unknown' });
+      await addJobCard({ ...data, performedBy: user?.name || 'Unknown', userRole: user?.role });
       navigate('/job-cards');
     } catch (err) {
       console.error('Failed to save job card:', err);

@@ -4,8 +4,13 @@ import pg from 'pg';
 const { Pool } = pg;
 import 'dotenv/config';
 import { fileURLToPath } from 'url';
+import bcrypt from 'bcryptjs';
+import jwt from 'jsonwebtoken';
 import { isValidTransition } from './workflow.js';
 import { createAuditLog } from './audit.js';
+import { sanitizeJobCardData } from './validation.js';
+
+const JWT_SECRET = process.env.JWT_SECRET || 'fallback-secret';
 
 const app = express();
 app.use(cors());
@@ -44,6 +49,50 @@ const toSnake = (obj) => {
   return newObj;
 };
 
+// --- AUTH ENDPOINTS ---
+
+app.post('/api/auth/register', async (req, res) => {
+  const { name, username, password, role, department } = req.body;
+  try {
+    const passwordHash = await bcrypt.hash(password, 10);
+    const id = Math.random().toString(36).substr(2, 9);
+    
+    await query(
+      'INSERT INTO users (id, name, username, password_hash, role, department) VALUES ($1, $2, $3, $4, $5, $6)',
+      [id, name, username, passwordHash, role, department]
+    );
+    
+    res.status(201).json({ message: 'User registered successfully' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Registration failed or user already exists' });
+  }
+});
+
+app.post('/api/auth/login', async (req, res) => {
+  const { username, password } = req.body;
+  try {
+    const result = await query('SELECT * FROM users WHERE username = $1', [username]);
+    if (result.rows.length === 0) return res.status(401).json({ error: 'Invalid credentials' });
+    
+    const user = result.rows[0];
+    const valid = await bcrypt.compare(password, user.password_hash);
+    if (!valid) return res.status(401).json({ error: 'Invalid credentials' });
+    
+    const token = jwt.sign(
+      { id: user.id, username: user.username, role: user.role, name: user.name },
+      JWT_SECRET,
+      { expiresIn: '24h' }
+    );
+    
+    const { password_hash, ...userNoPass } = user;
+    res.json({ token, user: toCamel(userNoPass) });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Login failed' });
+  }
+});
+
 // --- JOB CARDS ENDPOINTS ---
 
 app.get('/api/job-cards', async (req, res) => {
@@ -68,7 +117,8 @@ app.get('/api/job-cards/:id', async (req, res) => {
 
 app.post('/api/job-cards', async (req, res) => {
   const { performedBy, ...dataBody } = req.body;
-  const data = toSnake(dataBody);
+  const sanitizedData = sanitizeJobCardData(dataBody);
+  const data = toSnake(sanitizedData);
   const ticketNumber = `JC-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`;
   const id = Math.random().toString(36).substr(2, 9);
   
@@ -106,7 +156,8 @@ app.post('/api/job-cards', async (req, res) => {
 
 app.patch('/api/job-cards/:id', async (req, res) => {
   const { performedBy, userRole, ...updateData } = req.body;
-  const updates = toSnake(updateData);
+  const sanitizedUpdate = sanitizeJobCardData(updateData);
+  const updates = toSnake(sanitizedUpdate);
   const fields = Object.keys(updates);
   
   if (fields.length === 0) return res.status(400).json({ error: 'No fields to update' });

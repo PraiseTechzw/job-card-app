@@ -110,6 +110,7 @@ export interface JobCard {
   
   // API Operations Metadata
   performedBy?: string;
+  userRole?: string;
   
   // Metadata
   createdAt: string;

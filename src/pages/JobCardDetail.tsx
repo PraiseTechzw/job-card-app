@@ -13,7 +13,7 @@ const JobCardDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { getJobCard, updateJobCard, addAuditLog, getAuditLogs, getAssignments } = useJobCards();
+  const { getJobCard, updateJobCard, getAuditLogs, getAssignments } = useJobCards();
   const [card, setCard] = useState<JobCard | null>(null);
   const [activeTab, setActiveTab] = useState<'front' | 'back' | 'history'>('front');
   const [history, setHistory] = useState<any[]>([]);
@@ -39,14 +39,15 @@ const JobCardDetail: React.FC = () => {
     window.print();
   };
 
-  const handleStatusTransition = async (newStatus: JobCardStatus, extraFields = {}, actionLabel = 'Status Updated') => {
+  const handleStatusTransition = async (newStatus: JobCardStatus, extraFields = {}) => {
     if (card) {
       try {
         const updates = { 
           ...backData,
           status: newStatus, 
           ...extraFields,
-          performedBy: user?.name || 'Unknown'
+          performedBy: user?.name || 'Unknown',
+          userRole: user?.role
         };
         await updateJobCard(card.id, updates);
         

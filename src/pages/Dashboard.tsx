@@ -1,205 +1,179 @@
 import React from 'react';
-import { ClipboardList, Clock, CheckCircle, AlertOctagon, Plus, FileText, AlertCircle } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { 
+  TrendingUp, Clock, AlertCircle, CheckCircle2, 
+  BarChart3, Settings, Users, Activity
+} from 'lucide-react';
+import { 
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, 
+  Tooltip, ResponsiveContainer, AreaChart, Area 
+} from 'recharts';
 import styles from './Dashboard.module.css';
-import { useAuth } from '../context/AuthContext';
 import { useJobCards } from '../context/JobCardContext';
 
 const Dashboard: React.FC = () => {
-  const { user } = useAuth();
   const { jobCards } = useJobCards();
-  const currentDate = new Date().toLocaleDateString('en-US', {
-    weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
-  });
 
-  const getStats = () => {
-    if (!jobCards || !Array.isArray(jobCards)) return [];
-    
-    const countStatus = (status: string) => jobCards.filter(c => c.status === status).length;
-    
-    // Check for overdue (InProgress or Assigned and past requiredCompletionDate)
-    const today = new Date().toISOString().split('T')[0];
-    const overdueCount = jobCards.filter(c => 
-      ['Assigned', 'InProgress'].includes(c.status) && 
-      c.requiredCompletionDate && 
-      c.requiredCompletionDate < today
-    ).length;
-
-    const baseStats = [
-      { label: 'Total Raised', value: jobCards.length.toString(), icon: ClipboardList, type: 'primary' },
-      { label: 'Pending Appr', value: (countStatus('Pending_Supervisor') + countStatus('Pending_HOD')).toString(), icon: AlertOctagon, type: 'urgent' },
-      { label: 'InProgress', value: countStatus('InProgress').toString(), icon: Clock, type: 'warning' },
-      { label: 'Overdue', value: overdueCount.toString(), icon: AlertOctagon, type: 'danger' },
-      { label: 'Closed', value: countStatus('Closed').toString(), icon: CheckCircle, type: 'success' },
-    ];
-
-    if (user?.role === 'Artisan') {
-      const myJobs = jobCards.filter(c => c.issuedTo === user.name);
-      return [
-        { label: 'My Total', value: myJobs.length.toString(), icon: ClipboardList, type: 'primary' },
-        { label: 'My InProgress', value: myJobs.filter(c => c.status === 'InProgress').length.toString(), icon: Clock, type: 'warning' },
-        { label: 'My Done', value: myJobs.filter(c => c.status === 'Awaiting_SignOff').length.toString(), icon: CheckCircle, type: 'success' },
-      ];
-    }
-
-    return baseStats;
-  };
-
-  const stats = getStats();
-  
-  // Detailed full-status summary for all admins/supervisors
-  const statusSummary = [
-    { label: 'Draft', count: jobCards.filter(c => c.status === 'Draft').length, color: 'text-slate-400' },
-    { label: 'Pending', count: jobCards.filter(c => ['Pending_Supervisor', 'Pending_HOD'].includes(c.status)).length, color: 'text-amber-400' },
-    { label: 'Approved', count: jobCards.filter(c => c.status === 'Approved').length, color: 'text-blue-400' },
-    { label: 'Registered', count: jobCards.filter(c => c.status === 'Registered').length, color: 'text-cyan-400' },
-    { label: 'Assigned', count: jobCards.filter(c => c.status === 'Assigned').length, color: 'text-indigo-400' },
-    { label: 'InProgress', count: jobCards.filter(c => c.status === 'InProgress').length, color: 'text-orange-400' },
-    { label: 'Completed', count: jobCards.filter(c => c.status === 'Awaiting_SignOff').length, color: 'text-emerald-400' },
-    { label: 'SignedOff', count: jobCards.filter(c => c.status === 'SignedOff').length, color: 'text-green-400' },
-    { label: 'Closed', count: jobCards.filter(c => c.status === 'Closed').length, color: 'text-slate-500' },
+  const stats = [
+    { 
+      label: 'Open Job Cards', 
+      value: jobCards.filter(c => c.status !== 'Closed').length, 
+      change: '+12%', 
+      icon: Clock, 
+      color: '#6366f1',
+      bg: 'rgba(99, 102, 241, 0.1)' 
+    },
+    { 
+      label: 'Critical Faults', 
+      value: jobCards.filter(c => c.priority === 'Critical').length, 
+      change: '-5%', 
+      icon: AlertCircle, 
+      color: '#f43f5e',
+      bg: 'rgba(244, 63, 94, 0.1)' 
+    },
+    { 
+      label: 'Completed Today', 
+      value: jobCards.filter(c => c.status === 'Closed' || c.status === 'Awaiting_SignOff').length, 
+      change: '+8%', 
+      icon: CheckCircle2, 
+      color: '#10b981',
+      bg: 'rgba(16, 185, 129, 0.1)' 
+    },
+    { 
+      label: 'Asset Uptime', 
+      value: '94.2%', 
+      change: '+2.1%', 
+      icon: Activity, 
+      color: '#0ea5e9',
+      bg: 'rgba(14, 165, 233, 0.1)' 
+    },
   ];
 
-  const recentCards = Array.isArray(jobCards) ? [...jobCards].reverse().slice(0, 10) : [];
+  const chartData = [
+    { name: 'Mon', completion: 4, faults: 6 },
+    { name: 'Tue', completion: 7, faults: 4 },
+    { name: 'Wed', completion: 5, faults: 8 },
+    { name: 'Thu', completion: 12, faults: 3 },
+    { name: 'Fri', completion: 9, faults: 5 },
+    { name: 'Sat', completion: 3, faults: 2 },
+    { name: 'Sun', completion: 2, faults: 1 },
+  ];
 
   return (
-    <div className={styles.dashboard}>
-      <header className={styles.header}>
-        <div className="flex justify-between items-center w-full">
-          <div>
-            <h1 className={styles.title}>System Overview</h1>
-            <p className={styles.subtitle}>{currentDate} • {user?.department} ({user?.role})</p>
-          </div>
-          
-          <div className="flex gap-3">
-            <Link to="/reports" className="btn btn-ghost" style={{ background: 'rgba(255,255,255,0.05)' }}>
-              <FileText size={18} /> Detailed Reports
-            </Link>
-            {['Initiator', 'Admin'].includes(user?.role || '') && (
-              <Link to="/job-cards/new" className="btn btn-primary" style={{ textDecoration: 'none' }}>
-                <Plus size={18} /> Raise Job Card
-              </Link>
-            )}
-          </div>
+    <div className={styles.container}>
+      <div className={styles.header}>
+        <div>
+          <h1 className={styles.title}>Plant Overview</h1>
+          <p className={styles.subtitle}>Welcome back! Here's what's happening today.</p>
         </div>
-      </header>
- 
-      {/* URGENT ALERTS SECTION */}
-      {((jobCards.filter(c => ['Pending_Supervisor', 'Pending_HOD'].includes(c.status)).length > 0 && ['Supervisor', 'HOD', 'Admin'].includes(user?.role || '')) || 
-        jobCards.filter(c => c.requiredCompletionDate && new Date(c.requiredCompletionDate) < new Date() && !['Closed', 'Rejected'].includes(c.status)).length > 0) && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
-          {jobCards.filter(c => c.requiredCompletionDate && new Date(c.requiredCompletionDate) < new Date() && !['Closed', 'Rejected'].includes(c.status)).length > 0 && (
-            <div className="alert-card alert-card-danger">
-              <div className="flex items-center justify-center w-10 h-10 rounded-full bg-red-500 text-white flex-shrink-0">
-                <AlertCircle size={24} />
-              </div>
-              <div className="flex-1">
-                <h3 className="text-sm font-bold m-0" style={{ color: '#f87171' }}>Action Needed: Overdue Tasks</h3>
-                <p className="text-xs m-0" style={{ color: 'rgba(248, 113, 113, 0.7)' }}>
-                  {jobCards.filter(c => c.requiredCompletionDate && new Date(c.requiredCompletionDate) < new Date() && !['Closed', 'Rejected'].includes(c.status)).length} jobs past their required completion date.
-                </p>
-              </div>
-              <Link to="/job-cards" className="btn btn-ghost" style={{ fontSize: '10px', padding: '0.4rem 0.8rem' }}>View All</Link>
-            </div>
-          )}
-          {jobCards.filter(c => (user?.role === 'Supervisor' && c.status === 'Pending_Supervisor') || (user?.role === 'HOD' && c.status === 'Pending_HOD')).length > 0 && (
-            <div className="alert-card alert-card-warning">
-              <div className="flex items-center justify-center w-10 h-10 rounded-full bg-amber-500 text-white flex-shrink-0">
-                <Clock size={24} />
-              </div>
-              <div className="flex-1">
-                <h3 className="text-sm font-bold m-0" style={{ color: '#fbbf24' }}>Tasks Awaiting Approval</h3>
-                <p className="text-xs m-0" style={{ color: 'rgba(251, 191, 36, 0.7)' }}>
-                  {jobCards.filter(c => (user?.role === 'Supervisor' && c.status === 'Pending_Supervisor') || (user?.role === 'HOD' && c.status === 'Pending_HOD')).length} requests waiting for your authorization.
-                </p>
-              </div>
-              <Link to="/approvals" className="btn btn-ghost" style={{ fontSize: '10px', padding: '0.4rem 0.8rem' }}>Review Now</Link>
-            </div>
-          )}
+        <div className={styles.headerActions}>
+           <button className="btn btn-primary">
+             <TrendingUp size={18} />
+             Live Analytics
+           </button>
         </div>
-      )}
+      </div>
 
       <div className={styles.statsGrid}>
-        {stats.map((stat, idx) => (
-          <div key={idx} className={`glass-panel ${styles.statCard} ${styles[stat.type]}`}>
-            <div className={styles.iconWrapper}>
-              <stat.icon size={24} />
-            </div>
+        {stats.map((stat, i) => (
+          <div key={i} className={styles.statCard}>
             <div className={styles.statInfo}>
-              <div className={styles.statValue}>{stat.value}</div>
-              <div className={styles.statLabel}>{stat.label}</div>
+              <p className={styles.statLabel}>{stat.label}</p>
+              <h3 className={styles.statValue}>{stat.value}</h3>
+              <span className={styles.statChange} style={{ color: stat.change.startsWith('+') ? '#10b981' : '#f43f5e' }}>
+                {stat.change} <span className="text-slate-500 font-normal ml-1">vs last week</span>
+              </span>
+            </div>
+            <div className={styles.statIconWrapper} style={{ backgroundColor: stat.bg, color: stat.color }}>
+              <stat.icon size={24} />
             </div>
           </div>
         ))}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-8">
-        <div className="lg:col-span-2">
-          <div className={styles.recentSection}>
-            <div className={styles.sectionHeader}>
-              <h2 className={styles.sectionTitle}>Recent Task Activity</h2>
-              <Link to="/job-cards" className={styles.linkBtn}>Full Register</Link>
+      <div className={styles.chartsGrid}>
+        <div className={styles.mainChart}>
+          <div className={styles.chartHeader}>
+            <h3 className={styles.cardTitle}>Activity Trends</h3>
+            <div className={styles.legend}>
+               <span className={styles.legendItem}><i style={{ background: '#6366f1'}} /> Completed</span>
+               <span className={styles.legendItem}><i style={{ background: '#f43f5e'}} /> Faults</span>
             </div>
-            
-            <div className={styles.recentList}>
-              {recentCards.map(card => (
-                <Link key={card.id} to={`/job-cards/view/${card.id}`} className={styles.recentItem}>
-                  <div className={styles.recentDetails}>
-                    <div className={styles.recentMain}>
-                      <span className={styles.recentTicket}>{card.ticketNumber}</span>
-                      <span className={styles.recentAsset}>{card.plantDescription}</span>
-                    </div>
-                    <div className={styles.recentMeta}>
-                      <span className={`text-[10px] uppercase font-bold px-2 py-0.5 rounded bg-white/5 border border-white/10`}>
-                        {card.status.replace('_', ' ')}
-                      </span>
-                      <span className="mx-2 opacity-30">|</span>
-                      <span>By: {card.requestedBy}</span>
-                    </div>
-                  </div>
-                  <div className={styles.recentTime}>
-                    {new Date(card.createdAt).toLocaleDateString()}
-                  </div>
-                </Link>
-              ))}
-            </div>
+          </div>
+          <div className={styles.chartWrapper}>
+            <ResponsiveContainer width="100%" height={300}>
+              <AreaChart data={chartData}>
+                <defs>
+                  <linearGradient id="colorCompletion" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#6366f1" stopOpacity={0.1}/>
+                    <stop offset="95%" stopColor="#6366f1" stopOpacity={0}/>
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.05)" />
+                <XAxis 
+                  dataKey="name" 
+                  axisLine={false} 
+                  tickLine={false} 
+                  tick={{ fill: '#64748b', fontSize: 12 }} 
+                  dy={10}
+                />
+                <YAxis 
+                  axisLine={false} 
+                  tickLine={false} 
+                  tick={{ fill: '#64748b', fontSize: 12 }} 
+                />
+                <Tooltip 
+                  contentStyle={{ 
+                    backgroundColor: '#1e293b', 
+                    borderRadius: '12px', 
+                    border: '1px solid rgba(255,255,255,0.1)',
+                    boxShadow: '0 10px 25px -5px rgba(0,0,0,0.4)',
+                    padding: '12px'
+                  }}
+                  itemStyle={{ color: '#fff' }}
+                />
+                <Area 
+                  type="monotone" 
+                  dataKey="completion" 
+                  stroke="#6366f1" 
+                  strokeWidth={3}
+                  fillOpacity={1} 
+                  fill="url(#colorCompletion)" 
+                />
+                <Bar dataKey="faults" fill="#f43f5e" radius={[4, 4, 0, 0]} opacity={0.3} />
+              </AreaChart>
+            </ResponsiveContainer>
           </div>
         </div>
 
-        <div>
-           <div className="glass-panel p-6" style={{ height: 'min-content' }}>
-            <h2 className="text-lg font-bold mb-6 text-white pb-2" style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>Status Distribution</h2>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-              {statusSummary.map(s => (
-                <div key={s.label} className="flex justify-between items-center group">
-                  <span className="text-sm text-muted">{s.label}</span>
-                  <div className="flex items-center gap-3">
-                    <span className="text-sm font-bold" style={{ 
-                      color: s.label === 'Pending' ? '#fbbf24' : 
-                             s.label === 'InProgress' ? '#fb923c' :
-                             s.label === 'Completed' || s.label === 'SignedOff' ? '#10b981' :
-                             s.label === 'Approved' ? '#3b82f6' :
-                             'var(--text-muted)'
-                    }}>{s.count}</span>
-                    <div className="w-24 h-1.5 bg-white/5 rounded-full overflow-hidden">
-                      <div 
-                        className="h-full" 
-                        style={{ 
-                          width: `${(s.count / (jobCards.length || 1)) * 100}%`, 
-                          opacity: 0.6,
-                          background: s.label === 'Pending' ? '#fbbf24' : 
-                                      s.label === 'InProgress' ? '#fb923c' :
-                                      s.label === 'Completed' || s.label === 'SignedOff' ? '#10b981' :
-                                      s.label === 'Approved' ? '#3b82f6' :
-                                      'var(--text-muted)'
-                        }}
-                      />
-                    </div>
-                  </div>
+        <div className={styles.sidePanel}>
+           <h3 className={styles.cardTitle}>Top Performers</h3>
+           <div className={styles.artisanList}>
+              {[
+                { name: 'Peter Moyo', jobs: 14, efficiency: 98 },
+                { name: 'Sarah Choto', jobs: 12, efficiency: 95 },
+                { name: 'James Sibanda', jobs: 11, efficiency: 92 },
+              ].map((a, i) => (
+                <div key={i} className={styles.artisanItem}>
+                   <div className={styles.artisanAvatar}>{a.name.charAt(0)}</div>
+                   <div className={styles.artisanInfo}>
+                      <span className={styles.artisanName}>{a.name}</span>
+                      <span className={styles.artisanJobs}>{a.jobs} tasks finished</span>
+                   </div>
+                   <div className={styles.artisanMetric}>
+                      <span className={styles.metricVal}>{a.efficiency}%</span>
+                      <div className={styles.metricBar}><i style={{ width: `${a.efficiency}%` }} /></div>
+                   </div>
                 </div>
               ))}
-            </div>
-          </div>
+           </div>
+           
+           <div className={styles.quickLinks}>
+              <h3 className={styles.cardTitle} style={{ marginTop: '1.5rem'}}>Quick Tasks</h3>
+              <div className={styles.linksGrid}>
+                 <button className={styles.quickBtn}><Settings size={18} /> Asset Config</button>
+                 <button className={styles.quickBtn}><Users size={18} /> Manage Team</button>
+              </div>
+           </div>
         </div>
       </div>
     </div>
@@ -207,4 +181,3 @@ const Dashboard: React.FC = () => {
 };
 
 export default Dashboard;
-
