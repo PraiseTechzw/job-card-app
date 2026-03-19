@@ -1,3 +1,14 @@
 {
-  "commits": []
+  "commits": [
+    {
+      "hash": "a02d9df3f1843b7da36b7f225f8b6074dcd9c10d",
+      "message": "[autopilot] refactor(admin): update user management and dashboard views\nAutopilot-Commit: true\nAutopilot-Version: 2.4.0\nAutopilot-User: 9b06151f-e74d-41b9-af57-d1d258601e9e\nAutopilot-Signature: df067a75a796d3f195e88ca5136458b511e5ccb593faec54065b37fb72607f88",
+      "files": [
+        "rc/pages/admin/AdminDashboard.tsx",
+        "src/pages/admin/UserManagement.tsx",
+        "everything-claude-code/"
+      ],
+      "timestamp": "2026-03-19T18:37:34.213Z"
+    }
+  ]
 }

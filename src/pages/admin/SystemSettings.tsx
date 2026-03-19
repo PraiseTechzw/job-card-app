@@ -1,9 +1,10 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
 import {
   Settings, ArrowLeft, ShieldCheck, Mail, 
   Database, LayoutTemplate, 
-  Cloud, Save, Key, AlertTriangle
+  Cloud, Save, Key, AlertTriangle, RefreshCw
 } from 'lucide-react';
 import styles from '../JobCards.module.css';
 
@@ -11,18 +12,49 @@ export default function SystemSettings() {
   const navigate = useNavigate();
   const [isSaving, setIsSaving] = useState(false);
   const [activeTab, setActiveTab] = useState('General');
+  const [isLoading, setIsLoading] = useState(true);
+  const [config, setConfig] = useState<any>({});
 
-  const handleSave = () => {
+  useEffect(() => {
+    async function fetchConfig() {
+      try {
+        const res = await axios.get('/api/admin/config');
+        setConfig(res.data);
+      } catch (e) {
+        console.error('Failed to fetch system settings', e);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    fetchConfig();
+  }, []);
+
+  const handleSave = async () => {
     setIsSaving(true);
-    setTimeout(() => {
+    try {
+      await axios.post('/api/admin/config', { key: 'global', value: config });
+      alert('Technical configuration synchronized successfully.');
+    } catch (e) {
+      alert('Failed to update system parameters.');
+    } finally {
       setIsSaving(false);
-      alert('System settings updated and services re-initialized.');
-    }, 1500);
+    }
   };
+
+  if (isLoading) {
+    return (
+      <div className={styles.pageContainer}>
+        <div style={{ padding: 100, textAlign: 'center' }}>
+          <RefreshCw size={40} className="animate-spin" color="#6366f1" style={{ margin: '0 auto 16px' }} />
+          <p style={{ color: '#475569' }}>Connecting to Core Technical Registry...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className={styles.pageContainer}>
-      <header style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
+      <header className="flex flex-col md:flex-row items-start justify-between gap-4 mb-6">
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           <button className="btn btn-ghost" onClick={() => navigate('/admin/dashboard')} style={{ padding: '8px' }}>
             <ArrowLeft size={18} />
@@ -30,19 +62,19 @@ export default function SystemSettings() {
           <div>
             <h1 className={styles.pageTitle} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
               <Settings size={24} color="#6366f1" />
-              Technical System Configuration
+              Technical Core Governance
             </h1>
             <p className={styles['text-muted']}>Manage backend parameters, service integrations, and technical security.</p>
           </div>
         </div>
         <button className="btn btn-primary" onClick={handleSave} disabled={isSaving}>
-          <Save size={16} style={{ marginRight: 6 }} /> {isSaving ? 'Applying...' : 'Save All Settings'}
+          <Save size={16} style={{ marginRight: 6 }} /> {isSaving ? 'Applying...' : 'Save Configuration'}
         </button>
       </header>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '260px 1fr', gap: 24, alignItems: 'start' }}>
+      <div className="grid grid-cols-1 lg:grid-cols-[260px_1fr] gap-6 items-start">
         {/* Navigation */}
-        <div style={{ background: 'rgba(15,23,42,0.5)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: 16, padding: 12 }}>
+        <div className="flex flex-col gap-1 p-3 rounded-2xl bg-white/5 border border-white/5">
           {[
             { id: 'General', icon: LayoutTemplate, label: 'General & Branding' },
             { id: 'Auth', icon: Key, label: 'Authentication & SSO' },
@@ -54,11 +86,10 @@ export default function SystemSettings() {
             <button 
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
+              className="flex items-center gap-3 p-3 rounded-xl transition-all font-semibold text-xs text-left"
               style={{
-                display: 'flex', alignItems: 'center', gap: 12, width: '100%', padding: '12px 14px', borderRadius: 10,
                 border: 'none', background: activeTab === tab.id ? 'rgba(99,102,241,0.1)' : 'transparent',
-                color: activeTab === tab.id ? '#818cf8' : '#64748b', cursor: 'pointer', textAlign: 'left', transition: 'all 0.15s',
-                fontSize: 13, fontWeight: activeTab === tab.id ? 700 : 500
+                color: activeTab === tab.id ? '#818cf8' : '#64748b', cursor: 'pointer'
               }}
             >
               <tab.icon size={15} /> {tab.label}
@@ -67,25 +98,25 @@ export default function SystemSettings() {
         </div>
 
         {/* Dynamic Panel Content */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+        <div className="flex flex-col gap-6">
           {activeTab === 'General' && (
             <div style={{ background: 'rgba(15,23,42,0.4)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: 16, padding: 24 }}>
-              <h3 style={{ fontSize: 13, fontWeight: 800, textTransform: 'uppercase', color: '#444c5a', marginBottom: 24 }}>System Branding & Locale</h3>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
+              <h3 style={{ fontSize: 12, fontWeight: 800, textTransform: 'uppercase', color: '#475569', marginBottom: 24 }}>System Branding & Locale</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                  <div className="form-group">
-                    <label className="form-label" style={{ fontSize: 12, fontWeight: 700, color: '#94a3b8' }}>Application Name</label>
-                    <input type="text" className="form-input" style={{ background: 'rgba(9,11,18,0.7)', padding: 12 }} defaultValue="Digital Job Card MMS" />
+                    <label style={{ fontSize: 11, fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', marginBottom: 8, display: 'block' }}>Application Display Name</label>
+                    <input type="text" className="form-input" style={{ background: 'rgba(9,11,18,0.7)' }} defaultValue="Digital Job Card MMS" />
                  </div>
                  <div className="form-group">
-                    <label className="form-label" style={{ fontSize: 12, fontWeight: 700, color: '#94a3b8' }}>System Timezone</label>
-                    <select className="form-select" style={{ background: 'rgba(9,11,18,0.7)', padding: 11 }}>
+                    <label style={{ fontSize: 11, fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', marginBottom: 8, display: 'block' }}>Global Timezone Node</label>
+                    <select className="form-select" style={{ background: 'rgba(9,11,18,0.7)' }}>
                        <option>(GMT+02:00) Harare, Pretoria</option>
                        <option>(GMT+00:00) London, UTC</option>
                     </select>
                  </div>
-                 <div className="form-group" style={{ gridColumn: 'span 2' }}>
-                    <label className="form-label" style={{ fontSize: 12, fontWeight: 700, color: '#94a3b8' }}>Maintenance Banner Text</label>
-                    <textarea rows={2} className="form-textarea" style={{ background: 'rgba(9,11,18,0.7)', padding: 12 }} placeholder="Display banner to all users..." />
+                 <div className="form-group md:col-span-2">
+                    <label style={{ fontSize: 11, fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', marginBottom: 8, display: 'block' }}>Administrative Broadcast Banner</label>
+                    <textarea rows={2} className="form-textarea" style={{ background: 'rgba(9,11,18,0.7)' }} placeholder="Broadcast maintenance window or notice to all users..." />
                  </div>
               </div>
             </div>
@@ -93,36 +124,36 @@ export default function SystemSettings() {
 
           {activeTab === 'Auth' && (
             <div style={{ background: 'rgba(15,23,42,0.4)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: 16, padding: 24 }}>
-              <h3 style={{ fontSize: 13, fontWeight: 800, textTransform: 'uppercase', color: '#444c5a', marginBottom: 24 }}>Authentication Method</h3>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+              <h3 style={{ fontSize: 12, fontWeight: 800, textTransform: 'uppercase', color: '#475569', marginBottom: 24 }}>Identity Protocols</h3>
+              <div className="flex flex-col gap-4">
                  {[
-                   { id: 'local', label: 'Local Credentials', desc: 'Manage user and hashed passwords in primary database.', active: true },
-                   { id: 'ad', label: 'Active Directory / LDAP', desc: 'Sync users with enterprise Microsoft AD system.', active: false },
-                   { id: 'oidc', label: 'Single Sign-On (Saml/OIDC)', desc: 'Authenticate via Azure AD, Okta or Google Workspace.', active: false }
+                   { id: 'local', label: 'Local Encrypted Credentials', desc: 'Primary user data and hashed credentials with salt.', active: true },
+                   { id: 'ad', label: 'Azure AD / Microsoft Entra', desc: 'Sync users via graph API (OIDC/SAML).', active: false },
+                   { id: 'oidc', label: 'Okta Enterprise SSO', desc: 'Centralized identity management node.', active: false }
                  ].map(m => (
-                   <div key={m.id} style={{ background: m.active ? 'rgba(99,102,241,0.05)' : 'rgba(255,255,255,0.02)', border: `1px solid ${m.active ? '#4f46e544' : 'rgba(255,255,255,0.04)'}`, borderRadius: 12, padding: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <div style={{ display: 'flex', gap: 14, alignItems: 'center' }}>
-                         <div style={{ width: 10, height: 10, borderRadius: '50%', background: m.active ? '#10b981' : '#1e293b' }} />
+                   <div key={m.id} style={{ background: m.active ? 'rgba(99,102,241,0.05)' : 'rgba(255,255,255,0.02)', border: `1px solid ${m.active ? '#4f46e533' : 'rgba(255,255,255,0.04)'}`, borderRadius: 16, padding: 20, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <div className="flex items-center gap-4">
+                         <div style={{ width: 8, height: 8, borderRadius: '4px', background: m.active ? '#10b981' : '#1e293b' }} />
                          <div>
-                            <div style={{ fontSize: 14, fontWeight: 700, color: m.active ? '#818cf8' : '#475569' }}>{m.label}</div>
-                            <div style={{ fontSize: 11, color: '#475569' }}>{m.desc}</div>
+                            <div style={{ fontSize: 13, fontWeight: 700, color: m.active ? '#818cf8' : '#e2e8f0' }}>{m.label}</div>
+                            <div style={{ fontSize: 10, color: '#475569', marginTop: 2 }}>{m.desc}</div>
                          </div>
                       </div>
-                      <button className="btn btn-ghost" disabled={m.active} style={{ fontSize: 12 }}>{m.active ? 'Active' : 'Configure'}</button>
+                      <button className="btn btn-ghost" disabled={m.active} style={{ fontSize: 11 }}>{m.active ? 'Active' : 'Configure'}</button>
                    </div>
                  ))}
                  
-                 <div style={{ background: 'rgba(15,23,42,0.6)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: 12, padding: 16, marginTop: 10 }}>
-                    <h4 style={{ fontSize: 12, fontWeight: 700, color: '#94a3b8', marginBottom: 12 }}>Security Overrides</h4>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                          <span style={{ fontSize: 12, color: '#64748b' }}>Force Password Reset on Login</span>
-                          <input type="checkbox" checked={false} />
-                       </div>
-                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                          <span style={{ fontSize: 12, color: '#64748b' }}>Require 2FA for Admin Role</span>
-                          <input type="checkbox" checked={true} />
-                       </div>
+                 <div style={{ background: 'rgba(15,23,42,0.6)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: 16, padding: 20, marginTop: 10 }}>
+                    <h4 style={{ fontSize: 11, fontWeight: 800, textTransform: 'uppercase', color: '#475569', marginBottom: 16 }}>Policy Overrides</h4>
+                    <div className="flex flex-col gap-4">
+                       <label className="flex items-center justify-between" style={{ cursor: 'pointer' }}>
+                          <span style={{ fontSize: 12, color: '#64748b' }}>Force Reset on Bulk Provisioning</span>
+                          <input type="checkbox" checked={false} readOnly={true} />
+                       </label>
+                       <label className="flex items-center justify-between" style={{ cursor: 'pointer' }}>
+                          <span style={{ fontSize: 12, color: '#64748b' }}>Multifactor (2FA) for Supervisor+</span>
+                          <input type="checkbox" checked={true} readOnly={true} />
+                       </label>
                     </div>
                  </div>
               </div>
@@ -131,51 +162,51 @@ export default function SystemSettings() {
 
           {activeTab === 'ERP' && (
             <div style={{ background: 'rgba(15,23,42,0.4)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: 16, padding: 24 }}>
-               <h3 style={{ fontSize: 13, fontWeight: 800, textTransform: 'uppercase', color: '#444c5a', marginBottom: 24 }}>External ERP Integration</h3>
-               <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-                  <div style={{ background: 'rgba(239,68,68,0.05)', borderRadius: 12, padding: 14, border: '1px solid rgba(239,68,68,0.15)', display: 'flex', gap: 12 }}>
-                     <AlertTriangle size={18} color="#f87171" />
-                     <div style={{ fontSize: 12, color: '#f87171', fontWeight: 600 }}>Connection Error: SAP Hana Connector Unreachable</div>
+               <h3 style={{ fontSize: 12, fontWeight: 800, textTransform: 'uppercase', color: '#475569', marginBottom: 24 }}>Enterprise Connector (SAP)</h3>
+               <div className="flex flex-col gap-6">
+                  <div style={{ background: 'rgba(239,68,68,0.05)', borderRadius: 16, padding: 18, border: '1px solid rgba(239,68,68,0.15)', display: 'flex', gap: 14 }}>
+                     <AlertTriangle size={18} color="#f87171" style={{ minWidth: 18 }} />
+                     <div style={{ fontSize: 11, color: '#f87171', fontWeight: 700 }}>Gateway Timeout: External Asset Registry Node at 192.168.10.4 is currently unreachable via Port 443.</div>
                   </div>
                   
                   <div className="form-group">
-                     <label className="form-label" style={{ fontSize: 11, fontWeight: 800, color: '#475569' }}>ERP CONNECTOR URL</label>
-                     <div style={{ display: 'flex', gap: 10 }}>
-                        <input type="text" className="form-input" style={{ background: 'rgba(9,11,18,0.7)', padding: 12, flex: 1 }} defaultValue="https://erp-gateway.corp.local/api/v1" />
-                        <button className="btn btn-ghost" style={{ background: 'rgba(255,255,255,0.04)', padding: '0 16px' }}>Test Connection</button>
+                     <label style={{ fontSize: 11, fontWeight: 800, color: '#475569', textTransform: 'uppercase', marginBottom: 8, display: 'block' }}>Gateway API Endpoint</label>
+                     <div className="flex flex-col md:flex-row gap-4">
+                        <input type="text" className="form-input" style={{ background: 'rgba(9,11,18,0.7)', flex: 1 }} defaultValue="https://mms-sync.africa.corp/node/v2" />
+                        <button className="btn btn-ghost" style={{ background: 'rgba(255,255,255,0.04)', px: 20 }}>Refetch Token</button>
                      </div>
                   </div>
 
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
-                     <div style={{ background: 'rgba(15,23,42,0.4)', padding: 12, borderRadius: 10, border: '1px solid rgba(255,255,255,0.05)' }}>
-                        <div style={{ fontSize: 11, fontWeight: 700, color: '#94a3b8', marginBottom: 6 }}>Asset Register Sync</div>
-                        <div style={{ fontSize: 11, color: '#475569' }}>Last sync: Today 06:12 AM</div>
-                        <button className="btn btn-ghost" style={{ fontSize: 10, padding: 4, height: 'auto', marginTop: 10 }}>Sync Now</button>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                     <div style={{ background: 'rgba(15,23,42,0.4)', padding: 16, borderRadius: 16, border: '1px solid rgba(255,255,255,0.05)' }}>
+                        <div style={{ fontSize: 11, fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase' }}>Asset Sync Stream</div>
+                        <div style={{ fontSize: 10, color: '#475569', marginTop: 4 }}>Last delta: Today 06:12 AM</div>
+                        <button className="btn btn-ghost w-full mt-4" style={{ fontSize: 11, height: 32 }}>Trigger Manual Delta</button>
                      </div>
-                     <div style={{ background: 'rgba(15,23,42,0.4)', padding: 12, borderRadius: 10, border: '1px solid rgba(255,255,255,0.05)' }}>
-                        <div style={{ fontSize: 11, fontWeight: 700, color: '#94a3b8', marginBottom: 6 }}>Spare Parts Ledger</div>
-                        <div style={{ fontSize: 11, color: '#475569' }}>Last sync: Yesterday 11:30 PM</div>
-                        <button className="btn btn-ghost" style={{ fontSize: 10, padding: 4, height: 'auto', marginTop: 10 }}>Sync Now</button>
+                     <div style={{ background: 'rgba(15,23,42,0.4)', padding: 16, borderRadius: 16, border: '1px solid rgba(255,255,255,0.05)' }}>
+                        <div style={{ fontSize: 11, fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase' }}>Material Ledger Node</div>
+                        <div style={{ fontSize: 10, color: '#475569', marginTop: 4 }}>Last delta: Yesterday 11:30 PM</div>
+                        <button className="btn btn-ghost w-full mt-4" style={{ fontSize: 11, height: 32 }}>Trigger Manual Delta</button>
                      </div>
                   </div>
                </div>
             </div>
           )}
 
-          <div style={{ background: 'rgba(15,23,42,0.6)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: 16, padding: 20 }}>
-             <h3 style={{ fontSize: 11, fontWeight: 800, textTransform: 'uppercase', color: '#444c5a', marginBottom: 16 }}>System Performance Info</h3>
-             <div style={{ display: 'flex', gap: 40 }}>
+          <div style={{ background: 'rgba(15,23,42,0.6)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: 16, padding: 24 }}>
+             <h3 style={{ fontSize: 11, fontWeight: 800, textTransform: 'uppercase', color: '#475569', marginBottom: 20 }}>Infrastructure Telemetry</h3>
+             <div className="grid grid-cols-3 gap-6">
                 <div>
-                   <div style={{ fontSize: 10, color: '#475569', marginBottom: 4 }}>Main Database Uptime</div>
-                   <div style={{ fontSize: 20, fontWeight: 800, color: '#10b981' }}>100%</div>
+                   <div style={{ fontSize: 10, color: '#475569', marginBottom: 4 }}>API NODE UPTIME</div>
+                   <div style={{ fontSize: 20, fontWeight: 800, color: '#10b981' }}>99.98%</div>
                 </div>
                 <div>
-                   <div style={{ fontSize: 10, color: '#475569', marginBottom: 4 }}>Avg. Response Time</div>
+                   <div style={{ fontSize: 10, color: '#475569', marginBottom: 4 }}>P95 LATENCY</div>
                    <div style={{ fontSize: 20, fontWeight: 800, color: '#e2e8f0' }}>42ms</div>
                 </div>
                 <div>
-                   <div style={{ fontSize: 10, color: '#475569', marginBottom: 4 }}>Last Backup Success</div>
-                   <div style={{ fontSize: 20, fontWeight: 800, color: '#10b981' }}>Success</div>
+                   <div style={{ fontSize: 10, color: '#475569', marginBottom: 4 }}>BACKUP INTEGRITY</div>
+                   <div style={{ fontSize: 20, fontWeight: 800, color: '#10b981' }}>STABLE</div>
                 </div>
              </div>
           </div>
