@@ -16,10 +16,25 @@
   height: 80px;
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 12px;
   padding: 0 24px;
   background: linear-gradient(180deg, rgba(255, 255, 255, 0.02) 0%, transparent 100%);
   border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+}
+
+.mobileClose {
+  display: none;
+  background: none;
+  border: none;
+  color: #475569;
+  cursor: pointer;
+}
+
+@media (max-width: 1024px) {
+  .mobileClose {
+    display: flex;
+  }
 }
 
 .logoIcon {
@@ -34,6 +49,7 @@
   letter-spacing: -0.025em;
   background: linear-gradient(135deg, #fff 0%, #94a3b8 100%);
   -webkit-background-clip: text;
+  background-clip: text;
   -webkit-text-fill-color: transparent;
 }
 

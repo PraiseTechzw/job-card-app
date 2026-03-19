@@ -60,9 +60,9 @@ export default function AdminDashboard() {
 
   return (
     <div className={styles.pageContainer}>
-      <header className="flex flex-col md:flex-row items-start justify-between gap-4 mb-8">
-        <div>
-          <h1 className={styles.pageTitle} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+      <header className="flex flex-col md:flex-row items-center justify-between gap-6 mb-8 text-center md:text-left">
+        <div className="w-full md:w-auto flex flex-col items-center md:items-start gap-2">
+          <h1 className={styles.pageTitle} style={{ display: 'flex', alignItems: 'center', gap: 10, justifyContent: 'center' }}>
             <span style={{ background: 'rgba(79,70,229,0.15)', borderRadius: 10, padding: '7px 9px', display: 'inline-flex' }}>
               <ShieldCheck size={24} color="#6366f1" />
             </span>
@@ -70,8 +70,8 @@ export default function AdminDashboard() {
           </h1>
           <p className={styles['text-muted']}>Centralized configuration, security, and audit oversight.</p>
         </div>
-        <div style={{ display: 'flex', gap: 10 }}>
-          <div style={{ background: stats?.systemHealth === 'Healthy' ? 'rgba(16,185,129,0.1)' : 'rgba(239,68,68,0.1)', border: `1px solid ${stats?.systemHealth === 'Healthy' ? 'rgba(16,185,129,0.2)' : 'rgba(239,68,68,0.2)'}`, padding: '6px 14px', borderRadius: 8, display: 'flex', alignItems: 'center', gap: 8 }}>
+        <div className="flex justify-center w-full md:w-auto">
+          <div style={{ background: stats?.systemHealth === 'Healthy' ? 'rgba(16,185,129,0.1)' : 'rgba(239,68,68,0.1)', border: `1px solid ${stats?.systemHealth === 'Healthy' ? 'rgba(16,185,129,0.2)' : 'rgba(239,68,68,0.2)'}`, padding: '8px 16px', borderRadius: 10, display: 'flex', alignItems: 'center', gap: 8 }}>
             <div style={{ width: 8, height: 8, borderRadius: '50%', background: stats?.systemHealth === 'Healthy' ? '#10b981' : '#ef4444' }} />
             <span style={{ fontSize: 13, fontWeight: 700, color: stats?.systemHealth === 'Healthy' ? '#10b981' : '#ef4444' }}>SYSTEM STATUS: {stats?.systemHealth || 'STABLE'}</span>
           </div>
@@ -141,25 +141,25 @@ export default function AdminDashboard() {
           {/* Role Distribution Visualization */}
           <div style={{ background: 'rgba(15,23,42,0.4)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: 16, padding: 24 }}>
             <h3 style={{ fontSize: 12, fontWeight: 800, textTransform: 'uppercase', color: '#475569', marginBottom: 20 }}>License & Role Allocation</h3>
-            <div style={{ display: 'flex', gap: 10, height: 40, marginBottom: 20 }}>
-              {Object.entries(stats?.rolesDistribution || {}).map(([role, count], i) => {
+            <div className="flex flex-wrap gap-2 mb-6" style={{ height: 'auto', minHeight: 40 }}>
+              {Object.entries<number>(stats?.rolesDistribution || {}).map(([role, count], i) => {
                 const colors = ['#6366f1', '#10b981', '#f59e0b', '#0ea5e9', '#8b5cf6'];
                 return (
                   <div 
                     key={role} 
-                    style={{ flex: count as number, background: colors[i % colors.length], borderRadius: 4, position: 'relative' }} 
+                    style={{ flex: count, background: colors[i % colors.length], borderRadius: 6, minHeight: 12, minWidth: 40 }} 
                     title={`${role}: ${count}`} 
                   />
                 );
               })}
             </div>
-            <div className="flex flex-wrap gap-4">
-              {Object.entries(stats?.rolesDistribution || {}).map(([role, count], i) => {
+            <div className="flex flex-wrap gap-x-6 gap-y-4">
+              {Object.entries<number>(stats?.rolesDistribution || {}).map(([role, count], i) => {
                 const colors = ['#6366f1', '#10b981', '#f59e0b', '#0ea5e9', '#8b5cf6'];
                 return (
-                  <div key={role} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <div key={role} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                     <div style={{ width: 10, height: 10, borderRadius: 2, background: colors[i % colors.length] }} />
-                    <span style={{ fontSize: 12, color: '#94a3b8' }}>{role} ({count})</span>
+                    <span style={{ fontSize: 12, color: '#94a3b8', fontWeight: 600 }}>{role} <span style={{ color: '#64748b' }}>({count})</span></span>
                   </div>
                 );
               })}

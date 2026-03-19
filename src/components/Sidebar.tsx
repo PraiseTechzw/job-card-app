@@ -9,8 +9,13 @@ import {
 import styles from './Sidebar.module.css';
 import { useAuth } from '../context/AuthContext';
 import { useJobCards } from '../context/JobCardContext';
+import { X } from 'lucide-react';
 
-const Sidebar: React.FC = () => {
+interface SidebarProps {
+  onClose?: () => void;
+}
+
+const Sidebar: React.FC<SidebarProps> = ({ onClose }) => {
   const { user, logout } = useAuth();
   const { jobCards } = useJobCards();
 
@@ -242,8 +247,15 @@ const Sidebar: React.FC = () => {
   return (
     <aside className={styles.sidebar}>
       <div className={styles.brand}>
-        <PenTool className={styles.logoIcon} size={28} />
-        <span className={styles.brandText}>Job Card System</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <PenTool className={styles.logoIcon} size={28} />
+          <span className={styles.brandText}>Job Card System</span>
+        </div>
+        {onClose && (
+          <button className={styles.mobileClose} onClick={onClose}>
+            <X size={20} />
+          </button>
+        )}
       </div>
 
       <nav className={styles.nav}>
@@ -254,6 +266,7 @@ const Sidebar: React.FC = () => {
               key={item.to}
               to={item.to}
               className={({ isActive }) => `${styles.navItem} ${isActive ? styles.active : ''}`}
+              onClick={() => onClose && onClose()}
             >
               <item.icon className={styles.navIcon} />
               <span>{item.label}</span>

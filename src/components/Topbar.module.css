@@ -12,6 +12,17 @@
   z-index: 40;
 }
 
+@media (max-width: 768px) {
+  .topbar {
+    padding: 0 16px;
+    height: 64px;
+  }
+  
+  .searchInput:focus {
+    width: 100% !important;
+  }
+}
+
 .search {
   position: relative;
   width: 100%;
