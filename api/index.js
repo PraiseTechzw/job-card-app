@@ -109,7 +109,9 @@ app.get('/api/users', async (req, res) => {
   const { role } = req.query;
   try {
     let result;
-    if (role) {
+    if (role === 'Artisan') {
+      result = await query("SELECT id, name, phone, trade FROM artisans WHERE status = 'Active' ORDER BY name ASC");
+    } else if (role) {
       result = await query('SELECT id, name, username, role, department FROM users WHERE role = $1 ORDER BY name ASC', [role]);
     } else {
       result = await query('SELECT id, name, username, role, department FROM users ORDER BY name ASC');
