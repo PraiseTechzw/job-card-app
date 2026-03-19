@@ -1,0 +1,282 @@
+﻿
+--- Inspecting Artisan Names.xlsx ---
+Sheet: Sheet1
+First 5 rows:
+[
+  [ <1 empty item>, 'Artisans' ],
+  [ <1 empty item>, 'Artisan Name' ],
+  [ <1 empty item>, 'BVUNDE B.' ],
+  [ <1 empty item>, 'CHAGOMOKA R.' ]
+]
+
+--- Inspecting artisan working time.xlsx ---
+Sheet: Sheet1
+First 5 rows:
+[
+  [ <1 empty item>, 'ArtisanWorkingTime' ],
+  [
+    <1 empty item>,
+    'Artisan',
+    'SumOfTime Taken',
+    'Generated Date',
+    'Completion Date'
+  ],
+  [
+    <1 empty item>,
+    'MUNDANDI K.',
+    30,
+    2028-10-08T00:00:00.000Z,
+    2025-10-08T00:00:00.000Z
+  ],
+  [
+    <1 empty item>,
+    'WATSIKA A.',
+    28,
+    2025-11-28T00:00:00.000Z,
+    2025-11-28T00:00:00.000Z
+  ],
+  [
+    <1 empty item>,
+    'WATSIKA A.',
+    180,
+    2025-11-25T00:00:00.000Z,
+    2025-11-25T00:00:00.000Z
+  ]
+]
+
+--- Inspecting fault coding.xlsx ---
+Sheet: Sheet1
+First 5 rows:
+[
+  [ <1 empty item>, 'Fault Coding' ],
+  [ <1 empty item>, 'Fault Name' ],
+  [ <3 empty items>, 'Fault Number' ],
+  [ <1 empty item>, 'PREFORM CLAMP PROBLEM', <1 empty item>, 1001 ]
+]
+
+--- Inspecting location.xlsx ---
+Sheet: Sheet1
+First 5 rows:
+[
+  [ <1 empty item>, 'Location' ],
+  [ <1 empty item>, 'FACTORY' ],
+  [ <1 empty item>, 'ACCOUNTS' ],
+  [ <1 empty item>, 'BLOW' ],
+  [ <1 empty item>, 'CREDITORS' ]
+]
+
+--- Inspecting Machine breakdown query.xlsx ---
+Sheet: Sheet1
+First 5 rows:
+[
+  [ <1 empty item>, 'Machine Breakdowns Query' ],
+  [
+    <1 empty item>,
+    'Machine',
+    'Fault Name',
+    'Work Done',
+    'Time Taken',
+    'Artisan',
+    'Jorb Card Number',
+    'Generated Date',
+    'Completed',
+    'Completion Date',
+    'Location',
+    'Breakdown',
+    'Expr1011',
+    'Further work required',
+    'spares used',
+    'ProductionTeam'
+  ],
+  [
+    <1 empty item>,
+    'EXB02',
+    'ZONE TEMPERATURE PROBLEM',
+    'TERMINATED BROKEN CABLE AFTER CHECKING CONTACTOR, HEATER AND POWER SUPPLY',
+    30,
+    'MUNDANDI K.',
+    72808,
+    2028-10-08T00:00:00.000Z,
+    'Yes',
+    2025-10-08T00:00:00.000Z,
+    'BLOW',
+    'Yes',
+    <3 empty items>,
+    'NYAUCHI'
+  ]
+]
+
+--- Inspecting Machine breakdown.xlsx ---
+Sheet: Sheet1
+First 5 rows:
+[
+  [ <2 empty items>, 'Machine Breakdowns' ],
+  [
+    <2 empty items>,
+    'Jorb Card Number',
+    'Machine',
+    'Fault Number',
+    'Work Done',
+    'Time Taken',
+    'Artisan',
+    'Generated Date',
+    'Completed',
+    'Completion Date',
+    'Location',
+    'Breakdown',
+    'Further work required',
+    'spares used',
+    'ProductionTeam'
+  ],
+  [
+    <2 empty items>,
+    72808,
+    'EXB02',
+    3105,
+    'TERMINATED BROKEN CABLE AFTER CHECKING CONTACTOR, HEATER AND POWER SUPPLY',
+    30,
+    'MUNDANDI K.',
+    2028-10-08T00:00:00.000Z,
+    'Yes',
+    2025-10-08T00:00:00.000Z,
+    'BLOW',
+    'Yes',
+    <2 empty items>,
+    'NYAUCHI'
+  ],
+  [
+    <2 empty items>,
+    74822,
+    'HYPET 400',
+    1055,
+    'readjusted temposonic magnet on injection unit',
+    28,
+    'WATSIKA A.',
+    2025-11-28T00:00:00.000Z,
+    'No',
+    2025-11-28T00:00:00.000Z,
+    'PREFORMS',
+    'Yes'
+  ],
+  [
+    <2 empty items>,
+    74803,
+    'KM02',
+    1057,
+    'RECALIBRATED ROBOT AXIS',
+    30,
+    'WATSIKA A.',
+    2025-11-25T00:00:00.000Z,
+    'No',
+    2025-11-25T00:00:00.000Z,
+    'PREFORMS',
+    'Yes'
+  ]
+]
+
+--- Inspecting machineFault frequency.xlsx ---
+Sheet: Sheet1
+First 5 rows:
+[
+  [ <1 empty item>, 'MachineFault Frequency' ],
+  [ <1 empty item>, 'Machine', 'CountOfFault Number' ],
+  [ <1 empty item>, 'KM01', 571 ],
+  [ <1 empty item>, 'KM02', 442 ]
+]
+
+--- Inspecting machines with location.xlsx ---
+Sheet: Sheet1
+First 5 rows:
+[
+  [ <1 empty item>, 'Machines' ],
+  [ <1 empty item>, 'MachineNAME', 'Location' ],
+  [ <1 empty item>, '10 TONNE CRANE', 'PREFORMS' ],
+  [ <1 empty item>, '2000L MOULD', 'LIM' ],
+  [ <1 empty item>, '20-25 L DRUM MOULD', 'LIM' ]
+]
+
+--- Inspecting order status query.xlsx ---
+Sheet: Sheet1
+First 5 rows:
+[
+  [ <1 empty item>, 'OrderStatus Query' ],
+  [
+    <1 empty item>,
+    'Requisition Date',
+    'Order number',
+    'supplier name',
+    'Received fully'
+  ],
+  [
+    <1 empty item>,
+    2014-06-18T00:00:00.000Z,
+    <1 empty item>,
+    'testing',
+    false
+  ],
+  [ <1 empty item>, 2014-06-18T00:00:00.000Z, <2 empty items>, false ],
+  [ <1 empty item>, 2014-06-18T00:00:00.000Z, <2 empty items>, false ]
+]
+
+--- Inspecting order status.xlsx ---
+Sheet: Sheet1
+First 5 rows:
+[
+  [ <1 empty item>, 'OrderStatus' ],
+  [
+    <1 empty item>,
+    'Requisition Date',
+    'Requisition number',
+    'Confirmed',
+    'Order number',
+    'supplier name',
+    'Received fully'
+  ],
+  [
+    <1 empty item>,
+    2014-06-18T00:00:00.000Z,
+    0,
+    true,
+    <1 empty item>,
+    'testing',
+    false
+  ],
+  [
+    <1 empty item>,
+    2014-06-18T00:00:00.000Z,
+    1,
+    true,
+    <2 empty items>,
+    false
+  ],
+  [
+    <1 empty item>,
+    2014-06-18T00:00:00.000Z,
+    2,
+    true,
+    <2 empty items>,
+    false
+  ]
+]
+
+--- Inspecting production team.xlsx ---
+Sheet: Sheet1
+First 5 rows:
+[
+  [ <1 empty item>, 'ProductionTeam' ],
+  [ <1 empty item>, 'Nameteam' ],
+  [ <1 empty item>, 'ALFOSI' ],
+  [ <1 empty item>, 'MACHOWA O' ],
+  [ <1 empty item>, 'MAHONDA' ]
+]
+
+--- Inspecting tools Store table.xlsx ---
+Sheet: Sheet1
+First 5 rows:
+[
+  [ <1 empty item>, 'Toolstore' ],
+  [ <1 empty item>, 'ID', 'Toolid', 'size', 'quantinty' ],
+  [ <1 empty item>, 1, 'Boring bars', '8mm', 1 ],
+  [ <1 empty item>, 2, 'Boring bars', '12mm', 1 ],
+  [ <1 empty item>, 3, 'Boring bars', '16mm', 2 ]
+]
