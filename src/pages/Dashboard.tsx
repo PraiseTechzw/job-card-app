@@ -16,14 +16,15 @@ const Dashboard: React.FC = () => {
   const { jobCards } = useJobCards();
   const { user } = useAuth();
 
-  // Artisan users are redirected to the dedicated Artisan Module
+  // Role-based landing page redirects
   if (user?.role === 'Artisan') {
     return <Navigate to="/artisan/dashboard" replace />;
   }
-
-  // Supervisor / EngSupervisor → dedicated Control Centre
   if (user?.role === 'Supervisor' || user?.role === 'EngSupervisor') {
     return <Navigate to="/supervisor/dashboard" replace />;
+  }
+  if (user?.role === 'Initiator') {
+    return <Navigate to="/initiator/dashboard" replace />;
   }
 
   const stats = [

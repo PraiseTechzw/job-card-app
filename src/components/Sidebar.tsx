@@ -3,7 +3,7 @@ import { NavLink } from 'react-router-dom';
 import { 
   LayoutDashboard, ClipboardList, PenTool, CheckSquare, LogOut, 
   FileText, ShieldCheck, Clock, UserPlus, History, Wrench,
-  Activity, TrendingUp
+  Activity, TrendingUp, FilePlus
 } from 'lucide-react';
 import styles from './Sidebar.module.css';
 import { useAuth } from '../context/AuthContext';
@@ -27,6 +27,11 @@ const Sidebar: React.FC = () => {
         return jobCards.filter(c => c.status === 'Registered').length;
       case 'Sign-off Queue':
         return jobCards.filter(c => c.status === 'Awaiting_SignOff' && (user?.role === 'Admin' || c.requestedBy === user?.name)).length;
+      case 'My Requests':
+        return jobCards.filter(c =>
+          (c.requestedBy === user?.name || user?.role === 'Admin') &&
+          c.status === 'Awaiting_SignOff'
+        ).length;
       case 'My Active Jobs':
         return jobCards.filter(c => ['Assigned', 'InProgress'].includes(c.status) && c.issuedTo === user?.name).length;
       // Supervisor module
@@ -94,6 +99,26 @@ const Sidebar: React.FC = () => {
       label: 'My Work History', 
       icon: History, 
       roles: ['Artisan', 'Admin'] 
+    },
+
+    // Initiator Module — scoped to Initiator and Admin
+    {
+      to: '/initiator/dashboard',
+      label: 'My Requests',
+      icon: FilePlus,
+      roles: ['Initiator', 'Admin'],
+    },
+    {
+      to: '/initiator/new',
+      label: 'New Request',
+      icon: FilePlus,
+      roles: ['Initiator', 'Admin'],
+    },
+    {
+      to: '/initiator/history',
+      label: 'Request History',
+      icon: Clock,
+      roles: ['Initiator', 'Admin'],
     },
     
     // Supervisor Module — scoped to Supervisor, EngSupervisor, Admin

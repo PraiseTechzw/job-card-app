@@ -28,6 +28,19 @@ import JobAssignment from './pages/supervisor/JobAssignment';
 import ActiveJobsMonitor from './pages/supervisor/ActiveJobsMonitor';
 import JobReview from './pages/supervisor/JobReview';
 import SupervisorReports from './pages/supervisor/SupervisorReports';
+import InitiatorDashboard from './pages/initiator/InitiatorDashboard';
+import CreateJobRequest from './pages/initiator/CreateJobRequest';
+import RequestDetails from './pages/initiator/RequestDetails';
+import RequestHistory from './pages/initiator/RequestHistory';
+import CompletionFeedback from './pages/initiator/CompletionFeedback';
+
+import PlannerDashboard from './pages/planner/PlannerDashboard';
+import JobRecordsManagement from './pages/planner/JobRecordsManagement';
+import JobClassification from './pages/planner/JobClassification';
+import MaintenanceHistory from './pages/planner/MaintenanceHistory';
+import ReportingAnalytics from './pages/planner/ReportingAnalytics';
+import PreventiveMaintenancePlanning from './pages/planner/PreventiveMaintenancePlanning';
+import ArchiveManagement from './pages/planner/ArchiveManagement';
 
 const ProtectedRoute = ({ children, allowedRoles }: { children: React.ReactNode; allowedRoles?: string[] }) => {
   const { user } = useAuth();
@@ -79,6 +92,23 @@ const AppContent = () => {
       <Route path="/supervisor/active" element={<ProtectedRoute allowedRoles={['Supervisor', 'EngSupervisor', 'Admin']}><MainLayout><ActiveJobsMonitor /></MainLayout></ProtectedRoute>} />
       <Route path="/supervisor/review/:id" element={<ProtectedRoute allowedRoles={['Supervisor', 'EngSupervisor', 'Admin']}><MainLayout><JobReview /></MainLayout></ProtectedRoute>} />
       <Route path="/supervisor/reports" element={<ProtectedRoute allowedRoles={['Supervisor', 'EngSupervisor', 'Admin', 'HOD']}><MainLayout><SupervisorReports /></MainLayout></ProtectedRoute>} />
+
+      {/* Initiator Module */}
+      <Route path="/initiator/dashboard" element={<ProtectedRoute allowedRoles={['Initiator', 'Admin']}><MainLayout><InitiatorDashboard /></MainLayout></ProtectedRoute>} />
+      <Route path="/initiator/new" element={<ProtectedRoute allowedRoles={['Initiator', 'Admin']}><MainLayout><CreateJobRequest /></MainLayout></ProtectedRoute>} />
+      <Route path="/initiator/edit/:id" element={<ProtectedRoute allowedRoles={['Initiator', 'Admin']}><MainLayout><CreateJobRequest /></MainLayout></ProtectedRoute>} />
+      <Route path="/initiator/request/:id" element={<ProtectedRoute allowedRoles={['Initiator', 'Admin']}><MainLayout><RequestDetails /></MainLayout></ProtectedRoute>} />
+      <Route path="/initiator/history" element={<ProtectedRoute allowedRoles={['Initiator', 'Admin']}><MainLayout><RequestHistory /></MainLayout></ProtectedRoute>} />
+      <Route path="/initiator/feedback/:id" element={<ProtectedRoute allowedRoles={['Initiator', 'Admin']}><MainLayout><CompletionFeedback /></MainLayout></ProtectedRoute>} />
+
+      {/* Planning Office Module */}
+      <Route path="/planner/dashboard" element={<ProtectedRoute allowedRoles={['PlanningOffice', 'Admin']}><MainLayout><PlannerDashboard /></MainLayout></ProtectedRoute>} />
+      <Route path="/planner/jobs" element={<ProtectedRoute allowedRoles={['PlanningOffice', 'Admin']}><MainLayout><JobRecordsManagement /></MainLayout></ProtectedRoute>} />
+      <Route path="/planner/job/:id" element={<ProtectedRoute allowedRoles={['PlanningOffice', 'Admin']}><MainLayout><JobClassification /></MainLayout></ProtectedRoute>} />
+      <Route path="/planner/history" element={<ProtectedRoute allowedRoles={['PlanningOffice', 'Admin']}><MainLayout><MaintenanceHistory /></MainLayout></ProtectedRoute>} />
+      <Route path="/planner/reports" element={<ProtectedRoute allowedRoles={['PlanningOffice', 'Admin']}><MainLayout><ReportingAnalytics /></MainLayout></ProtectedRoute>} />
+      <Route path="/planner/preventive" element={<ProtectedRoute allowedRoles={['PlanningOffice', 'Admin']}><MainLayout><PreventiveMaintenancePlanning /></MainLayout></ProtectedRoute>} />
+      <Route path="/planner/archive" element={<ProtectedRoute allowedRoles={['PlanningOffice', 'Admin']}><MainLayout><ArchiveManagement /></MainLayout></ProtectedRoute>} />
 
       <Route path="/reports" element={<ProtectedRoute allowedRoles={['Admin', 'Supervisor', 'HOD', 'EngSupervisor']}><MainLayout><Reports /></MainLayout></ProtectedRoute>} />
       <Route path="/login" element={<Login />} />
