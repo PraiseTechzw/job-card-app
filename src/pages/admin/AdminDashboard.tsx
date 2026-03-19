@@ -1,18 +1,16 @@
-import { useMemo, useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import {
   ShieldCheck, Users, Activity, AlertTriangle, 
   Database, FileText, Settings, Bell, 
-  Archive, Lock, RefreshCw, ArrowRight, Server
+  Archive, Lock, RefreshCw, Server
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
-import { useJobCards } from '../../context/JobCardContext';
 import styles from '../JobCards.module.css';
 
 export default function AdminDashboard() {
   const { user } = useAuth();
-  const { jobCards } = useJobCards();
   const navigate = useNavigate();
   const [stats, setStats] = useState<any>(null);
   const [recentLogs, setRecentLogs] = useState<any[]>([]);
@@ -40,7 +38,7 @@ export default function AdminDashboard() {
     return (
       <div className={styles.pageContainer}>
         <div style={{ padding: 100, textAlign: 'center' }}>
-          <RefreshCw size={48} className="animate-spin" color="#6366f1" style={{ marginBottom: 20 }} />
+          <RefreshCw size={48} className="animate-spin" color="#6366f1" style={{ marginBottom: 20, margin: '0 auto' }} />
           <p style={{ color: '#475569', fontWeight: 700 }}>Initializing Governance Console...</p>
         </div>
       </div>
@@ -121,12 +119,12 @@ export default function AdminDashboard() {
                 <button 
                   key={m.to} 
                   onClick={() => navigate(m.to)}
+                  className="admin-module-btn"
                   style={{ 
                     textAlign: 'left', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.04)', 
-                    borderRadius: 12, padding: 16, cursor: 'pointer', transition: 'all 0.2s', display: 'flex', gap: 14, alignItems: 'center' 
+                    borderRadius: 12, padding: 16, cursor: 'pointer', transition: 'all 0.2s', display: 'flex', gap: 14, alignItems: 'center',
+                    width: '100%'
                   }}
-                  onMouseOver={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.05)'; e.currentTarget.style.borderColor = 'rgba(99,102,241,0.2)'; }}
-                  onMouseOut={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.02)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.04)'; }}
                 >
                   <div style={{ background: 'rgba(99,102,241,0.1)', padding: 10, borderRadius: 10 }}>
                     <m.icon size={18} color="#6366f1" />
@@ -204,23 +202,20 @@ export default function AdminDashboard() {
               ]).map((log, i) => (
                 <div key={i} style={{ borderLeft: '2px solid rgba(255,255,255,0.05)', paddingLeft: 12 }}>
                   <div style={{ fontSize: 12, fontWeight: 700, color: '#e2e8f0' }}>{log.action}</div>
-                  <div style={{ fontSize: 11, color: '#475569' }}>by {log.performedBy} · {new Date(log.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
+                  <div style={{ fontSize: 11, color: '#475569' }}>by {log.performedBy || log.performed_by} · {new Date(log.createdAt || log.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
                 </div>
               ))}
             </div>
           </div>
-        </div>
-      </div>
-    </div>
 
           <div style={{ background: 'rgba(15,23,42,0.6)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: 16, padding: 20 }}>
             <h3 style={{ fontSize: 11, fontWeight: 800, textTransform: 'uppercase', color: '#475569', marginBottom: 12 }}>Resource Usage</h3>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
               <span style={{ fontSize: 11, color: '#94a3b8' }}>Database Storage</span>
-              <span style={{ fontSize: 11, color: '#e2e8f0' }}>14.2 GB / 50 GB</span>
+              <span style={{ fontSize: 11, color: '#e2e8f0' }}>1.2 GB / 50 GB</span>
             </div>
             <div style={{ height: 6, background: 'rgba(255,255,255,0.05)', borderRadius: 3, overflow: 'hidden' }}>
-              <div style={{ width: '28%', height: '100%', background: '#6366f1' }} />
+              <div style={{ width: '5%', height: '100%', background: '#6366f1' }} />
             </div>
           </div>
         </div>
