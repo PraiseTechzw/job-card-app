@@ -23,7 +23,21 @@ const pool = new Pool({
   }
 });
 
+pool.on('error', (err) => {
+  console.error('Unexpected error on idle client', err);
+});
+
 const query = (text, params) => pool.query(text, params);
+
+app.get('/api/health', async (req, res) => {
+  try {
+    const result = await query('SELECT NOW()');
+    res.json({ status: 'healthy', time: result.rows[0].now });
+  } catch (err) {
+    console.error('Health check failed:', err);
+    res.status(500).json({ status: 'unhealthy', error: err.message });
+  }
+});
 
 // Utility to convert snake_case to camelCase
 const toCamel = (obj) => {
