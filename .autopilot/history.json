@@ -1,6 +1,18 @@
 {
   "commits": [
     {
+      "hash": "ba5a78c7f76637bdb464e77687c92ba57a5b9446",
+      "message": "[autopilot] feat(job-cards): update handling and validation \n* Add new fields to job cards\n* Update API to handle object values\n* Add missing columns to job_cards table\n* Update test_post.js with new data \n* Improve UI for job card detail view \n* Enhance feedback and sign-off sections \n* Update database schema to reflect changes \n* Modify assignment and allocation displays \n* Improve code organization and readability \n* Fix minor bugs and inconsistencies \nBREAKING CHANGE: Database schema changes may require migration scripts to ensure data integrity.\nAutopilot-Commit: true\nAutopilot-Version: 2.4.0\nAutopilot-User: 9b06151f-e74d-41b9-af57-d1d258601e9e\nAutopilot-Signature: 49ead396afd25c88fae7ff1d2aac344a423160b275e4b24c55c6e9b8aab71eba",
+      "files": [
+        "autopilot/history.json",
+        "api/validation.js",
+        "data/seed-data/patch_db_v2.js",
+        "schema.sql",
+        "src/pages/JobCardDetail.tsx"
+      ],
+      "timestamp": "2026-03-19T22:12:43.790Z"
+    },
+    {
       "hash": "d154b4672387ea9a3d0eaa39cf8c40f4406102f5",
       "message": "[autopilot] feat(api): update job cards handling and validation \n\n* Add new fields to job cards\n* Update API to handle object values\n* Add missing columns to job_cards table\n* Update test_post.js with new data\nAutopilot-Commit: true\nAutopilot-Version: 2.4.0\nAutopilot-User: 9b06151f-e74d-41b9-af57-d1d258601e9e\nAutopilot-Signature: c48d022272a6fd7ee24170567789e6a2a6e43b8c092cd9831930a2e1974580e5",
       "files": [

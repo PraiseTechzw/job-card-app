@@ -3,7 +3,7 @@ import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import type { JobCard, JobCardStatus } from '../types';
 import { useJobCards } from '../context/JobCardContext';
 import { useAuth } from '../context/AuthContext';
-import { Printer, Edit3, ArrowLeft, CheckCircle, Save, ShieldCheck, UserCheck, Play, CheckCircle2, History, ClipboardList, Zap, Calendar, Wrench, FileText, User, Settings, Component, UserPlus } from 'lucide-react';
+import { Printer, Edit3, ArrowLeft, CheckCircle, Save, ShieldCheck, UserCheck, Play, CheckCircle2, History, ClipboardList, Zap, Calendar, Wrench, FileText, User, Settings, Component, UserPlus, AlertTriangle } from 'lucide-react';
 import WorkflowTracker from '../components/WorkflowTracker';
 import JobCardBackForm from '../components/JobCardBackForm';
 import AuditTimeline from '../components/AuditTimeline';
@@ -82,7 +82,7 @@ const JobCardDetail: React.FC = () => {
                    (user?.role === 'HOD' && card.status === 'Pending_HOD');
   
   const canRegister = user?.role === 'PlanningOffice' && card.status === 'Approved';
-  const canAssign = user?.role === 'EngSupervisor' && card.status === 'Registered';
+  const canAssign = (user?.role === 'EngSupervisor' || user?.role === 'Supervisor' || user?.role === 'Admin') && card.status === 'Registered';
   const canStartWork = user?.role === 'Artisan' && card.status === 'Assigned';
   const canCompleteWork = user?.role === 'Artisan' && card.status === 'InProgress';
   const canSignOff = user?.role === 'Initiator' && card.status === 'Awaiting_SignOff';
@@ -140,10 +140,7 @@ const JobCardDetail: React.FC = () => {
 
             {canAssign && (
               <button 
-                onClick={() => {
-                  const artisan = prompt('Assign to Artisan:');
-                  if (artisan) handleStatusTransition('Assigned', { issuedTo: artisan });
-                }}
+                onClick={() => navigate(`/supervisor/assign/${card.id}`)}
                 className={styles.btnPrimary} style={{ background: 'linear-gradient(135deg, #8b5cf6, #6d28d9)' }}
               >
                 <UserCheck size={16} /> Assign Artisan

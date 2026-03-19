@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import axios from 'axios';
 import {
   UserPlus, ArrowLeft, AlertTriangle, RefreshCw, CheckCircle2,
   User, Building2, CalendarDays, Clock, StickyNote
@@ -8,11 +9,8 @@ import { useJobCards } from '../../context/JobCardContext';
 import { useAuth } from '../../context/AuthContext';
 import styles from '../JobCards.module.css';
 
-// Artisan roster — in production pull from /api/users?role=Artisan
-const ARTISAN_ROSTER = [
-  'Peter Moyo', 'Sarah Choto', 'James Sibanda', 'Grace Dube',
-  'Farai Mutasa', 'Tinashe Muza', 'Ruth Chikomo', 'David Nkomo',
-];
+// We strictly fetch from backend database now. No hardcoded users.
+
 
 export default function JobAssignment() {
   const { id } = useParams<{ id: string }>();
@@ -20,6 +18,7 @@ export default function JobAssignment() {
   const { getJobCard, updateJobCard, addAssignment, addAuditLog, assignments } = useJobCards();
   const { user } = useAuth();
 
+  const [artisanRoster, setArtisanRoster] = useState<string[]>([]);
   const [artisanName, setArtisanName] = useState('');
   const [section, setSection] = useState('');
   const [priority, setPriority] = useState('');
@@ -28,6 +27,23 @@ export default function JobAssignment() {
   const [instructions, setInstructions] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [done, setDone] = useState(false);
+
+  useEffect(() => {
+    async function fetchArtisans() {
+      try {
+        const res = await axios.get('/api/users?role=Artisan');
+        if (Array.isArray(res.data) && res.data.length > 0) {
+          setArtisanRoster(res.data.map((u: any) => u.name));
+        } else {
+          setArtisanRoster([]);
+        }
+      } catch (e) {
+        console.error('Failed to load DB artisans', e);
+        setArtisanRoster([]);
+      }
+    }
+    fetchArtisans();
+  }, []);
 
   const job = id ? getJobCard(id) : undefined;
 
@@ -194,7 +210,8 @@ export default function JobAssignment() {
                 required
               >
                 <option value="">— Select Artisan —</option>
-                {ARTISAN_ROSTER.map(a => (
+                {artisanRoster.length === 0 && <option value="" disabled>No Artisans found in Database</option>}
+                {artisanRoster.map(a => (
                   <option key={a} value={a}>
                     {a}{workloadMap[a] ? ` (${workloadMap[a]} active job${workloadMap[a] > 1 ? 's' : ''})` : ''}
                   </option>

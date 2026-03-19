@@ -105,6 +105,22 @@ app.post('/api/auth/login', async (req, res) => {
   }
 });
 
+app.get('/api/users', async (req, res) => {
+  const { role } = req.query;
+  try {
+    let result;
+    if (role) {
+      result = await query('SELECT id, name, username, role, department FROM users WHERE role = $1 ORDER BY name ASC', [role]);
+    } else {
+      result = await query('SELECT id, name, username, role, department FROM users ORDER BY name ASC');
+    }
+    res.json(toCamel(result.rows));
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to fetch users' });
+  }
+});
+
 // --- JOB CARDS ENDPOINTS ---
 
 app.get('/api/job-cards', async (req, res) => {
