@@ -21,6 +21,11 @@ const Dashboard: React.FC = () => {
     return <Navigate to="/artisan/dashboard" replace />;
   }
 
+  // Supervisor / EngSupervisor → dedicated Control Centre
+  if (user?.role === 'Supervisor' || user?.role === 'EngSupervisor') {
+    return <Navigate to="/supervisor/dashboard" replace />;
+  }
+
   const stats = [
     { 
       label: 'Open Job Cards', 

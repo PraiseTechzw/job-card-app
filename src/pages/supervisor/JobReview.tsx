@@ -2,8 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   CheckCircle2, RotateCcw, ArrowLeft, Clock, User,
-  AlertTriangle, FileText, Wrench, Package, MessageSquare,
-  Building2, CalendarDays, Shield
+  AlertTriangle, FileText, Wrench, Package, MessageSquare, Shield
 } from 'lucide-react';
 import { useJobCards } from '../../context/JobCardContext';
 import { useAuth } from '../../context/AuthContext';

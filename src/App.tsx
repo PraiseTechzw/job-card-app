@@ -22,6 +22,12 @@ import WorkExecution from './pages/artisan/WorkExecution';
 import MaterialsResources from './pages/artisan/MaterialsResources';
 import ReviewSubmit from './pages/artisan/ReviewSubmit';
 import MyHistory from './pages/artisan/MyHistory';
+import SupervisorDashboard from './pages/supervisor/SupervisorDashboard';
+import JobApproval from './pages/supervisor/JobApproval';
+import JobAssignment from './pages/supervisor/JobAssignment';
+import ActiveJobsMonitor from './pages/supervisor/ActiveJobsMonitor';
+import JobReview from './pages/supervisor/JobReview';
+import SupervisorReports from './pages/supervisor/SupervisorReports';
 
 const ProtectedRoute = ({ children, allowedRoles }: { children: React.ReactNode; allowedRoles?: string[] }) => {
   const { user } = useAuth();
@@ -66,6 +72,14 @@ const AppContent = () => {
       <Route path="/artisan/review/:id" element={<ProtectedRoute allowedRoles={['Artisan', 'Admin']}><MainLayout><ReviewSubmit /></MainLayout></ProtectedRoute>} />
       <Route path="/artisan/history" element={<ProtectedRoute allowedRoles={['Artisan', 'Admin']}><MainLayout><MyHistory /></MainLayout></ProtectedRoute>} />
       
+      {/* Supervisor Module */}
+      <Route path="/supervisor/dashboard" element={<ProtectedRoute allowedRoles={['Supervisor', 'EngSupervisor', 'Admin']}><MainLayout><SupervisorDashboard /></MainLayout></ProtectedRoute>} />
+      <Route path="/supervisor/approve/:id" element={<ProtectedRoute allowedRoles={['Supervisor', 'EngSupervisor', 'Admin']}><MainLayout><JobApproval /></MainLayout></ProtectedRoute>} />
+      <Route path="/supervisor/assign/:id" element={<ProtectedRoute allowedRoles={['Supervisor', 'EngSupervisor', 'Admin']}><MainLayout><JobAssignment /></MainLayout></ProtectedRoute>} />
+      <Route path="/supervisor/active" element={<ProtectedRoute allowedRoles={['Supervisor', 'EngSupervisor', 'Admin']}><MainLayout><ActiveJobsMonitor /></MainLayout></ProtectedRoute>} />
+      <Route path="/supervisor/review/:id" element={<ProtectedRoute allowedRoles={['Supervisor', 'EngSupervisor', 'Admin']}><MainLayout><JobReview /></MainLayout></ProtectedRoute>} />
+      <Route path="/supervisor/reports" element={<ProtectedRoute allowedRoles={['Supervisor', 'EngSupervisor', 'Admin', 'HOD']}><MainLayout><SupervisorReports /></MainLayout></ProtectedRoute>} />
+
       <Route path="/reports" element={<ProtectedRoute allowedRoles={['Admin', 'Supervisor', 'HOD', 'EngSupervisor']}><MainLayout><Reports /></MainLayout></ProtectedRoute>} />
       <Route path="/login" element={<Login />} />
     </Routes>

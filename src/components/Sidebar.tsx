@@ -2,7 +2,8 @@ import React from 'react';
 import { NavLink } from 'react-router-dom';
 import { 
   LayoutDashboard, ClipboardList, PenTool, CheckSquare, LogOut, 
-  FileText, ShieldCheck, Clock, UserPlus, History, Wrench
+  FileText, ShieldCheck, Clock, UserPlus, History, Wrench,
+  Activity, TrendingUp
 } from 'lucide-react';
 import styles from './Sidebar.module.css';
 import { useAuth } from '../context/AuthContext';
@@ -28,6 +29,14 @@ const Sidebar: React.FC = () => {
         return jobCards.filter(c => c.status === 'Awaiting_SignOff' && (user?.role === 'Admin' || c.requestedBy === user?.name)).length;
       case 'My Active Jobs':
         return jobCards.filter(c => ['Assigned', 'InProgress'].includes(c.status) && c.issuedTo === user?.name).length;
+      // Supervisor module
+      case 'Control Centre':
+        if (['Supervisor', 'EngSupervisor', 'Admin'].includes(user?.role || '')) {
+          return jobCards.filter(c => c.status === 'Pending_Supervisor' || c.status === 'Awaiting_SignOff').length;
+        }
+        return 0;
+      case 'Awaiting Review':
+        return jobCards.filter(c => c.status === 'Awaiting_SignOff').length;
       default:
         return 0;
     }
@@ -85,6 +94,26 @@ const Sidebar: React.FC = () => {
       label: 'My Work History', 
       icon: History, 
       roles: ['Artisan', 'Admin'] 
+    },
+    
+    // Supervisor Module — scoped to Supervisor, EngSupervisor, Admin
+    {
+      to: '/supervisor/dashboard',
+      label: 'Control Centre',
+      icon: ShieldCheck,
+      roles: ['Supervisor', 'EngSupervisor', 'Admin'],
+    },
+    {
+      to: '/supervisor/active',
+      label: 'Live Monitor',
+      icon: Activity,
+      roles: ['Supervisor', 'EngSupervisor', 'Admin'],
+    },
+    {
+      to: '/supervisor/reports',
+      label: 'Sup. Reports',
+      icon: TrendingUp,
+      roles: ['Supervisor', 'EngSupervisor', 'Admin', 'HOD'],
     },
     
     // Allocations — Supervisors, EngSupervisors, PlanningOffice, Admin
