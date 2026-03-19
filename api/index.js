@@ -135,7 +135,7 @@ app.post('/api/job-cards', async (req, res) => {
   const id = Math.random().toString(36).substr(2, 9);
   
   const fields = ['id', 'ticket_number', ...Object.keys(data)];
-  const values = [id, ticketNumber, ...Object.values(data)];
+  const values = [id, ticketNumber, ...Object.values(data).map(v => (typeof v === 'object' && v !== null) ? JSON.stringify(v) : v)];
   const placeholders = values.map((_, i) => `$${i + 1}`).join(', ');
 
   const client = await pool.connect();
@@ -187,9 +187,10 @@ app.patch('/api/job-cards/:id', async (req, res) => {
 
     // 3. Perform update
     const setQuery = fields.map((f, i) => `${f} = $${i + 2}`).join(', ');
+    const updateValues = Object.values(updates).map(v => (typeof v === 'object' && v !== null) ? JSON.stringify(v) : v);
     const updateResult = await query(
       `UPDATE job_cards SET ${setQuery}, updated_at = NOW() WHERE id = $1 RETURNING *`,
-      [req.params.id, ...Object.values(updates)]
+      [req.params.id, ...updateValues]
     );
     
     // 4. Record Audit Log (using query directly)
