@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Search, History, MessageSquare, Briefcase } from 'lucide-react';
+import { Search, History, MessageSquare, Briefcase, Clock, Calendar, CheckCircle2, ArrowLeft } from 'lucide-react';
 import { useJobCards } from '../../context/JobCardContext';
 import { useAuth } from '../../context/AuthContext';
 import styles from '../JobCards.module.css';
@@ -61,9 +61,9 @@ const MyHistory: React.FC = () => {
       </header>
 
       {/* Filter and Search Bar */}
-      <div className="flex flex-col md:flex-row gap-4 mb-8">
-        <div className="relative flex-1 group">
-          <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 group-hover:text-blue-400 transition-colors" />
+      <div className="flex flex-col md:flex-row gap-4 mb-8 bg-slate-900/30 p-2 rounded-2xl border border-white/5 shadow-xl glass-panel">
+        <div className="relative flex-1 group flex items-center">
+          <Search size={18} className="absolute left-4 text-slate-500 group-focus-within:text-blue-400 transition-colors z-10" />
           <input 
             type="text" 
             placeholder="Search history by ID, plant or keyword..." 
@@ -73,18 +73,25 @@ const MyHistory: React.FC = () => {
           />
         </div>
         
-        <div className="flex gap-2 overflow-x-auto pb-2 md:pb-0 scrollbar-hide">
-          {(['All', 'This week', 'This month', 'Completed', 'Returned'] as const).map(f => (
+        <div className="flex gap-1.5 overflow-x-auto pb-1 md:pb-0 scrollbar-hide">
+          {[
+            { id: 'All', icon: History },
+            { id: 'This week', icon: Clock },
+            { id: 'This month', icon: Calendar },
+            { id: 'Completed', icon: CheckCircle2 },
+            { id: 'Returned', icon: ArrowLeft }
+          ].map(f => (
             <button
-              key={f}
-              onClick={() => setFilter(f)}
-              className={`px-5 py-3 whitespace-nowrap rounded-xl text-sm font-semibold transition-all ${
-                filter === f 
+              key={f.id}
+              onClick={() => setFilter(f.id as any)}
+              className={`px-4 py-2.5 whitespace-nowrap rounded-xl text-xs font-bold transition-all flex items-center gap-2 border ${
+                filter === f.id 
                   ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/25 border-transparent'
-                  : 'bg-slate-900/60 text-slate-400 hover:bg-slate-800 border-white/5 border'
+                  : 'bg-slate-900/40 text-slate-400 hover:bg-slate-800 border-white/5 opacity-70 hover:opacity-100'
               }`}
             >
-              {f}
+              <f.icon size={14} className={filter === f.id ? 'text-white' : 'text-slate-500'} />
+              {f.id}
             </button>
           ))}
         </div>

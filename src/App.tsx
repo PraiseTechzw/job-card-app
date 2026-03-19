@@ -42,6 +42,16 @@ import ReportingAnalytics from './pages/planner/ReportingAnalytics';
 import PreventiveMaintenancePlanning from './pages/planner/PreventiveMaintenancePlanning';
 import ArchiveManagement from './pages/planner/ArchiveManagement';
 
+import AdminDashboard from './pages/admin/AdminDashboard';
+import UserManagement from './pages/admin/UserManagement';
+import RolesPermissions from './pages/admin/RolesPermissions';
+import MasterDataManager from './pages/admin/MasterDataManager';
+import WorkflowConfig from './pages/admin/WorkflowConfig';
+import NotificationSettings from './pages/admin/NotificationSettings';
+import AuditLogs from './pages/admin/AuditLogs';
+import RetentionSettings from './pages/admin/RetentionSettings';
+import SystemSettings from './pages/admin/SystemSettings';
+
 const ProtectedRoute = ({ children, allowedRoles }: { children: React.ReactNode; allowedRoles?: string[] }) => {
   const { user } = useAuth();
   
@@ -109,6 +119,17 @@ const AppContent = () => {
       <Route path="/planner/reports" element={<ProtectedRoute allowedRoles={['PlanningOffice', 'Admin']}><MainLayout><ReportingAnalytics /></MainLayout></ProtectedRoute>} />
       <Route path="/planner/preventive" element={<ProtectedRoute allowedRoles={['PlanningOffice', 'Admin']}><MainLayout><PreventiveMaintenancePlanning /></MainLayout></ProtectedRoute>} />
       <Route path="/planner/archive" element={<ProtectedRoute allowedRoles={['PlanningOffice', 'Admin']}><MainLayout><ArchiveManagement /></MainLayout></ProtectedRoute>} />
+
+      {/* Admin Module */}
+      <Route path="/admin/dashboard" element={<ProtectedRoute allowedRoles={['Admin']}><MainLayout><AdminDashboard /></MainLayout></ProtectedRoute>} />
+      <Route path="/admin/users" element={<ProtectedRoute allowedRoles={['Admin']}><MainLayout><UserManagement /></MainLayout></ProtectedRoute>} />
+      <Route path="/admin/roles" element={<ProtectedRoute allowedRoles={['Admin']}><MainLayout><RolesPermissions /></MainLayout></ProtectedRoute>} />
+      <Route path="/admin/master-data" element={<ProtectedRoute allowedRoles={['Admin']}><MainLayout><MasterDataManager /></MainLayout></ProtectedRoute>} />
+      <Route path="/admin/workflow" element={<ProtectedRoute allowedRoles={['Admin']}><MainLayout><WorkflowConfig /></MainLayout></ProtectedRoute>} />
+      <Route path="/admin/notifications" element={<ProtectedRoute allowedRoles={['Admin']}><MainLayout><NotificationSettings /></MainLayout></ProtectedRoute>} />
+      <Route path="/admin/audit" element={<ProtectedRoute allowedRoles={['Admin']}><MainLayout><AuditLogs /></MainLayout></ProtectedRoute>} />
+      <Route path="/admin/retention" element={<ProtectedRoute allowedRoles={['Admin']}><MainLayout><RetentionSettings /></MainLayout></ProtectedRoute>} />
+      <Route path="/admin/settings" element={<ProtectedRoute allowedRoles={['Admin']}><MainLayout><SystemSettings /></MainLayout></ProtectedRoute>} />
 
       <Route path="/reports" element={<ProtectedRoute allowedRoles={['Admin', 'Supervisor', 'HOD', 'EngSupervisor']}><MainLayout><Reports /></MainLayout></ProtectedRoute>} />
       <Route path="/login" element={<Login />} />

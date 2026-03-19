@@ -3,7 +3,8 @@ import { NavLink } from 'react-router-dom';
 import { 
   LayoutDashboard, ClipboardList, PenTool, CheckSquare, LogOut, 
   FileText, ShieldCheck, Clock, UserPlus, History, Wrench,
-  Activity, TrendingUp, FilePlus, Archive, Database, BarChart2
+  Activity, TrendingUp, FilePlus, Archive, Database, BarChart2,
+  Settings
 } from 'lucide-react';
 import styles from './Sidebar.module.css';
 import { useAuth } from '../context/AuthContext';
@@ -44,6 +45,8 @@ const Sidebar: React.FC = () => {
         return jobCards.filter(c => c.status === 'Awaiting_SignOff').length;
       case 'Job Records':
         return jobCards.filter(c => c.status === 'Approved').length; // Highlighting new jobs to classify
+      case 'System Governance':
+        return 0; // Admin alerts handled within the dashboard
       default:
         return 0;
     }
@@ -195,6 +198,14 @@ const Sidebar: React.FC = () => {
       label: 'Reports & Analytics', 
       icon: FileText, 
       roles: ['Admin', 'Supervisor', 'HOD', 'EngSupervisor'] 
+    },
+
+    // System Admin Module
+    {
+      to: '/admin/dashboard',
+      label: 'System Governance',
+      icon: Settings,
+      roles: ['Admin'],
     },
   ];
 

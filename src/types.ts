@@ -25,9 +25,69 @@ export type Trade =
 
 export interface User {
   id: string;
+  employeeId: string;
   name: string;
+  email: string;
   role: 'Admin' | 'Initiator' | 'Supervisor' | 'EngSupervisor' | 'Artisan' | 'PlanningOffice' | 'HOD';
   department: string;
+  section?: string;
+  status: 'Active' | 'Inactive' | 'Locked';
+  lastLogin?: string;
+  createdAt: string;
+}
+
+export interface AuditLog {
+  id: string;
+  timestamp: string;
+  userId: string;
+  userName: string;
+  userRole: string;
+  action: string;
+  module: string;
+  entityId?: string;
+  details?: string;
+  oldValue?: string;
+  newValue?: string;
+  ipAddress?: string;
+}
+
+export interface MasterDataItem {
+  id: string;
+  type: 'Department' | 'Plant' | 'Asset' | 'EquipmentCategory' | 'JobType' | 'FailureCode' | 'RootCause' | 'MaintenanceCategory' | 'Section';
+  code: string;
+  name: string;
+  description?: string;
+  isActive: boolean;
+  metadata?: Record<string, any>;
+}
+
+export interface WorkflowRule {
+  id: string;
+  fromStatus: JobCardStatus;
+  toStatus: JobCardStatus;
+  requiredRole: string[];
+  requiresApproval: boolean;
+  canReturn: boolean;
+  mandatoryFields: string[];
+}
+
+export interface SystemSettings {
+  id: string;
+  authMethod: 'Local' | 'OIDC' | 'ActiveDirectory';
+  emailEnabled: boolean;
+  smsEnabled: boolean;
+  archiveRetentionMonths: number;
+  maintenanceWindow?: string;
+  brandingName: string;
+  allowedUploadTypes: string[];
+}
+
+export interface NotificationRule {
+  id: string;
+  status: JobCardStatus;
+  recipients: string[]; // Role names or 'RequestedBy'
+  channels: ('Email' | 'InApp' | 'SMS')[];
+  isEnabled: boolean;
 }
 
 export interface SpareOrdered {

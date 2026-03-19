@@ -7,7 +7,17 @@ CREATE TABLE IF NOT EXISTS users (
     password_hash TEXT NOT NULL,
     role TEXT NOT NULL,
     department TEXT,
+    email TEXT,
+    employee_id TEXT UNIQUE,
+    status TEXT DEFAULT 'Active',
+    last_login TIMESTAMP WITH TIME ZONE,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS system_config (
+    key TEXT PRIMARY KEY,
+    value JSONB NOT NULL,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE IF NOT EXISTS job_cards (
@@ -83,7 +93,7 @@ CREATE TABLE IF NOT EXISTS artisans (
 
 CREATE TABLE IF NOT EXISTS audit_logs (
     id TEXT PRIMARY KEY,
-    job_card_id TEXT NOT NULL,
+    job_card_id TEXT, -- NULL for system-wide events
     action TEXT NOT NULL,
     performed_by TEXT NOT NULL,
     details TEXT,

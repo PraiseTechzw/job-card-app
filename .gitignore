@@ -22,3 +22,6 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+autopilot.log
+.autopilot.pid
+.vscode/

@@ -75,15 +75,15 @@ export default function PreventiveMaintenancePlanning() {
           <div style={{ background: 'rgba(15,23,42,0.6)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 20, padding: 24 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
               <h3 style={{ fontSize: 12, fontWeight: 800, textTransform: 'uppercase', color: '#475569' }}>Active PM Schedules</h3>
-              <div style={{ position: 'relative', width: 200 }}>
-                <Search size={14} style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: '#64748b' }} />
+              <div className="search-container" style={{ width: 220 }}>
+                <Search size={14} className="search-icon" />
                 <input 
                   type="text" 
                   placeholder="Search schedules..." 
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="form-input" 
-                  style={{ paddingLeft: 30, fontSize: 12 }}
+                  className="search-input" 
+                  style={{ fontSize: 12 }}
                 />
               </div>
             </div>

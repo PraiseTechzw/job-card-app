@@ -1,0 +1,27 @@
+{
+  "debounceSeconds": 20,
+  "minSecondsBetweenCommits": 180,
+  "autoPush": true,
+  "blockedBranches": [],
+  "requireChecks": false,
+  "checks": [],
+  "commitMessageMode": "ai",
+  "ai": {
+    "enabled": true,
+    "provider": "grok",
+    "apiKey": "",
+    "grokApiKey": "",
+    "model": "grok-beta",
+    "interactive": true
+  },
+  "teamMode": false,
+  "pullBeforePush": true,
+  "conflictStrategy": "abort",
+  "maxUnpushedCommits": 5,
+  "preCommitChecks": {
+    "secrets": true,
+    "fileSize": true,
+    "lint": false,
+    "test": null
+  }
+}

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Search, Bell, Settings } from 'lucide-react';
+import { Search } from 'lucide-react';
 import styles from './Topbar.module.css';
 
 const Topbar: React.FC = () => {
@@ -15,13 +15,7 @@ const Topbar: React.FC = () => {
       </div>
 
       <div className={styles.actions}>
-        <button className={styles.actionBtn}>
-          <Bell size={20} />
-          <span className={styles.badge}>3</span>
-        </button>
-        <button className={styles.actionBtn}>
-          <Settings size={20} />
-        </button>
+        {/* Actions removed per user request */}
       </div>
     </header>
   );

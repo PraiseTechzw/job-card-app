@@ -404,6 +404,119 @@ app.patch('/api/assignments/:id', async (req, res) => {
   }
 });
 
+// --- ADMIN ENDPOINTS ---
+
+app.get('/api/admin/stats', async (req, res) => {
+  try {
+    const [usersCount, lockedCount, jobCount, auditCount] = await Promise.all([
+      query('SELECT COUNT(*) FROM users'),
+      query("SELECT COUNT(*) FROM users WHERE status = 'Locked'"),
+      query('SELECT COUNT(*) FROM job_cards'),
+      query("SELECT COUNT(*) FROM audit_logs WHERE action ILIKE '%Log%'")
+    ]);
+
+    const usersByRole = await query('SELECT role, COUNT(*) FROM users GROUP BY role');
+    const rolesObj = {};
+    usersByRole.rows.forEach(r => rolesObj[r.role] = parseInt(r.count));
+
+    res.json({
+      totalUsers: parseInt(usersCount.rows[0].count),
+      lockedUsers: parseInt(lockedCount.rows[0].count),
+      jobCards: parseInt(jobCount.rows[0].count),
+      auditLogs: parseInt(auditCount.rows[0].count),
+      rolesDistribution: rolesObj,
+      systemHealth: 'Healthy',
+      uptime: '99.98%' // Static as per current infra limit
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.get('/api/admin/users', async (req, res) => {
+  try {
+    const result = await query('SELECT id, name, username, role, department, email, employee_id, status, last_login, created_at FROM users ORDER BY created_at DESC');
+    res.json(toCamel(result.rows));
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post('/api/admin/users', async (req, res) => {
+  const { name, username, password, role, department, email, employeeId } = req.body;
+  const id = Math.random().toString(36).substr(2, 9);
+  try {
+    const hash = await bcrypt.hash(password || 'default123', 10);
+    const result = await query(
+      'INSERT INTO users (id, name, username, password_hash, role, department, email, employee_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id, name, username, role, department, email, employee_id, status',
+      [id, name, username, hash, role, department, email, employeeId]
+    );
+
+    // Record system-wide audit event
+    await query(
+      'INSERT INTO audit_logs (id, job_card_id, action, performed_by, details) VALUES ($1, $2, $3, $4, $5)',
+      [Math.random().toString(36).substr(2, 9), null, 'USER_CREATED', 'Admin', JSON.stringify({ name, username, role })]
+    );
+
+    res.status(201).json(toCamel(result.rows[0]));
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post('/api/admin/users/:id/status', async (req, res) => {
+  const { status } = req.body;
+  try {
+    const userRes = await query('SELECT name FROM users WHERE id = $1', [req.params.id]);
+    if (userRes.rows.length === 0) return res.status(404).json({ error: 'User not found' });
+
+    await query('UPDATE users SET status = $1 WHERE id = $2', [status, req.params.id]);
+
+    await query(
+      'INSERT INTO audit_logs (id, job_card_id, action, performed_by, details) VALUES ($1, $2, $3, $4, $5)',
+      [Math.random().toString(36).substr(2, 9), null, status === 'Active' ? 'USER_ACTIVATED' : 'USER_DEACTIVATED', 'Admin', JSON.stringify({ userId: req.params.id, userName: userRes.rows[0].name })]
+    );
+
+    res.json({ message: `Status updated to ${status}` });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.get('/api/admin/audit-logs', async (req, res) => {
+  const limit = parseInt(req.query.limit) || 50;
+  try {
+    const result = await query('SELECT * FROM audit_logs ORDER BY created_at DESC LIMIT $1', [limit]);
+    res.json(toCamel(result.rows));
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.get('/api/admin/config', async (req, res) => {
+  try {
+    const result = await query('SELECT * FROM system_config');
+    const config = {};
+    result.rows.forEach(r => config[r.key] = r.value);
+    res.json(config);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post('/api/admin/config', async (req, res) => {
+  const { key, value } = req.body;
+  try {
+    await query(
+      'INSERT INTO system_config (key, value, updated_at) VALUES ($1, $2, NOW()) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = NOW()',
+      [key, JSON.stringify(value)]
+    );
+    res.json({ message: 'Config updated' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 export default app;
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
