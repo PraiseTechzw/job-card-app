@@ -4,6 +4,8 @@ import pg from 'pg';
 const { Pool } = pg;
 import 'dotenv/config';
 import { fileURLToPath } from 'url';
+import { isValidTransition } from './workflow.js';
+import { createAuditLog } from './audit.js';
 
 const app = express();
 app.use(cors());
@@ -65,7 +67,8 @@ app.get('/api/job-cards/:id', async (req, res) => {
 });
 
 app.post('/api/job-cards', async (req, res) => {
-  const data = toSnake(req.body);
+  const { performedBy, ...dataBody } = req.body;
+  const data = toSnake(dataBody);
   const ticketNumber = `JC-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`;
   const id = Math.random().toString(36).substr(2, 9);
   
@@ -73,33 +76,96 @@ app.post('/api/job-cards', async (req, res) => {
   const values = [id, ticketNumber, ...Object.values(data)];
   const placeholders = values.map((_, i) => `$${i + 1}`).join(', ');
 
+  const client = await pool.connect();
   try {
-    const result = await query(
+    await client.query('BEGIN');
+    
+    const result = await client.query(
       `INSERT INTO job_cards (${fields.join(', ')}) VALUES (${placeholders}) RETURNING *`,
       values
     );
+    
+    // Record Audit Log
+    await createAuditLog(
+      client, 
+      id, 
+      'Initial Creation', 
+      performedBy || 'System', 
+      { ticketNumber }
+    );
+
+    await client.query('COMMIT');
     res.status(201).json(toCamel(result.rows[0]));
   } catch (err) {
+    await client.query('ROLLBACK');
     res.status(500).json({ error: err.message });
+  } finally {
+    client.release();
   }
 });
 
 app.patch('/api/job-cards/:id', async (req, res) => {
-  const updates = toSnake(req.body);
+  const { performedBy, ...updateData } = req.body;
+  const updates = toSnake(updateData);
   const fields = Object.keys(updates);
+  
   if (fields.length === 0) return res.status(400).json({ error: 'No fields to update' });
 
-  const setQuery = fields.map((f, i) => `${f} = $${i + 2}`).join(', ');
-  
+  const client = await pool.connect();
   try {
-    const result = await query(
+    await client.query('BEGIN');
+    
+    // 1. Fetch current job card to check status
+    const currentResult = await client.query('SELECT status FROM job_cards WHERE id = $1', [req.params.id]);
+    if (currentResult.rows.length === 0) {
+      await client.query('ROLLBACK');
+      return res.status(404).json({ error: 'Card not found' });
+    }
+    
+    const currentStatus = currentResult.rows[0].status;
+    const nextStatus = updates.status;
+    
+    // 2. Validate transition if status is being updated
+    if (nextStatus && nextStatus !== currentStatus) {
+      if (!isValidTransition(currentStatus, nextStatus)) {
+        await client.query('ROLLBACK');
+        return res.status(400).json({ 
+          error: `Invalid status transition from ${currentStatus} to ${nextStatus}` 
+        });
+      }
+    }
+
+    // 3. Perform update
+    const setQuery = fields.map((f, i) => `${f} = $${i + 2}`).join(', ');
+    const updateResult = await client.query(
       `UPDATE job_cards SET ${setQuery}, updated_at = NOW() WHERE id = $1 RETURNING *`,
       [req.params.id, ...Object.values(updates)]
     );
-    if (result.rows.length === 0) return res.status(404).json({ error: 'Card not found' });
-    res.json(toCamel(result.rows[0]));
+    
+    // 4. Record Audit Log
+    const action = nextStatus && nextStatus !== currentStatus ? 'Status Update' : 'Fields Update';
+    const auditDetails = {
+      fromStatus: currentStatus,
+      toStatus: nextStatus || currentStatus,
+      changedFields: fields
+    };
+    
+    await createAuditLog(
+      client, 
+      req.params.id, 
+      action, 
+      performedBy || 'System', 
+      auditDetails
+    );
+
+    await client.query('COMMIT');
+    res.json(toCamel(updateResult.rows[0]));
   } catch (err) {
+    await client.query('ROLLBACK');
+    console.error('Patch failed:', err);
     res.status(500).json({ error: err.message });
+  } finally {
+    client.release();
   }
 });
 

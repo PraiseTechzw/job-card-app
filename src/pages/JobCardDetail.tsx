@@ -44,22 +44,21 @@ const JobCardDetail: React.FC = () => {
         const updates = { 
           ...backData,
           status: newStatus, 
-          ...extraFields
+          ...extraFields,
+          performedBy: user?.name || 'Unknown'
         };
         await updateJobCard(card.id, updates);
-        await addAuditLog({
-          jobCardId: card.id,
-          action: actionLabel,
-          performedBy: user?.name || 'Unknown',
-          details: `Changed status to ${newStatus.replace('_', ' ')}`
-        });
+        
+        // Refresh local state
+        const updatedCard = getJobCard(card.id);
+        if (updatedCard) setCard(updatedCard);
         
         const freshLogs = await getAuditLogs(card.id);
         setHistory(freshLogs);
-        setCard({ ...card, ...updates });
         setIsEditingBack(false);
-      } catch (err) {
+      } catch (err: any) {
         console.error('Failed to update status:', err);
+        alert(err.response?.data?.error || 'Failed to update job card. Please check the workflow constraints.');
       }
     }
   };
