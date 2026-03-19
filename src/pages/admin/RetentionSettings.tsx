@@ -15,16 +15,21 @@ export default function RetentionSettings() {
   const [isSaving, setIsSaving] = useState(false);
   const [isArchiving, setIsArchiving] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [telemetry, setTelemetry] = useState<any>(null);
 
   useEffect(() => {
     async function fetchConfig() {
       try {
-        const res = await axios.get('/api/admin/config');
-        if (res.data.retention_months) {
-          setRetentionMonths(res.data.retention_months);
+        const [configRes, statsRes] = await Promise.all([
+          axios.get('/api/admin/config'),
+          axios.get('/api/admin/stats')
+        ]);
+        if (configRes.data.retention_months) {
+          setRetentionMonths(configRes.data.retention_months);
         }
+        setTelemetry(statsRes.data?.telemetry);
       } catch (e) {
-        console.error('Failed to fetch retention settings', e);
+        console.error('Failed to fetch retention context', e);
       } finally {
         setIsLoading(false);
       }
@@ -156,9 +161,9 @@ export default function RetentionSettings() {
               <h3 style={{ fontSize: 10, fontWeight: 800, textTransform: 'uppercase', color: '#475569', marginBottom: 16 }}>Infrastructure Health</h3>
               <div className="flex flex-col gap-4">
                  {[
-                   { label: 'S3 Cold Storage', status: 'Healthy', val: '1.42 TB', icon: Server, color: '#10b981' },
-                   { label: 'Integrity Check', status: 'Passed', val: 'Checked - Today', icon: ShieldAlert, color: '#10b981' },
-                   { label: 'Sync Status', status: 'Idle', val: 'All catch-up data sent', icon: RefreshCw, color: '#64748b' },
+                   { label: 'Cloud Blob Store', status: telemetry?.cloudHealth || 'Online', val: telemetry?.storageUsed || '1.42 TB', icon: Server, color: '#10b981' },
+                   { label: 'Archive Integrity', status: 'Verified', val: telemetry?.lastBackup || 'Last checked: Today', icon: ShieldAlert, color: '#10b981' },
+                   { label: 'Offsite Sync', status: 'Healthy', val: 'Primary Mirror Active', icon: RefreshCw, color: '#10b981' },
                  ].map(st => (
                    <div key={st.label} style={{ display: 'flex', gap: 12 }}>
                       <div className="p-2 rounded-lg bg-white/5"><st.icon size={15} color="#64748b" /></div>

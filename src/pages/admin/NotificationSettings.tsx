@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import {
-  Bell, ArrowLeft, Mail, MessageSquare, 
+  Bell, ArrowLeft, Mail, 
   Smartphone, Save, AlertTriangle, 
   Clock, History, RefreshCw
 } from 'lucide-react';
@@ -19,22 +19,26 @@ export default function NotificationSettings() {
   const [isSaving, setIsSaving] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [settings, setSettings] = useState<any>({});
+  const [telemetry, setTelemetry] = useState<any>(null);
 
   useEffect(() => {
     async function fetchConfig() {
       try {
-        const res = await axios.get('/api/admin/config');
-        if (res.data.notifications) {
-          setSettings(res.data.notifications);
+        const [configRes, statsRes] = await Promise.all([
+          axios.get('/api/admin/config'),
+          axios.get('/api/admin/stats')
+        ]);
+        if (configRes.data.notifications) {
+          setSettings(configRes.data.notifications);
         } else {
-          // Default init
           setSettings({
             'Job Submission': { email: true, inApp: true, sms: false, recipients: ['Supervisor', 'Admin'] },
             'Approval Pending': { email: true, inApp: true, sms: true, recipients: ['Supervisor', 'HOD'] }
           });
         }
+        setTelemetry(statsRes.data?.telemetry);
       } catch (e) {
-        console.error('Failed to fetch notification settings', e);
+        console.error('Failed to fetch notification context', e);
       } finally {
         setIsLoading(false);
       }
@@ -175,9 +179,9 @@ export default function NotificationSettings() {
               <h3 style={{ fontSize: 11, fontWeight: 800, textTransform: 'uppercase', color: '#475569', marginBottom: 16 }}>Provisioning Status</h3>
               <div className="flex flex-col gap-4">
                  {[
-                   { label: 'SMTP Connector', status: 'Online', icon: Mail, color: '#10b981' },
-                   { label: 'SMS Gateway (Twilio)', status: 'Online', icon: Smartphone, color: '#10b981' },
-                   { label: 'Push Hub', status: 'Online', icon: Bell, color: '#10b981' },
+                   { label: 'SMTP Connector', status: telemetry?.channelHealth?.email || 'Online', icon: Mail, color: '#10b981' },
+                   { label: 'SMS Gateway (Twilio)', status: telemetry?.channelHealth?.sms || 'Online', icon: Smartphone, color: '#10b981' },
+                   { label: 'Push Hub', status: telemetry?.channelHealth?.push || 'Online', icon: Bell, color: '#10b981' },
                  ].map(ch => (
                    <div key={ch.label} style={{ display: 'flex', gap: 12, alignItems: 'start' }}>
                       <div className="p-2 rounded-lg bg-white/5"><ch.icon size={15} color="#64748b" /></div>

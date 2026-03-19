@@ -71,9 +71,9 @@ export default function AdminDashboard() {
           <p className={styles['text-muted']}>Centralized configuration, security, and audit oversight.</p>
         </div>
         <div style={{ display: 'flex', gap: 10 }}>
-          <div style={{ background: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.2)', padding: '6px 14px', borderRadius: 8, display: 'flex', alignItems: 'center', gap: 8 }}>
-            <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#10b981' }} />
-            <span style={{ fontSize: 13, fontWeight: 700, color: '#10b981' }}>SYSTEM HEALTH: {stats?.systemHealth || 'STABLE'}</span>
+          <div style={{ background: stats?.systemHealth === 'Healthy' ? 'rgba(16,185,129,0.1)' : 'rgba(239,68,68,0.1)', border: `1px solid ${stats?.systemHealth === 'Healthy' ? 'rgba(16,185,129,0.2)' : 'rgba(239,68,68,0.2)'}`, padding: '6px 14px', borderRadius: 8, display: 'flex', alignItems: 'center', gap: 8 }}>
+            <div style={{ width: 8, height: 8, borderRadius: '50%', background: stats?.systemHealth === 'Healthy' ? '#10b981' : '#ef4444' }} />
+            <span style={{ fontSize: 13, fontWeight: 700, color: stats?.systemHealth === 'Healthy' ? '#10b981' : '#ef4444' }}>SYSTEM STATUS: {stats?.systemHealth || 'STABLE'}</span>
           </div>
         </div>
       </header>
@@ -209,13 +209,17 @@ export default function AdminDashboard() {
           </div>
 
           <div style={{ background: 'rgba(15,23,42,0.6)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: 16, padding: 20 }}>
-            <h3 style={{ fontSize: 11, fontWeight: 800, textTransform: 'uppercase', color: '#475569', marginBottom: 12 }}>Resource Usage</h3>
+            <h3 style={{ fontSize: 11, fontWeight: 800, textTransform: 'uppercase', color: '#475569', marginBottom: 12 }}>Infrastructure Resource Matrix</h3>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
-              <span style={{ fontSize: 11, color: '#94a3b8' }}>Database Storage</span>
-              <span style={{ fontSize: 11, color: '#e2e8f0' }}>1.2 GB / 50 GB</span>
+              <span style={{ fontSize: 11, color: '#94a3b8' }}>Forensic Storage</span>
+              <span style={{ fontSize: 11, color: '#e2e8f0' }}>{stats?.telemetry?.storageUsed || '1.2 GB'} / {stats?.telemetry?.storageLimit || '50 GB'}</span>
             </div>
             <div style={{ height: 6, background: 'rgba(255,255,255,0.05)', borderRadius: 3, overflow: 'hidden' }}>
-              <div style={{ width: '5%', height: '100%', background: '#6366f1' }} />
+              <div style={{ width: `${stats?.telemetry?.storagePercent || 5}%`, height: '100%', background: '#6366f1' }} />
+            </div>
+            <div style={{ marginTop: 12, display: 'flex', justifyContent: 'space-between' }}>
+               <span style={{ fontSize: 10, color: '#475569' }}>Avg Cloud Latency</span>
+               <span style={{ fontSize: 10, color: '#cbd5e1' }}>{stats?.telemetry?.avgResponseTime || '--'}</span>
             </div>
           </div>
         </div>

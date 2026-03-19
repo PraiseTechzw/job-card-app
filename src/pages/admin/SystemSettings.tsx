@@ -14,14 +14,19 @@ export default function SystemSettings() {
   const [activeTab, setActiveTab] = useState('General');
   const [isLoading, setIsLoading] = useState(true);
   const [config, setConfig] = useState<any>({});
+  const [telemetry, setTelemetry] = useState<any>(null);
 
   useEffect(() => {
     async function fetchConfig() {
       try {
-        const res = await axios.get('/api/admin/config');
-        setConfig(res.data);
+        const [configRes, statsRes] = await Promise.all([
+          axios.get('/api/admin/config'),
+          axios.get('/api/admin/stats')
+        ]);
+        setConfig(configRes.data);
+        setTelemetry(statsRes.data?.telemetry);
       } catch (e) {
-        console.error('Failed to fetch system settings', e);
+        console.error('Failed to fetch system context', e);
       } finally {
         setIsLoading(false);
       }
@@ -173,7 +178,7 @@ export default function SystemSettings() {
                      <label style={{ fontSize: 11, fontWeight: 800, color: '#475569', textTransform: 'uppercase', marginBottom: 8, display: 'block' }}>Gateway API Endpoint</label>
                      <div className="flex flex-col md:flex-row gap-4">
                         <input type="text" className="form-input" style={{ background: 'rgba(9,11,18,0.7)', flex: 1 }} defaultValue="https://mms-sync.africa.corp/node/v2" />
-                        <button className="btn btn-ghost" style={{ background: 'rgba(255,255,255,0.04)', px: 20 }}>Refetch Token</button>
+                        <button className="btn btn-ghost" style={{ background: 'rgba(255,255,255,0.04)', padding: '0 20px' }}>Refetch Token</button>
                      </div>
                   </div>
 
@@ -197,16 +202,16 @@ export default function SystemSettings() {
              <h3 style={{ fontSize: 11, fontWeight: 800, textTransform: 'uppercase', color: '#475569', marginBottom: 20 }}>Infrastructure Telemetry</h3>
              <div className="grid grid-cols-3 gap-6">
                 <div>
-                   <div style={{ fontSize: 10, color: '#475569', marginBottom: 4 }}>API NODE UPTIME</div>
-                   <div style={{ fontSize: 20, fontWeight: 800, color: '#10b981' }}>99.98%</div>
+                   <div style={{ fontSize: 10, color: '#475569', marginBottom: 4 }}>MAIN NODE UPTIME</div>
+                   <div style={{ fontSize: 20, fontWeight: 800, color: '#10b981' }}>{telemetry?.databaseUptime || '100%'}</div>
                 </div>
                 <div>
-                   <div style={{ fontSize: 10, color: '#475569', marginBottom: 4 }}>P95 LATENCY</div>
-                   <div style={{ fontSize: 20, fontWeight: 800, color: '#e2e8f0' }}>42ms</div>
+                   <div style={{ fontSize: 10, color: '#475569', marginBottom: 4 }}>AVG LATENCY</div>
+                   <div style={{ fontSize: 20, fontWeight: 800, color: '#e2e8f0' }}>{telemetry?.avgResponseTime || '--'}</div>
                 </div>
                 <div>
-                   <div style={{ fontSize: 10, color: '#475569', marginBottom: 4 }}>BACKUP INTEGRITY</div>
-                   <div style={{ fontSize: 20, fontWeight: 800, color: '#10b981' }}>STABLE</div>
+                   <div style={{ fontSize: 10, color: '#475569', marginBottom: 4 }}>BACKUP HEALTH</div>
+                   <div style={{ fontSize: 20, fontWeight: 800, color: '#10b981' }}>{telemetry?.lastBackup ? 'SYNCED' : 'PENDING'}</div>
                 </div>
              </div>
           </div>
