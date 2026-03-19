@@ -21,7 +21,7 @@ async function fixDatabase() {
     if (err.message.includes('already exists')) {
       console.log('Columns already exist!');
     } else {
-      console.error('❌ Failed to update schema:', err.message);
+      console.error('❌ Failed to update schema:', err);
     }
   } finally {
     await pool.end();

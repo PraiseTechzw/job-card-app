@@ -35,9 +35,14 @@ export const ALLOWED_JOB_CARD_FIELDS = [
   'sparesOrdered',
   'sparesWithdrawn',
   // Sign-off Fields
+  'approvedBySupervisor',
+  'approvedByHOD',
+  'registrationPlanning',
+  'originatorSignOff',
   'originatorComment',
   'originatorSignOffDate',
   'originatorSignOffTime',
+  'closedBy',
   'closureComment',
   'closedByDate',
   'closedByTime'
