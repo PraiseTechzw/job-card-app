@@ -11,6 +11,7 @@ import {
 import styles from './Dashboard.module.css';
 import { useAuth } from '../context/AuthContext';
 import { useJobCards } from '../context/JobCardContext';
+import SEO from '../components/SEO';
 
 const Dashboard: React.FC = () => {
   const { jobCards } = useJobCards();
@@ -18,13 +19,28 @@ const Dashboard: React.FC = () => {
 
   // Role-based landing page redirects
   if (user?.role === 'Artisan') {
-    return <Navigate to="/artisan/dashboard" replace />;
+    return (
+      <>
+        <SEO title="Artisan Dashboard" />
+        <Navigate to="/artisan/dashboard" replace />
+      </>
+    );
   }
   if (user?.role === 'Supervisor' || user?.role === 'EngSupervisor') {
-    return <Navigate to="/supervisor/dashboard" replace />;
+    return (
+      <>
+        <SEO title="Supervisor Dashboard" />
+        <Navigate to="/supervisor/dashboard" replace />
+      </>
+    );
   }
   if (user?.role === 'Initiator') {
-    return <Navigate to="/initiator/dashboard" replace />;
+    return (
+      <>
+        <SEO title="Initiator Dashboard" />
+        <Navigate to="/initiator/dashboard" replace />
+      </>
+    );
   }
 
   const stats = [
@@ -74,6 +90,7 @@ const Dashboard: React.FC = () => {
 
   return (
     <div className={styles.container}>
+      <SEO title="Plant Dashboard" />
       <div className={styles.header}>
         <div>
           <h1 className={styles.title}>Plant Overview</h1>

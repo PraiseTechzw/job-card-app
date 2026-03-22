@@ -33,6 +33,7 @@ const getPriorityBadgeClass = (priority: JobCard['priority']) => {
 };
 
 import { Search } from 'lucide-react';
+import SEO from '../components/SEO';
 
 const JobCards: React.FC = () => {
   const { jobCards: cards } = useJobCards();
@@ -68,6 +69,7 @@ const JobCards: React.FC = () => {
 
   return (
     <div className={styles.pageContainer}>
+      <SEO title="Job Card Register" description="View and manage all maintenance job cards and requests." />
       <div className={styles.tableHeader}>
         <div>
           <h1 className={styles.pageTitle}>Job Card Register</h1>

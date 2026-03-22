@@ -4,6 +4,7 @@ import { Search, Clock, Play, CheckCircle2, FileText, AlertCircle } from 'lucide
 import { useJobCards } from '../../context/JobCardContext';
 import { useAuth } from '../../context/AuthContext';
 import styles from '../JobCards.module.css';
+import SEO from '../../components/SEO';
 
 const ArtisanDashboard: React.FC = () => {
   const { jobCards, updateJobCard } = useJobCards();
@@ -80,6 +81,7 @@ const ArtisanDashboard: React.FC = () => {
 
   return (
     <div className={styles.pageContainer}>
+      <SEO title="Artisan Dashboard" description="Manage your assigned maintenance tasks and work execution." />
       <header className={styles.tableHeader}>
         <div>
           <h1 className={styles.pageTitle} style={{ fontSize: '2rem' }}>Artisan Dashboard</h1>

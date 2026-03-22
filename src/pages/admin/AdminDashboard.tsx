@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import styles from '../JobCards.module.css';
+import SEO from '../../components/SEO';
 
 export default function AdminDashboard() {
   const { user } = useAuth();
@@ -60,6 +61,7 @@ export default function AdminDashboard() {
 
   return (
     <div className={styles.pageContainer}>
+      <SEO title="System Governance Console" description="Administrative console for system configuration and security management." />
       <header className="flex flex-col md:flex-row items-center justify-between gap-6 mb-8 text-center md:text-left">
         <div className="w-full md:w-auto flex flex-col items-center md:items-start gap-2">
           <h1 className={styles.pageTitle} style={{ display: 'flex', alignItems: 'center', gap: 10, justifyContent: 'center' }}>

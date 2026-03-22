@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { LogIn, Key, User, Loader2, HardHat } from 'lucide-react';
 import styles from './Login.module.css';
+import SEO from '../components/SEO';
 
 const Login: React.FC = () => {
   const [username, setUsername] = useState('');
@@ -29,12 +30,13 @@ const Login: React.FC = () => {
 
   return (
     <div className={styles.container}>
+      <SEO title="Login" description="Sign in to the Mega Pak Zimbabwe Job Card Management System." />
       <div className={styles.glassPanel}>
         <div className={styles.header}>
           <div className={styles.iconWrapper}>
             <HardHat size={32} className="text-blue-400" />
           </div>
-          <h1 className={styles.title}>Job Card Manager</h1>
+          <h1 className={styles.title}>Mega Pak Zimbabwe</h1>
           <p className={styles.subtitle}>Sign in to access maintenance portal</p>
         </div>
 
