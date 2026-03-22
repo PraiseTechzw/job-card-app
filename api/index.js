@@ -9,7 +9,16 @@ import { isValidTransition } from './workflow.js';
 import { createAuditLog } from './audit.js';
 import { sanitizeJobCardData } from './validation.js';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'fallback-secret';
+if (!process.env.DATABASE_URL) {
+  console.error('CRITICAL: DATABASE_URL environment variable is missing.');
+  process.exit(1);
+}
+if (!process.env.JWT_SECRET) {
+  console.error('CRITICAL: JWT_SECRET environment variable is missing.');
+  process.exit(1);
+}
+
+const JWT_SECRET = process.env.JWT_SECRET;
 
 const app = express();
 app.use(cors());
@@ -26,6 +35,29 @@ pool.on('error', (err) => {
 
 // Replacement query function that uses the secure WebSocket driver
 const query = (text, params) => pool.query(text, params);
+
+// --- AUTH MIDDLEWARE ---
+const authenticateToken = (req, res, next) => {
+  const authHeader = req.headers['authorization'];
+  const token = authHeader && authHeader.split(' ')[1];
+
+  if (!token) return res.status(401).json({ error: 'Authentication required' });
+
+  jwt.verify(token, JWT_SECRET, (err, user) => {
+    if (err) return res.status(403).json({ error: 'Invalid or expired token' });
+    req.user = user;
+    next();
+  });
+};
+
+const authorizeRoles = (...roles) => {
+  return (req, res, next) => {
+    if (!req.user || !roles.includes(req.user.role)) {
+      return res.status(403).json({ error: 'Access denied: insufficient permissions' });
+    }
+    next();
+  };
+};
 
 app.get('/api/health', async (req, res) => {
   try {
@@ -105,7 +137,7 @@ app.post('/api/auth/login', async (req, res) => {
   }
 });
 
-app.get('/api/users', async (req, res) => {
+app.get('/api/users', authenticateToken, async (req, res) => {
   const { role } = req.query;
   try {
     let result;
@@ -125,7 +157,7 @@ app.get('/api/users', async (req, res) => {
 
 // --- JOB CARDS ENDPOINTS ---
 
-app.get('/api/job-cards', async (req, res) => {
+app.get('/api/job-cards', authenticateToken, async (req, res) => {
   try {
     const result = await query('SELECT * FROM job_cards ORDER BY created_at DESC');
     res.json(toCamel(result.rows));
@@ -135,7 +167,7 @@ app.get('/api/job-cards', async (req, res) => {
   }
 });
 
-app.get('/api/job-cards/:id', async (req, res) => {
+app.get('/api/job-cards/:id', authenticateToken, async (req, res) => {
   try {
     const result = await query('SELECT * FROM job_cards WHERE id = $1', [req.params.id]);
     if (result.rows.length === 0) return res.status(404).json({ error: 'Not found' });
@@ -145,7 +177,7 @@ app.get('/api/job-cards/:id', async (req, res) => {
   }
 });
 
-app.post('/api/job-cards', async (req, res) => {
+app.post('/api/job-cards', authenticateToken, async (req, res) => {
   const { performedBy, ...dataBody } = req.body;
   const sanitizedData = sanitizeJobCardData(dataBody);
   const data = toSnake(sanitizedData);
@@ -163,11 +195,8 @@ app.post('/api/job-cards', async (req, res) => {
       values
     );
     
-    // Record Audit Log (using query directly)
-    await query(
-      'INSERT INTO audit_logs (id, job_card_id, action, performed_by, details) VALUES ($1, $2, $3, $4, $5)',
-      [Math.random().toString(36).substr(2, 9), id, 'Initial Creation', performedBy || 'System', JSON.stringify({ ticketNumber })]
-    );
+    // Record Audit Log
+    await createAuditLog(pool, id, 'Initial Creation', performedBy || req.user?.name || 'System', { ticketNumber });
 
     res.status(201).json(toCamel(result.rows[0]));
   } catch (err) {
@@ -176,8 +205,9 @@ app.post('/api/job-cards', async (req, res) => {
   }
 });
 
-app.patch('/api/job-cards/:id', async (req, res) => {
-  const { performedBy, userRole, ...updateData } = req.body;
+app.patch('/api/job-cards/:id', authenticateToken, async (req, res) => {
+  const { performedBy, ...updateData } = req.body;
+  const userRole = req.user.role;
   const sanitizedUpdate = sanitizeJobCardData(updateData);
   const updates = toSnake(sanitizedUpdate);
   const fields = Object.keys(updates);
@@ -211,7 +241,7 @@ app.patch('/api/job-cards/:id', async (req, res) => {
       [req.params.id, ...updateValues]
     );
     
-    // 4. Record Audit Log (using query directly)
+    // 4. Record Audit Log
     if (updateResult.rows.length > 0) {
       const action = nextStatus && nextStatus !== currentStatus ? 'Status Update' : 'Fields Update';
       const auditDetails = {
@@ -220,10 +250,7 @@ app.patch('/api/job-cards/:id', async (req, res) => {
         changedFields: fields
       };
       
-      await query(
-        'INSERT INTO audit_logs (id, job_card_id, action, performed_by, details) VALUES ($1, $2, $3, $4, $5)',
-        [Math.random().toString(36).substr(2, 9), req.params.id, action, performedBy || 'System', JSON.stringify(auditDetails)]
-      );
+      await createAuditLog(pool, req.params.id, action, performedBy || req.user?.name || 'System', auditDetails);
     }
 
     res.json(toCamel(updateResult.rows[0]));
@@ -235,7 +262,7 @@ app.patch('/api/job-cards/:id', async (req, res) => {
 
 // --- ALLOCATION SHEETS ENDPOINTS ---
 
-app.get('/api/allocation-sheets', async (req, res) => {
+app.get('/api/allocation-sheets', authenticateToken, async (req, res) => {
   try {
     const sheetsResult = await query('SELECT * FROM allocation_sheets ORDER BY date DESC, created_at DESC');
     const sheets = toCamel(sheetsResult.rows);
@@ -256,7 +283,7 @@ app.get('/api/allocation-sheets', async (req, res) => {
   }
 });
 
-app.post('/api/allocation-sheets', async (req, res) => {
+app.post('/api/allocation-sheets', authenticateToken, authorizeRoles('Supervisor', 'Admin'), async (req, res) => {
   const { supervisor, section, date, rows } = req.body;
   const sheetId = Math.random().toString(36).substr(2, 9);
   
@@ -280,6 +307,8 @@ app.post('/api/allocation-sheets', async (req, res) => {
       }
     }
     
+    await createAuditLog(pool, null, 'ALLOCATION_SHEET_CREATED', req.user?.name || 'System', { sheetId, supervisor, section, date, rowCount: insertedRows.length });
+
     res.status(201).json({ 
       id: sheetId, 
       supervisor, 
@@ -293,7 +322,7 @@ app.post('/api/allocation-sheets', async (req, res) => {
   }
 });
 
-app.patch('/api/allocation-sheets/:id', async (req, res) => {
+app.patch('/api/allocation-sheets/:id', authenticateToken, authorizeRoles('Supervisor', 'Admin'), async (req, res) => {
   const { supervisor, section, date, rows } = req.body;
   const sheetId = req.params.id;
   
@@ -319,6 +348,8 @@ app.patch('/api/allocation-sheets/:id', async (req, res) => {
       }
     }
     
+    await createAuditLog(pool, null, 'ALLOCATION_SHEET_UPDATED', req.user?.name || 'System', { sheetId, supervisor, section, date, rowCount: insertedRows.length });
+
     res.json({ id: sheetId, supervisor, section, date, rows: insertedRows });
   } catch (err) {
     console.error('Allocation update failed:', err);
@@ -326,9 +357,10 @@ app.patch('/api/allocation-sheets/:id', async (req, res) => {
   }
 });
 
-app.delete('/api/allocation-sheets/:id', async (req, res) => {
+app.delete('/api/allocation-sheets/:id', authenticateToken, authorizeRoles('Supervisor', 'Admin'), async (req, res) => {
   try {
     await query('DELETE FROM allocation_sheets WHERE id = $1', [req.params.id]);
+    await createAuditLog(pool, null, 'ALLOCATION_SHEET_DELETED', req.user?.name || 'System', { sheetId: req.params.id });
     res.status(204).send();
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -337,7 +369,7 @@ app.delete('/api/allocation-sheets/:id', async (req, res) => {
 
 // --- AUDIT LOGS ENDPOINTS ---
 
-app.get('/api/audit-logs/:jobCardId', async (req, res) => {
+app.get('/api/audit-logs/:jobCardId', authenticateToken, async (req, res) => {
   try {
     const result = await query(
       'SELECT * FROM audit_logs WHERE job_card_id = $1 ORDER BY created_at DESC',
@@ -349,7 +381,7 @@ app.get('/api/audit-logs/:jobCardId', async (req, res) => {
   }
 });
 
-app.post('/api/audit-logs', async (req, res) => {
+app.post('/api/audit-logs', authenticateToken, async (req, res) => {
   const data = toSnake(req.body);
   const id = Math.random().toString(36).substr(2, 9);
   const fields = ['id', ...Object.keys(data)];
@@ -369,7 +401,7 @@ app.post('/api/audit-logs', async (req, res) => {
 
 // --- ASSIGNMENTS ENDPOINTS ---
 
-app.get('/api/assignments', async (req, res) => {
+app.get('/api/assignments', authenticateToken, async (req, res) => {
   try {
     const result = await query('SELECT * FROM assignments ORDER BY created_at DESC');
     res.json(toCamel(result.rows));
@@ -378,7 +410,7 @@ app.get('/api/assignments', async (req, res) => {
   }
 });
 
-app.get('/api/assignments/:jobCardId', async (req, res) => {
+app.get('/api/assignments/:jobCardId', authenticateToken, async (req, res) => {
   try {
     const result = await query('SELECT * FROM assignments WHERE job_card_id = $1', [req.params.jobCardId]);
     res.json(toCamel(result.rows));
@@ -387,7 +419,7 @@ app.get('/api/assignments/:jobCardId', async (req, res) => {
   }
 });
 
-app.post('/api/assignments', async (req, res) => {
+app.post('/api/assignments', authenticateToken, authorizeRoles('EngSupervisor', 'Admin'), async (req, res) => {
   const data = toSnake(req.body);
   const id = Math.random().toString(36).substr(2, 9);
   const fields = ['id', ...Object.keys(data)];
@@ -405,7 +437,7 @@ app.post('/api/assignments', async (req, res) => {
   }
 });
 
-app.patch('/api/assignments/:id', async (req, res) => {
+app.patch('/api/assignments/:id', authenticateToken, authorizeRoles('EngSupervisor', 'Admin'), async (req, res) => {
   const updates = toSnake(req.body);
   const fields = Object.keys(updates);
   if (fields.length === 0) return res.status(400).json({ error: 'No fields to update' });
@@ -417,7 +449,9 @@ app.patch('/api/assignments/:id', async (req, res) => {
       [req.params.id, ...Object.values(updates)]
     );
     if (result.rows.length === 0) return res.status(404).json({ error: 'Assignment not found' });
-    res.json(toCamel(result.rows[0]));
+    const resultData = toCamel(result.rows[0]);
+    await createAuditLog(pool, resultData.jobCardId, 'ASSIGNMENT_UPDATED', req.user?.name || 'System', { assignmentId: req.params.id, updates: fields });
+    res.json(resultData);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -425,7 +459,7 @@ app.patch('/api/assignments/:id', async (req, res) => {
 
 // --- ADMIN ENDPOINTS ---
 
-app.get('/api/admin/stats', async (req, res) => {
+app.get('/api/admin/stats', authenticateToken, authorizeRoles('Admin'), async (req, res) => {
   try {
     const [usersCount, lockedCount, jobCount, auditCount] = await Promise.all([
       query('SELECT COUNT(*) FROM users'),
@@ -467,7 +501,7 @@ app.get('/api/admin/stats', async (req, res) => {
   }
 });
 
-app.get('/api/admin/users', async (req, res) => {
+app.get('/api/admin/users', authenticateToken, authorizeRoles('Admin'), async (req, res) => {
   try {
     const result = await query('SELECT id, name, username, role, department, email, employee_id, status, last_login, created_at FROM users ORDER BY created_at DESC');
     res.json(toCamel(result.rows));
@@ -476,7 +510,7 @@ app.get('/api/admin/users', async (req, res) => {
   }
 });
 
-app.post('/api/admin/users', async (req, res) => {
+app.post('/api/admin/users', authenticateToken, authorizeRoles('Admin'), async (req, res) => {
   const { name, username, password, role, department, email, employeeId } = req.body;
   const id = Math.random().toString(36).substr(2, 9);
   try {
@@ -487,10 +521,7 @@ app.post('/api/admin/users', async (req, res) => {
     );
 
     // Record system-wide audit event
-    await query(
-      'INSERT INTO audit_logs (id, job_card_id, action, performed_by, details) VALUES ($1, $2, $3, $4, $5)',
-      [Math.random().toString(36).substr(2, 9), null, 'USER_CREATED', 'Admin', JSON.stringify({ name, username, role })]
-    );
+    await createAuditLog(pool, null, 'USER_CREATED', req.user?.name || 'Admin', { name, username, role });
 
     res.status(201).json(toCamel(result.rows[0]));
   } catch (err) {
@@ -498,7 +529,7 @@ app.post('/api/admin/users', async (req, res) => {
   }
 });
 
-app.post('/api/admin/users/:id/status', async (req, res) => {
+app.post('/api/admin/users/:id/status', authenticateToken, authorizeRoles('Admin'), async (req, res) => {
   const { status } = req.body;
   try {
     const userRes = await query('SELECT name FROM users WHERE id = $1', [req.params.id]);
@@ -506,9 +537,12 @@ app.post('/api/admin/users/:id/status', async (req, res) => {
 
     await query('UPDATE users SET status = $1 WHERE id = $2', [status, req.params.id]);
 
-    await query(
-      'INSERT INTO audit_logs (id, job_card_id, action, performed_by, details) VALUES ($1, $2, $3, $4, $5)',
-      [Math.random().toString(36).substr(2, 9), null, status === 'Active' ? 'USER_ACTIVATED' : 'USER_DEACTIVATED', 'Admin', JSON.stringify({ userId: req.params.id, userName: userRes.rows[0].name })]
+    await createAuditLog(
+      pool,
+      null,
+      status === 'Active' ? 'USER_ACTIVATED' : 'USER_DEACTIVATED',
+      req.user?.name || 'Admin',
+      { userId: req.params.id, userName: userRes.rows[0].name }
     );
 
     res.json({ message: `Status updated to ${status}` });
@@ -517,7 +551,7 @@ app.post('/api/admin/users/:id/status', async (req, res) => {
   }
 });
 
-app.get('/api/admin/audit-logs', async (req, res) => {
+app.get('/api/admin/audit-logs', authenticateToken, authorizeRoles('Admin'), async (req, res) => {
   const limit = parseInt(req.query.limit) || 50;
   try {
     const result = await query('SELECT * FROM audit_logs ORDER BY created_at DESC LIMIT $1', [limit]);
@@ -527,7 +561,7 @@ app.get('/api/admin/audit-logs', async (req, res) => {
   }
 });
 
-app.get('/api/admin/config', async (req, res) => {
+app.get('/api/admin/config', authenticateToken, authorizeRoles('Admin'), async (req, res) => {
   try {
     const result = await query('SELECT * FROM system_config');
     const config = {};
@@ -538,13 +572,14 @@ app.get('/api/admin/config', async (req, res) => {
   }
 });
 
-app.post('/api/admin/config', async (req, res) => {
+app.post('/api/admin/config', authenticateToken, authorizeRoles('Admin'), async (req, res) => {
   const { key, value } = req.body;
   try {
     await query(
       'INSERT INTO system_config (key, value, updated_at) VALUES ($1, $2, NOW()) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = NOW()',
       [key, JSON.stringify(value)]
     );
+    await createAuditLog(pool, null, 'SYSTEM_CONFIG_UPDATED', req.user?.name || 'Admin', { key });
     res.json({ message: 'Config updated' });
   } catch (err) {
     res.status(500).json({ error: err.message });
