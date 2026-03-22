@@ -35,11 +35,12 @@ const ArtisanDashboard: React.FC = () => {
   const filteredJobs = useMemo(() => {
     return myJobs.filter(card => {
       // Search matches
+      const search = searchTerm.toLowerCase();
       const matchesSearch = 
-        card.ticketNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        card.plantNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        card.plantDescription.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        card.workRequest?.toLowerCase().includes(searchTerm.toLowerCase());
+        (card.ticketNumber || '').toLowerCase().includes(search) ||
+        (card.plantNumber || '').toLowerCase().includes(search) ||
+        (card.plantDescription || '').toLowerCase().includes(search) ||
+        (card.workRequest || '').toLowerCase().includes(search);
 
       if (!matchesSearch) return false;
 

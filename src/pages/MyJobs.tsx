@@ -12,12 +12,16 @@ const MyJobs: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
 
   // Filtering for jobs assigned specifically to this user
-  const myAssignedJobs = jobCards.filter(card => 
-    (card.issuedTo?.toLowerCase() === user?.name?.toLowerCase()) &&
-    ['Assigned', 'InProgress', 'Awaiting_SignOff'].includes(card.status) &&
-    (card.ticketNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
-     card.plantDescription.toLowerCase().includes(searchTerm.toLowerCase()))
-  );
+  const myAssignedJobs = jobCards.filter(card => {
+    const search = searchTerm.toLowerCase();
+    const isTargetStatus = ['Assigned', 'InProgress', 'Awaiting_SignOff'].includes(card.status);
+    const isIssuedToMe = card.issuedTo?.toLowerCase() === user?.name?.toLowerCase();
+    const matchesSearch = 
+      (card.ticketNumber || '').toLowerCase().includes(search) ||
+      (card.plantDescription || '').toLowerCase().includes(search);
+    
+    return isTargetStatus && isIssuedToMe && matchesSearch;
+  });
 
   const handleStatusUpdate = async (id: string, newStatus: 'InProgress' | 'Awaiting_SignOff') => {
     try {
