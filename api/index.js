@@ -37,6 +37,10 @@ pool.on('error', (err) => {
 // Replacement query function that uses the secure WebSocket driver
 const query = (text, params) => pool.query(text, params);
 
+// Auto-migrate to ensure phone column exists for SMS functionality
+query('ALTER TABLE users ADD COLUMN IF NOT EXISTS phone VARCHAR(20)').catch(() => {});
+
+
 // --- AUTH MIDDLEWARE ---
 const authenticateToken = (req, res, next) => {
   const authHeader = req.headers['authorization'];
@@ -199,6 +203,15 @@ app.post('/api/job-cards', authenticateToken, async (req, res) => {
     // Record Audit Log
     await createAuditLog(pool, id, 'Initial Creation', performedBy || req.user?.name || 'System', { ticketNumber });
 
+    // SMS Notification for new active Jobs
+    if (data.status && data.status !== 'Draft') {
+        query('SELECT phone FROM users WHERE role = $1 AND phone IS NOT NULL', ['Supervisor'])
+          .then(res => {
+            const phones = res.rows.map(r => r.phone).filter(Boolean);
+            phones.forEach(p => sendSms(p, `Megapak: New Job ${ticketNumber} requires your approval.`).catch(()=>{}));
+          }).catch(console.error);
+    }
+
     res.status(201).json(toCamel(result.rows[0]));
   } catch (err) {
     console.error('Create failed:', err);
@@ -253,18 +266,71 @@ app.patch('/api/job-cards/:id', authenticateToken, async (req, res) => {
       
       await createAuditLog(pool, req.params.id, action, performedBy || req.user?.name || 'System', auditDetails);
       
-      // 5. Send SMS Notification for Assignments
+      // 5. Send SMS Notifications covering the entire pipeline
       const updatedJob = updateResult.rows[0];
-      if (nextStatus === 'Assigned' && currentStatus !== 'Assigned' && updatedJob.issued_to) {
+      if (nextStatus && nextStatus !== currentStatus) {
         try {
-          const artisanRes = await query('SELECT phone FROM artisans WHERE name = $1', [updatedJob.issued_to]);
-          if (artisanRes.rows.length > 0 && artisanRes.rows[0].phone) {
-            const msg = `Megapak Job Assigned: ${updatedJob.ticket_number} - ${updatedJob.plant_description}. Priority: ${updatedJob.priority}. Login to portal to view.`;
-            // Fire async without awaiting so we don't block the request response
-            sendSms(artisanRes.rows[0].phone, msg).catch(e => console.error('[SMS Async] Error:', e));
+          const notify = async (phones, msg) => {
+             for (const p of phones) {
+                 if(p) await sendSms(p, msg).catch(() => {});
+             }
+          };
+
+          const getPhonesByRole = async (role) => {
+             const res = await query('SELECT phone FROM users WHERE role = $1 AND phone IS NOT NULL', [role]);
+             return res.rows.map(r => r.phone);
+          };
+
+          const ticketInfo = `${updatedJob.ticket_number} - ${updatedJob.plant_description}`;
+
+          switch (nextStatus) {
+            case 'Pending_Supervisor': {
+              const phones = await getPhonesByRole('Supervisor');
+              notify(phones, `Megapak: New Job ${ticketInfo} requires your approval.`);
+              break;
+            }
+            case 'Approved': {
+              const phones = await getPhonesByRole('PlanningOffice');
+              notify(phones, `Megapak: Job ${ticketInfo} approved. Proceed to planning and classification.`);
+              break;
+            }
+            case 'Registered': {
+              const phones = await getPhonesByRole('EngSupervisor');
+              notify(phones, `Megapak: Job ${ticketInfo} registered. Ready for artisan assignment.`);
+              break;
+            }
+            case 'Assigned': {
+              if (updatedJob.issued_to) {
+                 const res1 = await query('SELECT phone FROM artisans WHERE name = $1 UNION SELECT phone FROM users WHERE name = $1', [updatedJob.issued_to]);
+                 const artisanPhones = res1.rows.map(r => r.phone).filter(Boolean);
+                 notify(artisanPhones, `Megapak: Job Assigned. ${ticketInfo}. Priority: ${updatedJob.priority}. Login to portal.`);
+              }
+              break;
+            }
+            case 'InProgress': {
+              if (updatedJob.requested_by) {
+                 const res = await query('SELECT phone FROM users WHERE name = $1', [updatedJob.requested_by]);
+                 notify(res.rows.map(r => r.phone).filter(Boolean), `Megapak: Work has started on your request ${ticketInfo}.`);
+              }
+              break;
+            }
+            case 'Awaiting_SignOff': {
+              if (updatedJob.requested_by) {
+                 const res = await query('SELECT phone FROM users WHERE name = $1', [updatedJob.requested_by]);
+                 notify(res.rows.map(r => r.phone).filter(Boolean), `Megapak: Job ${ticketInfo} completed automatically. Please log in to review and sign off.`);
+              }
+              break;
+            }
+            case 'SignedOff': {
+              if (updatedJob.issued_to) {
+                 const res1 = await query('SELECT phone FROM artisans WHERE name = $1 UNION SELECT phone FROM users WHERE name = $1', [updatedJob.issued_to]);
+                 notify(res1.rows.map(r => r.phone).filter(Boolean), `Megapak: Job ${ticketInfo} has been officially signed off by the initiator. Good job!`);
+              }
+              break;
+            }
           }
         } catch(e) {
-          console.error('[SMS] Query failed:', e);
+          console.error('[SMS] Notification dispatcher failed:', e);
         }
       }
     }
@@ -519,7 +585,7 @@ app.get('/api/admin/stats', authenticateToken, authorizeRoles('Admin'), async (r
 
 app.get('/api/admin/users', authenticateToken, authorizeRoles('Admin'), async (req, res) => {
   try {
-    const result = await query('SELECT id, name, username, role, department, email, employee_id, status, last_login, created_at FROM users ORDER BY created_at DESC');
+    const result = await query('SELECT id, name, username, role, department, email, phone, employee_id, status, last_login, created_at FROM users ORDER BY created_at DESC');
     res.json(toCamel(result.rows));
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -527,14 +593,25 @@ app.get('/api/admin/users', authenticateToken, authorizeRoles('Admin'), async (r
 });
 
 app.post('/api/admin/users', authenticateToken, authorizeRoles('Admin'), async (req, res) => {
-  const { name, username, password, role, department, email, employeeId } = req.body;
+  const { name, username, password, role, department, email, employeeId, phone } = req.body;
   const id = Math.random().toString(36).substr(2, 9);
   try {
     const hash = await bcrypt.hash(password || 'default123', 10);
     const result = await query(
-      'INSERT INTO users (id, name, username, password_hash, role, department, email, employee_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id, name, username, role, department, email, employee_id, status',
-      [id, name, username, hash, role, department, email, employeeId]
+      'INSERT INTO users (id, name, username, password_hash, role, department, email, employee_id, phone) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING id, name, username, role, department, email, employee_id, phone, status',
+      [id, name, username, hash, role, department, email, employeeId, phone]
     );
+
+    if (role === 'Artisan') {
+      try {
+        await query(
+          'INSERT INTO artisans (id, name, phone, trade, status) VALUES ($1, $2, $3, $4, $5)',
+          [id, name, phone || '', department || 'General', 'Active']
+        );
+      } catch (artisansErr) {
+        console.error('Artisan insert failed:', artisansErr.message);
+      }
+    }
 
     // Record system-wide audit event
     await createAuditLog(pool, null, 'USER_CREATED', req.user?.name || 'Admin', { name, username, role });

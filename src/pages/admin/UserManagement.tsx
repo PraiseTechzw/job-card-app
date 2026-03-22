@@ -25,6 +25,7 @@ export default function UserManagement() {
     name: '',
     username: '',
     email: '',
+    phone: '',
     employeeId: '',
     role: 'Artisan',
     department: 'Mechanical',
@@ -82,7 +83,7 @@ export default function UserManagement() {
     try {
       await axios.post('/api/admin/users', newUser);
       setShowCreateModal(false);
-      setNewUser({ name: '', username: '', email: '', employeeId: '', role: 'Artisan', department: 'Mechanical', password: '' });
+      setNewUser({ name: '', username: '', email: '', phone: '', employeeId: '', role: 'Artisan', department: 'Mechanical', password: '' });
       setNotification({ type: 'success', message: 'User created successfully.' });
       fetchUsers();
     } catch (e: any) {
@@ -186,7 +187,7 @@ export default function UserManagement() {
                       </div>
                       <div>
                         <div style={{ fontWeight: 700, color: '#f1f5f9', fontSize: 13 }}>{u.name}</div>
-                        <div style={{ fontSize: 11, color: '#475569' }}>{u.employeeId} · {u.email}</div>
+                        <div style={{ fontSize: 11, color: '#475569' }}>{u.employeeId} · {u.email} {u.phone && `· ${u.phone}`}</div>
                       </div>
                     </div>
                   </td>
@@ -248,50 +249,58 @@ export default function UserManagement() {
         </div>
       </div>
 
-      {/* Create User Modal */}
       {showCreateModal && (
-        <div className="modal-overlay">
-          <div className="modal-content glass-panel" style={{ maxWidth: 500, width: '90%' }}>
-            <div className="modal-header">
-              <h2 className="modal-title flex items-center gap-3">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
+          <div className="bg-slate-900 border border-white/10 rounded-2xl shadow-2xl relative w-full overflow-hidden" style={{ maxWidth: 600 }}>
+            <div className="flex items-center justify-between p-6 border-b border-white/10 bg-slate-900/50">
+              <h2 className="text-xl font-bold flex items-center gap-3 text-white">
                 <UserPlus size={20} color="#6366f1" /> Provision New Account
               </h2>
-              <button className="modal-close" onClick={() => setShowCreateModal(false)}><X size={20} /></button>
+              <button className="text-slate-400 hover:text-white transition" onClick={() => setShowCreateModal(false)}>
+                <X size={20} />
+              </button>
             </div>
-            <form onSubmit={handleCreateUser} className="modal-body flex flex-col gap-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="form-group">
-                  <label>Full Name</label>
-                  <input required className="form-input" value={newUser.name} onChange={e => setNewUser({...newUser, name: e.target.value})} />
+            <form onSubmit={handleCreateUser} className="p-6 flex flex-col gap-5">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                <div className="flex flex-col gap-1">
+                  <label className="text-xs uppercase font-bold text-slate-400">Full Name</label>
+                  <input required className="form-input bg-slate-800/50 w-full" value={newUser.name} onChange={e => setNewUser({...newUser, name: e.target.value})} />
                 </div>
-                <div className="form-group">
-                  <label>Employee ID</label>
-                  <input required className="form-input" value={newUser.employeeId} onChange={e => setNewUser({...newUser, employeeId: e.target.value})} />
+                <div className="flex flex-col gap-1">
+                  <label className="text-xs uppercase font-bold text-slate-400">Employee ID</label>
+                  <input required className="form-input bg-slate-800/50 w-full" value={newUser.employeeId} onChange={e => setNewUser({...newUser, employeeId: e.target.value})} />
                 </div>
               </div>
-              <div className="form-group">
-                <label>System Username</label>
-                <input required className="form-input" value={newUser.username} onChange={e => setNewUser({...newUser, username: e.target.value})} />
+              <div className="flex flex-col gap-1">
+                <label className="text-xs uppercase font-bold text-slate-400">System Username</label>
+                <input required className="form-input bg-slate-800/50 w-full" value={newUser.username} onChange={e => setNewUser({...newUser, username: e.target.value})} />
               </div>
-              <div className="form-group">
-                <label>Professional Email</label>
-                <input required type="email" className="form-input" value={newUser.email} onChange={e => setNewUser({...newUser, email: e.target.value})} />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                <div className="flex flex-col gap-1">
+                  <label className="text-xs uppercase font-bold text-slate-400">Professional Email</label>
+                  <input required type="email" className="form-input bg-slate-800/50 w-full" value={newUser.email} onChange={e => setNewUser({...newUser, email: e.target.value})} />
+                </div>
+                <div className="flex flex-col gap-1">
+                  <label className="text-xs uppercase font-bold text-slate-400">Phone / SMS Target</label>
+                  <input required type="tel" className="form-input bg-slate-800/50 w-full" placeholder="+26377000000" value={newUser.phone} onChange={e => setNewUser({...newUser, phone: e.target.value})} />
+                </div>
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="form-group">
-                  <label>Access Role</label>
-                  <select required className="form-select" value={newUser.role} onChange={e => setNewUser({...newUser, role: e.target.value})}>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                <div className="flex flex-col gap-1">
+                  <label className="text-xs uppercase font-bold text-slate-400">Access Role</label>
+                  <select required className="form-select bg-slate-800/50 w-full" value={newUser.role} onChange={e => setNewUser({...newUser, role: e.target.value})}>
                     <option value="Admin">Admin</option>
                     <option value="Supervisor">Supervisor</option>
+                    <option value="EngSupervisor">Engineering Supervisor</option>
                     <option value="Artisan">Artisan</option>
                     <option value="Initiator">Initiator</option>
-                    <option value="Planner">Planner</option>
+                    <option value="PlanningOffice">Planning Office</option>
                     <option value="HOD">HOD</option>
                   </select>
                 </div>
-                <div className="form-group">
-                  <label>Department</label>
-                  <select required className="form-select" value={newUser.department} onChange={e => setNewUser({...newUser, department: e.target.value})}>
+                <div className="flex flex-col gap-1">
+                  <label className="text-xs uppercase font-bold text-slate-400">Department</label>
+                  <select required className="form-select bg-slate-800/50 w-full" value={newUser.department} onChange={e => setNewUser({...newUser, department: e.target.value})}>
                     <option value="Mechanical">Mechanical</option>
                     <option value="Electrical">Electrical</option>
                     <option value="Production">Production</option>
@@ -300,11 +309,11 @@ export default function UserManagement() {
                   </select>
                 </div>
               </div>
-              <div className="form-group">
-                <label>Temporary Password</label>
-                <input required type="password" placeholder="System default is 'default123'" className="form-input" value={newUser.password} onChange={e => setNewUser({...newUser, password: e.target.value})} />
+              <div className="flex flex-col gap-1">
+                <label className="text-xs uppercase font-bold text-slate-400">Temporary Password</label>
+                <input required type="password" placeholder="System default is 'default123'" className="form-input bg-slate-800/50 w-full" value={newUser.password} onChange={e => setNewUser({...newUser, password: e.target.value})} />
               </div>
-              <div className="modal-footer" style={{ marginTop: 10 }}>
+              <div className="flex justify-end gap-3 mt-4 pt-4 border-t border-white/5">
                 <button type="button" className="btn btn-ghost" onClick={() => setShowCreateModal(false)}>Cancel</button>
                 <button type="submit" className="btn btn-primary">Create User Profile</button>
               </div>
