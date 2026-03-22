@@ -2,7 +2,7 @@ import { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import {
-  FileText, ArrowLeft, Search, Filter, 
+  FileText, ArrowLeft, Search, 
   Download, Info, ShieldCheck,
   ChevronRight, RefreshCw
 } from 'lucide-react';

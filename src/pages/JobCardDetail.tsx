@@ -3,7 +3,7 @@ import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import type { JobCard, JobCardStatus } from '../types';
 import { useJobCards } from '../context/JobCardContext';
 import { useAuth } from '../context/AuthContext';
-import { Printer, Edit3, ArrowLeft, CheckCircle, Save, ShieldCheck, UserCheck, Play, CheckCircle2, History, ClipboardList, Zap, Calendar, Wrench, FileText, User, Settings, Component, UserPlus, AlertTriangle } from 'lucide-react';
+import { Printer, Edit3, ArrowLeft, Save, ShieldCheck, UserCheck, Play, CheckCircle2, History, ClipboardList, Zap, Wrench, FileText, User, Settings, Component, AlertTriangle } from 'lucide-react';
 import WorkflowTracker from '../components/WorkflowTracker';
 import JobCardBackForm from '../components/JobCardBackForm';
 import AuditTimeline from '../components/AuditTimeline';
@@ -96,7 +96,6 @@ const JobCardDetail: React.FC = () => {
   } as Record<string, string>;
   const pc = priorityColors[card.priority] || 'var(--default)';
 
-  const totalCost = (card.sparesWithdrawn || []).reduce((s, sw) => s + (parseFloat(sw.cost) || 0), 0);
 
   return (
     <div className={styles.pageContainer}>

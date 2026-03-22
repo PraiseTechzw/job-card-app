@@ -4,13 +4,12 @@ import axios from 'axios';
 import {
   Users, UserPlus, Search, Filter,
   ShieldCheck, AlertTriangle, CheckCircle2,
-  Lock, Unlock, Edit2, LogOut, ArrowLeft, X, RefreshCw
+  Unlock, Edit2, LogOut, ArrowLeft, X, RefreshCw
 } from 'lucide-react';
-import { useAuth } from '../../context/AuthContext';
+// import { useAuth } from '../../context/AuthContext';
 import styles from '../JobCards.module.css';
 
 export default function UserManagement() {
-  const { user: currentUser } = useAuth();
   const navigate = useNavigate();
   
   const [users, setUsers] = useState<any[]>([]);

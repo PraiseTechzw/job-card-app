@@ -3,8 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import {
   RefreshCw, ArrowLeft, ShieldCheck, 
-  ArrowRight, Settings, Save, MessageSquare, 
-  AlertTriangle, CheckCircle2, XCircle
+  ArrowRight, Save, MessageSquare
 } from 'lucide-react';
 import styles from '../JobCards.module.css';
 
