@@ -79,11 +79,11 @@ export function isValidTransition(currentStatus, nextStatus, userRole) {
   const transitionKey = `${currentStatus}->${nextStatus}`;
   const requiredRoles = ROLE_REQUIREMENTS[transitionKey] || ROLE_REQUIREMENTS['ANY->' + nextStatus];
   
-  if (requiredRoles && userRole) {
+  if (requiredRoles) {
+    if (!userRole) return false;
     return requiredRoles.includes(userRole);
   }
   
-  // If no specific role defined but transition is within allowed list, allow it for now
-  // (This handles legacy transitions or internal system updates if any)
+  // If no specific role defined but transition is within allowed list, allow it for all
   return true;
 }
