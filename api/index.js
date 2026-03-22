@@ -92,7 +92,9 @@ const toSnake = (obj) => {
   if (!obj || typeof obj !== 'object') return obj;
   const newObj = {};
   for (const key in obj) {
-    const snakeKey = key.replace(/[A-Z]/g, (letter) => `_${letter.toLowerCase()}`);
+    let snakeKey = key.replace(/[A-Z]/g, (letter) => `_${letter.toLowerCase()}`);
+    // Fix specific acronym casing issues 
+    snakeKey = snakeKey.replace(/_h_o_d/g, '_hod');
     newObj[snakeKey] = obj[key];
   }
   return newObj;
@@ -203,13 +205,18 @@ app.post('/api/job-cards', authenticateToken, async (req, res) => {
     // Record Audit Log
     await createAuditLog(pool, id, 'Initial Creation', performedBy || req.user?.name || 'System', { ticketNumber });
 
-    // SMS Notification for new active Jobs
     if (data.status && data.status !== 'Draft') {
+        const ticketInfo = `[${ticketNumber}] (${data.plant_description || 'General Asset'})`;
+        console.log(`[SMS DEBUG POST] New job created. Querying phones for Supervisors...`);
         query('SELECT phone FROM users WHERE role = $1 AND phone IS NOT NULL', ['Supervisor'])
           .then(res => {
-            const phones = res.rows.map(r => r.phone).filter(Boolean);
-            phones.forEach(p => sendSms(p, `Megapak: New Job ${ticketNumber} requires your approval.`).catch(()=>{}));
-          }).catch(console.error);
+            const phones = [...new Set(res.rows.map(r => r.phone).filter(Boolean))];
+            console.log(`[SMS DEBUG POST] Supervisors found:`, phones);
+            phones.forEach(p => {
+               console.log(`[SMS DEBUG POST] Sending to ${p}...`);
+               sendSms(p, `Megapak Notification: Critical Job Request ${ticketInfo} has been officially recorded and awaits your immediate supervisor review.`).catch(e => console.error(`[SMS DEBUG POST] Failed sending to ${p}:`, e));
+             });
+          }).catch(err => console.error(`[SMS DEBUG POST] Failed querying supervisor phones:`, err));
     }
 
     res.status(201).json(toCamel(result.rows[0]));
@@ -271,8 +278,17 @@ app.patch('/api/job-cards/:id', authenticateToken, async (req, res) => {
       if (nextStatus && nextStatus !== currentStatus) {
         try {
           const notify = async (phones, msg) => {
-             for (const p of phones) {
-                 if(p) await sendSms(p, msg).catch(() => {});
+             console.log(`[SMS DEBUG PATCH] Attempting notify to broad list:`, phones);
+             const uniquePhones = [...new Set(phones)].filter(Boolean);
+             if (uniquePhones.length === 0) {
+                 console.log(`[SMS DEBUG PATCH] Notification aborted - No valid target phones mapped.`);
+                 return;
+             }
+             for (const p of uniquePhones) {
+                 console.log(`[SMS DEBUG PATCH] Dispatch target: ${p} | Message: ${msg}`);
+                 await sendSms(p, msg).catch((err) => {
+                     console.error(`[SMS DEBUG PATCH] Dispatch failure to ${p}:`, err);
+                 });
              }
           };
 
@@ -281,51 +297,63 @@ app.patch('/api/job-cards/:id', authenticateToken, async (req, res) => {
              return res.rows.map(r => r.phone);
           };
 
-          const ticketInfo = `${updatedJob.ticket_number} - ${updatedJob.plant_description}`;
+          const getPhonesByName = async (name) => {
+             if (!name) return [];
+             const res = await query('SELECT phone FROM users WHERE name = $1 UNION SELECT phone FROM artisans WHERE name = $1', [name]);
+             return res.rows.map(r => r.phone);
+          }
+
+          const ticketInfo = `[${updatedJob.ticket_number}] (${updatedJob.plant_description})`;
 
           switch (nextStatus) {
             case 'Pending_Supervisor': {
               const phones = await getPhonesByRole('Supervisor');
-              notify(phones, `Megapak: New Job ${ticketInfo} requires your approval.`);
+              notify(phones, `Megapak Notification: Job Request ${ticketInfo} has been submitted by ${updatedJob.requested_by || 'an initiator'} and awaits your official approval.`);
+              break;
+            }
+            case 'Pending_HOD': {
+              const phones = await getPhonesByRole('HOD');
+              notify(phones, `Megapak Notification: Critical Job Request ${ticketInfo} has been flagged for mandatory Department Head endorsement. Please review via the portal.`);
               break;
             }
             case 'Approved': {
               const phones = await getPhonesByRole('PlanningOffice');
-              notify(phones, `Megapak: Job ${ticketInfo} approved. Proceed to planning and classification.`);
+              notify(phones, `Megapak Notification: Job Request ${ticketInfo} has been formally approved. Please proceed with system registration and technical planning.`);
               break;
             }
             case 'Registered': {
               const phones = await getPhonesByRole('EngSupervisor');
-              notify(phones, `Megapak: Job ${ticketInfo} registered. Ready for artisan assignment.`);
+              notify(phones, `Megapak Notification: Technical Planning for Job ${ticketInfo} is now complete. It is fully ready for Artisan allocation.`);
               break;
             }
             case 'Assigned': {
-              if (updatedJob.issued_to) {
-                 const res1 = await query('SELECT phone FROM artisans WHERE name = $1 UNION SELECT phone FROM users WHERE name = $1', [updatedJob.issued_to]);
-                 const artisanPhones = res1.rows.map(r => r.phone).filter(Boolean);
-                 notify(artisanPhones, `Megapak: Job Assigned. ${ticketInfo}. Priority: ${updatedJob.priority}. Login to portal.`);
-              }
+              const artisanPhones = await getPhonesByName(updatedJob.issued_to);
+              notify(artisanPhones, `Megapak Action Required: You have been officially assigned to execute Job ${ticketInfo} with ${updatedJob.priority?.toUpperCase() || 'NORMAL'} priority. Please check the engineering portal.`);
               break;
             }
             case 'InProgress': {
-              if (updatedJob.requested_by) {
-                 const res = await query('SELECT phone FROM users WHERE name = $1', [updatedJob.requested_by]);
-                 notify(res.rows.map(r => r.phone).filter(Boolean), `Megapak: Work has started on your request ${ticketInfo}.`);
-              }
+              const initiatorPhones = await getPhonesByName(updatedJob.requested_by);
+              notify(initiatorPhones, `Megapak Update: Work has officially commenced on your Job Request ${ticketInfo}. Our technical team is actively handling the defect.`);
               break;
             }
             case 'Awaiting_SignOff': {
-              if (updatedJob.requested_by) {
-                 const res = await query('SELECT phone FROM users WHERE name = $1', [updatedJob.requested_by]);
-                 notify(res.rows.map(r => r.phone).filter(Boolean), `Megapak: Job ${ticketInfo} completed automatically. Please log in to review and sign off.`);
-              }
+              const initiatorPhones = await getPhonesByName(updatedJob.requested_by);
+              notify(initiatorPhones, `Megapak Action Required: The assigned artisan has completed Job ${ticketInfo}. Please log into the portal to review and officially Sign Off on the work quality.`);
               break;
             }
             case 'SignedOff': {
-              if (updatedJob.issued_to) {
-                 const res1 = await query('SELECT phone FROM artisans WHERE name = $1 UNION SELECT phone FROM users WHERE name = $1', [updatedJob.issued_to]);
-                 notify(res1.rows.map(r => r.phone).filter(Boolean), `Megapak: Job ${ticketInfo} has been officially signed off by the initiator. Good job!`);
-              }
+              const artisanPhones = await getPhonesByName(updatedJob.issued_to);
+              notify(artisanPhones, `Megapak Update: Job ${ticketInfo} has been successfully validated and signed off by the Originator. Thank you for your service.`);
+              break;
+            }
+            case 'Closed': {
+              const initiatorPhones = await getPhonesByName(updatedJob.requested_by);
+              notify(initiatorPhones, `Megapak Update: Your Job Request ${ticketInfo} has essentially been resolved, formally approved, and officially ARCHIVED (Closed) by the Supervisor.`);
+              break;
+            }
+            case 'Rejected': {
+              const initiatorPhones = await getPhonesByName(updatedJob.requested_by);
+              notify(initiatorPhones, `Megapak Alert: Unfortunately, your Job Request ${ticketInfo} has been REJECTED. Please check the portal comments for further instructions.`);
               break;
             }
           }
@@ -605,11 +633,20 @@ app.post('/api/admin/users', authenticateToken, authorizeRoles('Admin'), async (
     if (role === 'Artisan') {
       try {
         await query(
-          'INSERT INTO artisans (id, name, phone, trade, status) VALUES ($1, $2, $3, $4, $5)',
-          [id, name, phone || '', department || 'General', 'Active']
+          'INSERT INTO artisans (name, phone, trade, status) VALUES ($1, $2, $3, $4)',
+          [name, phone || '', department || 'General', 'Active']
         );
       } catch (artisansErr) {
         console.error('Artisan insert failed:', artisansErr.message);
+        // Fallback if ID is strongly typed as string and required
+        try {
+          await query(
+            'INSERT INTO artisans (id, name, phone, trade, status) VALUES ($1, $2, $3, $4, $5)',
+            [id, name, phone || '', department || 'General', 'Active']
+          );
+        } catch (fallbackErr) {
+           console.error('Artisan fallback insert also failed:', fallbackErr.message);
+        }
       }
     }
 
