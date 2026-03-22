@@ -72,7 +72,9 @@ export const JobCardProvider: React.FC<{ children: React.ReactNode }> = ({ child
       const res = await axios.patch(`${API_BASE}/job-cards/${id}`, updates);
       setJobCards(prev => prev.map(card => card.id === id ? res.data : card));
     } catch (err) {
-      setJobCards(prev => prev.map(card => card.id === id ? { ...card, ...updates } : card));
+      console.error('[JobCardContext] updateJobCard explicitly failed:', err);
+      // Do NOT silently merge broken requests into local memory. Throw it beautifully!
+      throw err;
     }
   };
 
