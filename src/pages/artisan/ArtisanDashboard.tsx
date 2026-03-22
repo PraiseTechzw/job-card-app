@@ -90,7 +90,7 @@ const ArtisanDashboard: React.FC = () => {
       </header>
 
       {/* Stats Summary */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         {[
           { label: 'Assigned', val: dashboardStats.assigned, color: 'text-slate-300', icon: FileText },
           { label: 'In Progress', val: dashboardStats.inProgress, color: 'text-amber-400', icon: Clock },
@@ -194,7 +194,7 @@ const ArtisanDashboard: React.FC = () => {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-3 mt-auto">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-auto">
                 <button 
                   onClick={() => navigate(`/artisan/job-details/${card.id}`)}
                   className="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-sm font-bold flex items-center justify-center gap-2 border border-white/10 transition-all col-span-2 sm:col-span-1"

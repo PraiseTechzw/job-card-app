@@ -24,6 +24,7 @@
   margin-bottom: 6px;
   background: linear-gradient(135deg, #fff 0%, #94a3b8 100%);
   -webkit-background-clip: text;
+  background-clip: text;
   -webkit-text-fill-color: transparent;
 }
 
@@ -407,4 +408,79 @@
 .jobCard:hover .jobCardBtn {
   background: #2563eb;
   color: #fff;
+}
+
+@media (max-width: 1024px) {
+  .container {
+    padding: 24px;
+    gap: 24px;
+  }
+  
+  .chartsGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .container {
+    padding: 16px;
+  }
+  
+  .header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+  }
+  
+  .headerActions {
+    width: 100%;
+  }
+  
+  .headerActions button {
+    width: 100%;
+    justify-content: center;
+  }
+  
+  .statsGrid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+  }
+  
+  .statCard {
+    padding: 16px;
+  }
+  
+  .statIconWrapper {
+    width: 40px;
+    height: 40px;
+    padding: 8px;
+  }
+  
+  .statValue {
+    font-size: 1.5rem;
+  }
+  
+  .mainChart, .sidePanel {
+    padding: 20px;
+  }
+  
+  .chartHeader {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+  }
+}
+
+@media (max-width: 480px) {
+  .statsGrid {
+    grid-template-columns: 1fr;
+  }
+  
+  .title {
+    font-size: 1.5rem;
+  }
+  
+  .linksGrid {
+    grid-template-columns: 1fr;
+  }
 }

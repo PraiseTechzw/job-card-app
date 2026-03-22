@@ -102,7 +102,7 @@ const ArtisanJobDetail: React.FC = () => {
               Plant Details
             </h3>
 
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               <div>
                 <span className="text-slate-500 text-xs font-bold uppercase tracking-wider block mb-1">Plant Number</span>
                 <p className="text-slate-200 font-bold">{job.plantNumber}</p>
@@ -182,7 +182,7 @@ const ArtisanJobDetail: React.FC = () => {
       </div>
 
       {/* Floating Action Bar */}
-      <div className="fixed bottom-0 left-0 right-0 md:left-64 p-4 lg:p-6 bg-slate-900/90 backdrop-blur-md border-t border-white/10 flex justify-end gap-4 z-50">
+      <div className="fixed bottom-0 left-0 right-0 lg:left-[280px] p-4 lg:p-6 bg-slate-900/90 backdrop-blur-md border-t border-white/10 flex justify-end gap-4 z-50">
         <button 
           onClick={() => navigate('/artisan/dashboard')}
           className="px-6 py-3 rounded-xl bg-slate-800 text-white font-bold hover:bg-slate-700 transition"

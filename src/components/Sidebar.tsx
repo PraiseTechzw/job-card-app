@@ -1,7 +1,7 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
 import { 
-  LayoutDashboard, ClipboardList, PenTool, CheckSquare, LogOut, 
+  LayoutDashboard, ClipboardList, CheckSquare, LogOut, 
   FileText, ShieldCheck, Clock, UserPlus, History, Wrench,
   Activity, TrendingUp, FilePlus, Archive, Database, BarChart2,
   Settings
@@ -93,7 +93,7 @@ const Sidebar: React.FC<SidebarProps> = ({ onClose }) => {
     { 
       to: '/sign-offs', 
       label: 'Sign-off Queue', 
-      icon: PenTool, 
+      icon: CheckSquare, 
       roles: ['Initiator', 'Admin'] 
     },
     
@@ -248,7 +248,7 @@ const Sidebar: React.FC<SidebarProps> = ({ onClose }) => {
     <aside className={styles.sidebar}>
       <div className={styles.brand}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <PenTool className={styles.logoIcon} size={28} />
+          <img src="http://www.megapak.co.zw/wp-content/uploads/2021/04/WhatsApp-Image-2021-04-14-at-12.07.24-1.jpeg" alt="Mega Pak Logo" style={{ height: 32, width: 'auto', borderRadius: 4 }} />
           <span className={styles.brandText}>Job Card System</span>
         </div>
         {onClose && (

@@ -4,6 +4,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import styles from './JobCards.module.css';
 import type { JobCard } from '../types';
 import { useJobCards } from '../context/JobCardContext';
+import { useAuth } from '../context/AuthContext';
 
 const getStatusBadgeClass = (status: JobCard['status']) => {
   switch (status) {
@@ -37,6 +38,7 @@ import SEO from '../components/SEO';
 
 const JobCards: React.FC = () => {
   const { jobCards: cards } = useJobCards();
+  const { user } = useAuth();
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = React.useState<string>('');
   const [statusFilter, setStatusFilter] = React.useState<string>('All');
@@ -53,6 +55,10 @@ const JobCards: React.FC = () => {
       card.plantNumber?.toLowerCase().includes(s) ||
       card.plantDescription?.toLowerCase().includes(s) ||
       card.issuedTo?.toLowerCase().includes(s);
+
+    if (user?.role === 'Artisan' && card.issuedTo?.toLowerCase() !== user?.name?.toLowerCase()) {
+      return false;
+    }
 
     const statusMatch = statusFilter === 'All' || card.status === statusFilter;
     const priorityMatch = priorityFilter === 'All' || card.priority === priorityFilter;
@@ -72,17 +78,19 @@ const JobCards: React.FC = () => {
       <SEO title="Job Card Register" description="View and manage all maintenance job cards and requests." />
       <div className={styles.tableHeader}>
         <div>
-          <h1 className={styles.pageTitle}>Job Card Register</h1>
-          <p className="text-muted">Manage and track all maintenance requests.</p>
+          <h1 className={styles.pageTitle}>{user?.role === 'Artisan' ? 'My Active Jobs' : 'Job Card Register'}</h1>
+          <p className="text-muted">{user?.role === 'Artisan' ? 'Manage your assigned maintenance tasks.' : 'Manage and track all maintenance requests.'}</p>
         </div>
         <div className="flex gap-2">
-          <Link to="/job-cards/new" className="btn btn-primary" style={{ textDecoration: 'none' }}>
-            <Plus size={18} /> New Job Card
-          </Link>
+          {user?.role !== 'Artisan' && (
+            <Link to="/job-cards/new" className="btn btn-primary" style={{ textDecoration: 'none' }}>
+              <Plus size={18} /> New Job Card
+            </Link>
+          )}
         </div>
       </div>
 
-      <div className={styles.filtersGlass} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem', marginBottom: '1.5rem', padding: '1.5rem', borderRadius: '12px', background: 'rgba(30, 41, 59, 0.5)', border: '1px solid rgba(255,255,255,0.1)' }}>
+      <div className={`${styles.filtersGlass} grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4`}>
         <div className="search-container">
           <Search size={16} className="search-icon" />
           <input 
@@ -102,15 +110,26 @@ const JobCards: React.FC = () => {
             className="form-select"
           >
             <option value="All">All Statuses</option>
-            <option value="Draft">Draft</option>
-            <option value="Pending_Supervisor">Pending Approval</option>
-            <option value="Approved">Approved</option>
-            <option value="Registered">Registered</option>
-            <option value="Assigned">Assigned</option>
-            <option value="InProgress">In Progress</option>
-            <option value="Awaiting_SignOff">Awaiting Sign-off</option>
-            <option value="SignedOff">Signed Off</option>
-            <option value="Closed">Closed</option>
+            {user?.role === 'Artisan' ? (
+              <>
+                <option value="Assigned">Assigned</option>
+                <option value="InProgress">In Progress</option>
+                <option value="Awaiting_SignOff">Awaiting Sign-off</option>
+                <option value="SignedOff">Completed / Signed Off</option>
+              </>
+            ) : (
+              <>
+                <option value="Draft">Draft</option>
+                <option value="Pending_Supervisor">Pending Approval</option>
+                <option value="Approved">Approved</option>
+                <option value="Registered">Registered</option>
+                <option value="Assigned">Assigned</option>
+                <option value="InProgress">In Progress</option>
+                <option value="Awaiting_SignOff">Awaiting Sign-off</option>
+                <option value="SignedOff">Signed Off</option>
+                <option value="Closed">Closed</option>
+              </>
+            )}
           </select>
         </div>
 
@@ -129,38 +148,43 @@ const JobCards: React.FC = () => {
           </select>
         </div>
 
-        <div className="flex flex-col gap-1">
-          <label className="text-[10px] uppercase font-bold text-slate-500 ml-1">Section</label>
-          <select 
-            value={sectionFilter} 
-            onChange={(e) => setSectionFilter(e.target.value)}
-            className="form-select"
-          >
-            <option value="All">All Sections</option>
-            <option value="Fitting">Fitting</option>
-            <option value="Electrical">Electrical</option>
-            <option value="Tooling">Tooling</option>
-            <option value="InstAndControl">Inst & Control</option>
-            <option value="MachineShop">Machine Shop</option>
-          </select>
-        </div>
+        {user?.role !== 'Artisan' && (
+          <div className="flex flex-col gap-1">
+            <label className="text-[10px] uppercase font-bold text-slate-500 ml-1">Section</label>
+            <select 
+              value={sectionFilter} 
+              onChange={(e) => setSectionFilter(e.target.value)}
+              className="form-select"
+            >
+              <option value="All">All Sections</option>
+              <option value="Fitting">Fitting</option>
+              <option value="Electrical">Electrical</option>
+              <option value="Tooling">Tooling</option>
+              <option value="InstAndControl">Inst & Control</option>
+              <option value="MachineShop">Machine Shop</option>
+            </select>
+          </div>
+        )}
 
-        <div className="flex flex-col gap-1">
-          <label className="text-[10px] uppercase font-bold text-slate-500 ml-1">Date Range</label>
-          <div className="flex gap-2">
+        <div className="flex flex-col lg:flex-row gap-2 lg:gap-1">
+          <div className="flex flex-col w-full">
+            <label className="text-[10px] uppercase font-bold text-slate-500 ml-1 mb-1">From</label>
             <input 
               type="date" 
               value={dateFrom}
               onChange={(e) => setDateFrom(e.target.value)}
-              className="form-input"
-              style={{ padding: '0.5rem' }}
+              className="form-input w-full"
+              style={{ padding: '0.6rem 0.75rem' }}
             />
+          </div>
+          <div className="flex flex-col w-full">
+            <label className="text-[10px] uppercase font-bold text-slate-500 ml-1 mb-1">To</label>
             <input 
               type="date" 
               value={dateTo}
               onChange={(e) => setDateTo(e.target.value)}
-              className="form-input"
-              style={{ padding: '0.5rem' }}
+              className="form-input w-full"
+              style={{ padding: '0.6rem 0.75rem' }}
             />
           </div>
         </div>

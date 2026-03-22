@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { LogIn, Key, User, Loader2, HardHat } from 'lucide-react';
+import { LogIn, Key, User, Loader2 } from 'lucide-react';
 import styles from './Login.module.css';
 import SEO from '../components/SEO';
 
@@ -33,10 +33,14 @@ const Login: React.FC = () => {
       <SEO title="Login" description="Sign in to the Mega Pak Zimbabwe Job Card Management System." />
       <div className={styles.glassPanel}>
         <div className={styles.header}>
-          <div className={styles.iconWrapper}>
-            <HardHat size={32} className="text-blue-400" />
+          <div className={styles.logoWrapper}>
+            <img 
+              src="http://www.megapak.co.zw/wp-content/uploads/2021/04/WhatsApp-Image-2021-04-14-at-12.07.24-1.jpeg" 
+              alt="Mega Pak Logo" 
+              className={styles.logo}
+              style={{ width: '100%', height: 'auto', borderRadius: '8px', marginBottom: '16px' }}
+            />
           </div>
-          <h1 className={styles.title}>Mega Pak Zimbabwe</h1>
           <p className={styles.subtitle}>Sign in to access maintenance portal</p>
         </div>
 

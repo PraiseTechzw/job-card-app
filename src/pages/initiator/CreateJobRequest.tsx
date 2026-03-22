@@ -259,7 +259,7 @@ export default function CreateJobRequest() {
         <div style={panelStyle}>
           <StepHeader n={1} title="Your Details & Priority" subtitle="Tell us who is raising this request and how urgent it is." />
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4" style={{ marginBottom: 16 }}>
             <div>
               <Label text="Requested By" required />
               <input className="form-input" value={form.requestedBy} onChange={e => f('requestedBy', e.target.value)} placeholder="Your full name" />
@@ -321,7 +321,7 @@ export default function CreateJobRequest() {
         <div style={panelStyle}>
           <StepHeader n={2} title="Plant & Asset Information" subtitle="Identify the exact equipment or area with the problem." />
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4" style={{ marginBottom: 16 }}>
             <div>
               <Label text="Plant Number / Asset ID" required />
               <input className="form-input" value={form.plantNumber} onChange={e => f('plantNumber', e.target.value)} placeholder="e.g. PMP-042, CB-01" />
@@ -375,7 +375,7 @@ export default function CreateJobRequest() {
           </div>
 
           {/* Location + job category */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginTop: 18 }}>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4" style={{ marginTop: 18 }}>
             <div>
               <Label text="Exact Location / Area" />
               <div style={{ position: 'relative' }}>
@@ -434,7 +434,7 @@ export default function CreateJobRequest() {
               <span style={{ fontSize: 12, fontWeight: 700, color: '#6366f1', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Additional Safety & Risk Information</span>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <Label text="Safety Risk Level" />
                 <select className="form-select" value={safetyLevel} onChange={e => setSafetyLevel(e.target.value)}>

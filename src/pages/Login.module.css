@@ -156,3 +156,14 @@
   border-top: 1px solid rgba(255, 255, 255, 0.05);
   padding-top: 1.5rem;
 }
+
+@media (max-width: 480px) {
+  .glassPanel {
+    padding: 2rem 1.5rem;
+    border-radius: 16px;
+  }
+  
+  .title {
+    font-size: 1.5rem;
+  }
+}

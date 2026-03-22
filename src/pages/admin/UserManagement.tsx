@@ -259,7 +259,7 @@ export default function UserManagement() {
               <button className="modal-close" onClick={() => setShowCreateModal(false)}><X size={20} /></button>
             </div>
             <form onSubmit={handleCreateUser} className="modal-body flex flex-col gap-4">
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="form-group">
                   <label>Full Name</label>
                   <input required className="form-input" value={newUser.name} onChange={e => setNewUser({...newUser, name: e.target.value})} />
@@ -277,7 +277,7 @@ export default function UserManagement() {
                 <label>Professional Email</label>
                 <input required type="email" className="form-input" value={newUser.email} onChange={e => setNewUser({...newUser, email: e.target.value})} />
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="form-group">
                   <label>Access Role</label>
                   <select required className="form-select" value={newUser.role} onChange={e => setNewUser({...newUser, role: e.target.value})}>

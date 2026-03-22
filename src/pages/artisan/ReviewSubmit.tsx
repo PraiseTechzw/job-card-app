@@ -110,7 +110,7 @@ const ReviewSubmit: React.FC = () => {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                  <span className="text-slate-500 text-xs font-bold uppercase tracking-wider block mb-1">Time Started</span>
                  <p className="text-slate-200 font-medium">{job.startHours || 'N/A'}</p>

@@ -252,7 +252,7 @@ const MaterialsResources: React.FC = () => {
               Labour Resources
             </h3>
 
-            <div className="grid grid-cols-2 gap-6 mb-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
               <div>
                 <label className="text-slate-500 text-xs font-bold uppercase tracking-wider block mb-2">No. Artisans</label>
                 <input 
@@ -289,7 +289,7 @@ const MaterialsResources: React.FC = () => {
       {/* Floating Action Bar */}
       {!isReadOnly && (
         <>
-          <div className="fixed bottom-0 left-0 right-0 md:left-64 p-4 lg:p-6 bg-slate-900/95 backdrop-blur-md border-t border-white/10 flex justify-end gap-4 z-50">
+          <div className="fixed bottom-0 left-0 right-0 lg:left-[280px] p-4 lg:p-6 bg-slate-900/95 backdrop-blur-md border-t border-white/10 flex justify-end gap-4 z-50">
             <button 
               onClick={() => handleSaveAndContinue()}
               className="px-8 py-3 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold flex items-center gap-2 shadow-lg shadow-blue-600/20 transition transform hover:-translate-y-1"
@@ -303,7 +303,7 @@ const MaterialsResources: React.FC = () => {
 
       {isReadOnly && (
          <>
-         <div className="fixed bottom-0 left-0 right-0 md:left-64 p-4 lg:p-6 bg-slate-900/95 backdrop-blur-md border-t border-white/10 flex justify-end gap-4 z-50">
+         <div className="fixed bottom-0 left-0 right-0 lg:left-[280px] p-4 lg:p-6 bg-slate-900/95 backdrop-blur-md border-t border-white/10 flex justify-end gap-4 z-50">
            <button 
              onClick={() => navigate(`/artisan/review/${job.id}`)}
              className="px-8 py-3 rounded-xl bg-slate-700 hover:bg-slate-600 text-white font-bold flex items-center gap-2 shadow-lg transition"

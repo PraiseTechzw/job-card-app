@@ -8,6 +8,7 @@ import jwt from 'jsonwebtoken';
 import { isValidTransition } from './workflow.js';
 import { createAuditLog } from './audit.js';
 import { sanitizeJobCardData } from './validation.js';
+import { sendSms } from './sms.js';
 
 if (!process.env.DATABASE_URL) {
   console.error('CRITICAL: DATABASE_URL environment variable is missing.');
@@ -251,6 +252,21 @@ app.patch('/api/job-cards/:id', authenticateToken, async (req, res) => {
       };
       
       await createAuditLog(pool, req.params.id, action, performedBy || req.user?.name || 'System', auditDetails);
+      
+      // 5. Send SMS Notification for Assignments
+      const updatedJob = updateResult.rows[0];
+      if (nextStatus === 'Assigned' && currentStatus !== 'Assigned' && updatedJob.issued_to) {
+        try {
+          const artisanRes = await query('SELECT phone FROM artisans WHERE name = $1', [updatedJob.issued_to]);
+          if (artisanRes.rows.length > 0 && artisanRes.rows[0].phone) {
+            const msg = `Megapak Job Assigned: ${updatedJob.ticket_number} - ${updatedJob.plant_description}. Priority: ${updatedJob.priority}. Login to portal to view.`;
+            // Fire async without awaiting so we don't block the request response
+            sendSms(artisanRes.rows[0].phone, msg).catch(e => console.error('[SMS Async] Error:', e));
+          }
+        } catch(e) {
+          console.error('[SMS] Query failed:', e);
+        }
+      }
     }
 
     res.json(toCamel(updateResult.rows[0]));
