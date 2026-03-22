@@ -33,18 +33,31 @@ export const sendSms = async (phoneNumber, message) => {
       manual_contacts: cleanNumber,
     };
 
-    const response = await fetch('http://smspop.co.zw/api/campaigns', {
+    const response = await fetch('https://smspop.co.zw/api/campaigns', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json',
+        'Accept': 'application/json'
       },
       body: JSON.stringify(campaignData)
     });
 
-    const result = await response.json();
-    console.log('[SMSPop] Send Result:', result);
-    return result.success;
+    if (!response.ok) {
+        const errorText = await response.text();
+        console.error(`[SMSPop] Gateway explicitly rejected request: ${response.status} ${response.statusText} -> ${errorText}`);
+        return false;
+    }
+
+    const rawText = await response.text();
+    try {
+        const result = JSON.parse(rawText);
+        console.log('[SMSPop] Send Result:', result);
+        return result.success !== false;
+    } catch (parseErr) {
+        console.error('[SMSPop] API returned invalid JSON (possibly an HTML maintenance page). Raw:', rawText.substring(0, 150));
+        return false;
+    }
   } catch (err) {
     console.error('[SMSPop] Failed to send SMS:', err);
     return false;

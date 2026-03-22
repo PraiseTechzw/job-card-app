@@ -47,8 +47,8 @@ export const ROLE_REQUIREMENTS = {
   // Planning Office
   [`${JobCardStatus.APPROVED}->${JobCardStatus.REGISTERED}`]: ['PlanningOffice', 'Admin'],
   
-  // Engineering Supervisor
-  [`${JobCardStatus.REGISTERED}->${JobCardStatus.ASSIGNED}`]: ['EngSupervisor', 'Admin'],
+  // Engineering Supervisor / Production Supervisor
+  [`${JobCardStatus.REGISTERED}->${JobCardStatus.ASSIGNED}`]: ['EngSupervisor', 'Supervisor', 'Admin'],
   
   // Artisan flows
   [`${JobCardStatus.ASSIGNED}->${JobCardStatus.IN_PROGRESS}`]: ['Artisan', 'Admin'],
