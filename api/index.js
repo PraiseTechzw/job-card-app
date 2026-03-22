@@ -590,8 +590,8 @@ export default app;
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const PORT = process.env.PORT || 3001;
-  app.listen(PORT, () => {
-    console.log(`Backend server running on port ${PORT}`);
+  app.listen(PORT, '0.0.0.0', () => {
+    console.log(`Backend server running on port ${PORT} (exposed to network)`);
   });
 }
 
