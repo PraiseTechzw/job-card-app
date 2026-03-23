@@ -43,7 +43,7 @@ export default function JobApproval() {
     );
   }
 
-  const canReviewRole = user?.role === 'Supervisor' || user?.role === 'Admin';
+  const canReviewRole = user?.role === 'Supervisor' || user?.role === 'EngSupervisor' || user?.role === 'Admin';
   const notApprovable = !canReviewRole || !['Pending_Supervisor', 'Draft'].includes(job.status);
 
   const handleApprove = async () => {
@@ -164,7 +164,7 @@ export default function JobApproval() {
           <div>
             <strong>This job cannot be approved</strong>
             <p style={{ fontSize: 12, marginTop: 2, color: '#94a3b8' }}>
-              Current status: <strong>{job.status}</strong>. Only Supervisors/Admin can review jobs that are pending supervisor approval.
+              Current status: <strong>{job.status}</strong>. Only Supervisors, EngSupervisors, or Admin can review jobs pending supervisor approval.
             </p>
           </div>
         </div>

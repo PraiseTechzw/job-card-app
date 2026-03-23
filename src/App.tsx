@@ -85,7 +85,7 @@ const AppContent = () => {
       
       <Route path="/approvals" element={<ProtectedRoute allowedRoles={['Supervisor', 'EngSupervisor', 'HOD', 'Admin']}><MainLayout><Approvals /></MainLayout></ProtectedRoute>} />
       <Route path="/planning" element={<ProtectedRoute allowedRoles={['PlanningOffice', 'Admin']}><MainLayout><Planning /></MainLayout></ProtectedRoute>} />
-      <Route path="/assignments" element={<ProtectedRoute allowedRoles={['EngSupervisor', 'Admin']}><MainLayout><Assignments /></MainLayout></ProtectedRoute>} />
+      <Route path="/assignments" element={<ProtectedRoute allowedRoles={['Supervisor', 'EngSupervisor', 'Admin']}><MainLayout><Assignments /></MainLayout></ProtectedRoute>} />
       <Route path="/sign-offs" element={<ProtectedRoute allowedRoles={['Initiator', 'Admin']}><MainLayout><SignOffs /></MainLayout></ProtectedRoute>} />
       
       {/* Artisan Module */}

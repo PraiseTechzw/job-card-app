@@ -85,6 +85,11 @@ export default function SupervisorReports() {
   ];
 
   const priorityColors: Record<string, string> = { Critical: '#ef4444', High: '#f59e0b', Medium: '#0ea5e9', Low: '#64748b' };
+  const scoreStyles: Record<string, { bg: string; text: string; bar: string }> = {
+    emerald: { bg: 'rgba(16,185,129,0.1)', text: '#34d399', bar: '#22c55e' },
+    amber: { bg: 'rgba(245,158,11,0.12)', text: '#f59e0b', bar: '#f59e0b' },
+    red: { bg: 'rgba(239,68,68,0.12)', text: '#f87171', bar: '#ef4444' },
+  };
 
   const clearFilters = () => { setDateFrom(''); setDateTo(''); setPlantFilter(''); setArtisanFilter(''); setStatusFilter(''); };
 
@@ -335,11 +340,15 @@ export default function SupervisorReports() {
                 .map(([name, data]) => {
                   const rate = data.total > 0 ? Math.round((data.closed / data.total) * 100) : 0;
                   const healthColor = rate >= 85 ? 'emerald' : rate >= 60 ? 'amber' : 'red';
+                  const palette = scoreStyles[healthColor];
                   return (
                     <tr key={name} className="group hover:bg-white/[0.02] transition-colors">
                       <td className="px-8 py-6">
                         <div className="flex items-center gap-4">
-                          <div className={`w-10 h-10 rounded-2xl bg-${healthColor}-500/10 flex items-center justify-center text-${healthColor}-400 font-black text-lg shadow-inner`}>
+                          <div
+                            className="w-10 h-10 rounded-2xl flex items-center justify-center font-black text-lg shadow-inner"
+                            style={{ backgroundColor: palette.bg, color: palette.text }}
+                          >
                             {name.charAt(0)}
                           </div>
                           <div>
@@ -362,12 +371,12 @@ export default function SupervisorReports() {
                       <td className="px-8 py-6">
                         <div className="flex flex-col items-center gap-2">
                           <div className="w-32 h-2 bg-slate-950 rounded-full overflow-hidden border border-white/5 shadow-inner">
-                            <div 
-                              className={`h-full bg-${healthColor}-500 transition-all duration-1000 shadow-[0_0_10px_rgba(0,0,0,0.5)]`}
-                              style={{ width: `${rate}%` }} 
+                            <div
+                              className="h-full transition-all duration-1000 shadow-[0_0_10px_rgba(0,0,0,0.5)]"
+                              style={{ width: `${rate}%`, backgroundColor: palette.bar }}
                             />
                           </div>
-                          <span className={`text-xs font-black text-${healthColor}-400`}>{rate}%</span>
+                          <span className="text-xs font-black" style={{ color: palette.text }}>{rate}%</span>
                         </div>
                       </td>
                     </tr>

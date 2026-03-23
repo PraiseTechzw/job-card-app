@@ -55,7 +55,6 @@ export default function SupervisorDashboard() {
   const { jobCards } = useJobCards();
   const { user } = useAuth();
   const navigate = useNavigate();
-  const isEngSupervisor = user?.role === 'EngSupervisor' || user?.role === 'Admin';
 
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState<FilterKey>('all');
@@ -343,11 +342,9 @@ export default function SupervisorDashboard() {
               <button onClick={() => navigate('/supervisor/active')} className="btn btn-ghost" style={{ width: '100%', justifyContent: 'flex-start', fontSize: 12, padding: '10px 12px', gap: 10 }}>
                 <Activity size={16} /> Live Job Monitor
               </button>
-              {isEngSupervisor && (
-                <button onClick={() => navigate('/assignments')} className="btn btn-ghost" style={{ width: '100%', justifyContent: 'flex-start', fontSize: 12, padding: '10px 12px', gap: 10 }}>
-                  <UserPlus size={16} /> Bulk Assignments
-                </button>
-              )}
+              <button onClick={() => navigate('/assignments')} className="btn btn-ghost" style={{ width: '100%', justifyContent: 'flex-start', fontSize: 12, padding: '10px 12px', gap: 10 }}>
+                <UserPlus size={16} /> Bulk Assignments
+              </button>
               <button onClick={() => navigate('/supervisor/reports')} className="btn btn-ghost" style={{ width: '100%', justifyContent: 'flex-start', fontSize: 12, padding: '10px 12px', gap: 10 }}>
                 <TrendingUp size={16} /> Efficiency Reports
               </button>

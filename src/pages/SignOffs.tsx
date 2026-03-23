@@ -15,8 +15,8 @@ const SignOffs: React.FC = () => {
   const pendingSignOff = jobCards.filter(card => 
     card.status === 'Awaiting_SignOff' &&
     (user?.role === 'Admin' || card.requestedBy === user?.name) &&
-    (card.ticketNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
-     card.plantDescription.toLowerCase().includes(searchTerm.toLowerCase()))
+    ((card.ticketNumber || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+     (card.plantDescription || '').toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
   return (
@@ -65,7 +65,7 @@ const SignOffs: React.FC = () => {
                   <td>{card.dateFinished || '---'}</td>
                   <td>
                     <button 
-                      onClick={() => navigate(`/job-cards/view/${card.id}`)}
+                      onClick={() => navigate(`/initiator/feedback/${card.id}`)}
                       className="btn btn-primary btn-sm px-4"
                     >
                       Review & Sign-off

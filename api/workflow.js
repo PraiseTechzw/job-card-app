@@ -39,8 +39,8 @@ export const ROLE_REQUIREMENTS = {
   [`${JobCardStatus.AWAITING_SIGN_OFF}->${JobCardStatus.CLOSED}`]: ['Supervisor', 'Admin'],
   
   // Supervisor flows
-  [`${JobCardStatus.PENDING_SUPERVISOR}->${JobCardStatus.PENDING_HOD}`]: ['Supervisor', 'Admin'],
-  [`${JobCardStatus.PENDING_SUPERVISOR}->${JobCardStatus.APPROVED}`]: ['Supervisor', 'Admin'], // If no HOD required?
+  [`${JobCardStatus.PENDING_SUPERVISOR}->${JobCardStatus.PENDING_HOD}`]: ['Supervisor', 'EngSupervisor', 'Admin'],
+  [`${JobCardStatus.PENDING_SUPERVISOR}->${JobCardStatus.APPROVED}`]: ['Supervisor', 'EngSupervisor', 'Admin'], // If no HOD required?
   [`${JobCardStatus.SIGNED_OFF}->${JobCardStatus.CLOSED}`]: ['Supervisor', 'Admin'],
   
   // HOD flows

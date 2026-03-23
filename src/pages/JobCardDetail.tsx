@@ -88,7 +88,7 @@ const JobCardDetail: React.FC = () => {
     </div>
   );
 
-  const canApprove = (user?.role === 'Supervisor' && card.status === 'Pending_Supervisor') || 
+  const canApprove = ((user?.role === 'Supervisor' || user?.role === 'EngSupervisor') && card.status === 'Pending_Supervisor') || 
                    (user?.role === 'HOD' && card.status === 'Pending_HOD');
   
   const canRegister = user?.role === 'PlanningOffice' && card.status === 'Approved';
@@ -131,8 +131,8 @@ const JobCardDetail: React.FC = () => {
                   Reject
                 </button>
                 <button 
-                  onClick={() => handleStatusTransition(user?.role === 'Supervisor' ? 'Pending_HOD' : 'Approved', 
-                    user?.role === 'Supervisor' ? { approvedBySupervisor: user?.name } : { approvedByHOD: user?.name }, 
+                  onClick={() => handleStatusTransition((user?.role === 'Supervisor' || user?.role === 'EngSupervisor') ? 'Pending_HOD' : 'Approved', 
+                    (user?.role === 'Supervisor' || user?.role === 'EngSupervisor') ? { approvedBySupervisor: user?.name } : { approvedByHOD: user?.name }, 
                     'Request Approved')}
                   className={styles.btnPrimary} style={{ background: 'linear-gradient(135deg, #10b981, #059669)' }}
                 >
