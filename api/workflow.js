@@ -25,7 +25,7 @@ export const VALID_TRANSITIONS = {
   [JobCardStatus.REGISTERED]: [JobCardStatus.ASSIGNED, JobCardStatus.REJECTED],
   [JobCardStatus.ASSIGNED]: [JobCardStatus.IN_PROGRESS, JobCardStatus.REJECTED],
   [JobCardStatus.IN_PROGRESS]: [JobCardStatus.AWAITING_SIGN_OFF, JobCardStatus.REJECTED],
-  [JobCardStatus.AWAITING_SIGN_OFF]: [JobCardStatus.SIGNED_OFF, JobCardStatus.REJECTED],
+  [JobCardStatus.AWAITING_SIGN_OFF]: [JobCardStatus.SIGNED_OFF, JobCardStatus.IN_PROGRESS, JobCardStatus.CLOSED, JobCardStatus.REJECTED],
   [JobCardStatus.SIGNED_OFF]: [JobCardStatus.CLOSED, JobCardStatus.REJECTED],
   [JobCardStatus.CLOSED]: [], // Terminal state
   [JobCardStatus.REJECTED]: [JobCardStatus.DRAFT], // Allow restarting from draft if rejected
@@ -35,6 +35,8 @@ export const ROLE_REQUIREMENTS = {
   // Initiator flows
   [`${JobCardStatus.DRAFT}->${JobCardStatus.PENDING_SUPERVISOR}`]: ['Initiator', 'Admin'],
   [`${JobCardStatus.AWAITING_SIGN_OFF}->${JobCardStatus.SIGNED_OFF}`]: ['Initiator', 'Admin'],
+  [`${JobCardStatus.AWAITING_SIGN_OFF}->${JobCardStatus.IN_PROGRESS}`]: ['Supervisor', 'Admin'],
+  [`${JobCardStatus.AWAITING_SIGN_OFF}->${JobCardStatus.CLOSED}`]: ['Supervisor', 'Admin'],
   
   // Supervisor flows
   [`${JobCardStatus.PENDING_SUPERVISOR}->${JobCardStatus.PENDING_HOD}`]: ['Supervisor', 'Admin'],

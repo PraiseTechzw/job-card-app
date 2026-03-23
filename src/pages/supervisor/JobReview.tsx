@@ -7,6 +7,7 @@ import {
 import { useJobCards } from '../../context/JobCardContext';
 import { useAuth } from '../../context/AuthContext';
 import styles from '../JobCards.module.css';
+import { toast } from 'react-hot-toast';
 
 export default function JobReview() {
   const { id } = useParams<{ id: string }>();
@@ -40,6 +41,7 @@ export default function JobReview() {
 
   const handleApprove = async () => {
     setIsSubmitting(true);
+    const loadingToast = toast.loading('Processing approval...');
     try {
       await updateJobCard(job.id, {
         status: 'Closed',
@@ -56,18 +58,23 @@ export default function JobReview() {
         performedBy: user?.name || 'Supervisor',
         details: `Final approval by ${user?.name}. Job closed. ${supervisorNote ? 'Note: ' + supervisorNote : ''}`,
       });
+      toast.success('Job approved and closed', { id: loadingToast });
       setDone('approved');
       setTimeout(() => navigate('/supervisor/dashboard'), 3000);
     } catch (e: any) {
-      alert(e?.message || 'Approval failed. Please try again.');
+      toast.error(e?.message || 'Approval failed. Please try again.', { id: loadingToast });
     } finally {
       setIsSubmitting(false);
     }
   };
 
   const handleReturn = async () => {
-    if (!returnReason.trim()) { alert('A return reason is mandatory.'); return; }
+    if (!returnReason.trim()) {
+      toast.error('A return reason is mandatory.');
+      return;
+    }
     setIsSubmitting(true);
+    const loadingToast = toast.loading('Returning job for correction...');
     try {
       await updateJobCard(job.id, {
         status: 'InProgress',
@@ -81,10 +88,11 @@ export default function JobReview() {
         performedBy: user?.name || 'Supervisor',
         details: `Returned to artisan. Reason: ${returnReason.trim()}`,
       });
+      toast.success('Job returned for correction', { id: loadingToast });
       setDone('returned');
       setTimeout(() => navigate('/supervisor/dashboard'), 3000);
     } catch (e: any) {
-      alert(e?.message || 'Failed to return job. Please try again.');
+      toast.error(e?.message || 'Failed to return job. Please try again.', { id: loadingToast });
     } finally {
       setIsSubmitting(false);
     }

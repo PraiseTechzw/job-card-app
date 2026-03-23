@@ -5,6 +5,8 @@ import { useJobCards } from '../context/JobCardContext';
 import { useAuth } from '../context/AuthContext';
 import type { JobCard } from '../types';
 
+import { toast } from 'react-hot-toast';
+
 const EditJobCard: React.FC = () => {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
@@ -22,13 +24,15 @@ const EditJobCard: React.FC = () => {
 
   const handleSave = async (data: Partial<JobCard>) => {
     if (!id) return;
+    const loadingToast = toast.loading('Updating job card...');
     try {
       setIsSubmitting(true);
       await updateJobCard(id, { ...data, performedBy: user?.name || 'Unknown', userRole: user?.role });
+      toast.success('Job card updated successfully', { id: loadingToast });
       navigate('/job-cards');
-    } catch (err) {
+    } catch (err: any) {
       console.error('Failed to update job card:', err);
-      alert('Failed to update job card. Please try again.');
+      toast.error(err?.message || 'Failed to update job card. Please try again.', { id: loadingToast });
     } finally {
       setIsSubmitting(false);
     }
