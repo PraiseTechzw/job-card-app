@@ -24,10 +24,37 @@ export const AuthProvider: React.FC<{children: ReactNode}> = ({ children }) => {
     
     if (savedToken && savedUser) {
       setUser(JSON.parse(savedUser));
-      // Set default header for future axios calls
-      axios.defaults.headers.common['Authorization'] = `Bearer ${savedToken}`;
     }
     setIsLoading(false);
+  }, []);
+
+  // Axios Interceptor for Auth
+  useEffect(() => {
+    const requestInterceptor = axios.interceptors.request.use(
+      (config) => {
+        const token = localStorage.getItem('token');
+        if (token) {
+          config.headers.Authorization = `Bearer ${token}`;
+        }
+        return config;
+      },
+      (error) => Promise.reject(error)
+    );
+
+    const responseInterceptor = axios.interceptors.response.use(
+      (response) => response,
+      (error) => {
+        if (error.response?.status === 401) {
+          logout();
+        }
+        return Promise.reject(error);
+      }
+    );
+
+    return () => {
+      axios.interceptors.request.eject(requestInterceptor);
+      axios.interceptors.response.eject(responseInterceptor);
+    };
   }, []);
 
   const login = async (username: string, password: string) => {
@@ -39,7 +66,6 @@ export const AuthProvider: React.FC<{children: ReactNode}> = ({ children }) => {
       localStorage.setItem('user', JSON.stringify(userData));
       
       setUser(userData);
-      axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
     } catch (err: any) {
       throw new Error(err.response?.data?.error || 'Login failed');
     }

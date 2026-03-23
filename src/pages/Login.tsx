@@ -35,7 +35,7 @@ const Login: React.FC = () => {
         <div className={styles.header}>
           <div className={styles.logoWrapper}>
             <img 
-              src="http://www.megapak.co.zw/wp-content/uploads/2021/04/WhatsApp-Image-2021-04-14-at-12.07.24-1.jpeg" 
+              src="https://www.megapak.co.zw/wp-content/uploads/2021/04/WhatsApp-Image-2021-04-14-at-12.07.24-1.jpeg" 
               alt="Mega Pak Logo" 
               className={styles.logo}
               style={{ width: '100%', height: 'auto', borderRadius: '8px', marginBottom: '16px' }}

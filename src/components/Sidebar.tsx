@@ -248,7 +248,7 @@ const Sidebar: React.FC<SidebarProps> = ({ onClose }) => {
     <aside className={styles.sidebar}>
       <div className={styles.brand}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <img src="http://www.megapak.co.zw/wp-content/uploads/2021/04/WhatsApp-Image-2021-04-14-at-12.07.24-1.jpeg" alt="Mega Pak Logo" style={{ height: 32, width: 'auto', borderRadius: 4 }} />
+          <img src="https://www.megapak.co.zw/wp-content/uploads/2021/04/WhatsApp-Image-2021-04-14-at-12.07.24-1.jpeg" alt="Mega Pak Logo" style={{ height: 32, width: 'auto', borderRadius: 4 }} />
           <span className={styles.brandText}>Job Card System</span>
         </div>
         {onClose && (
