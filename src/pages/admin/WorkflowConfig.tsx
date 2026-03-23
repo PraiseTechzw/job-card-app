@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import { toast } from 'react-hot-toast';
 import {
   RefreshCw, ArrowLeft, ShieldCheck, 
   ArrowRight, Save, MessageSquare
@@ -49,14 +50,12 @@ export default function WorkflowConfig() {
   }, []);
 
   const handleSave = async () => {
-    if (confirm('Modifying operational workflow rules can impact mid-process jobs. All changes are logged for forensic audit. Continue?')) {
-      try {
-        await axios.post('/api/admin/config', { key: 'workflow', value: config });
-        setIsEditing(false);
-        alert('Workflow configuration synchronized successfully.');
-      } catch (e) {
-        alert('Failed to save configuration.');
-      }
+    try {
+      await axios.post('/api/admin/config', { key: 'workflow', value: config });
+      setIsEditing(false);
+      toast.success('Workflow configuration synchronized successfully.');
+    } catch (e) {
+      toast.error('Failed to save configuration.');
     }
   };
 
@@ -136,7 +135,7 @@ export default function WorkflowConfig() {
               <div className="form-group">
                 <label className="form-label" style={{ fontSize: 11, fontWeight: 700, color: '#475569', textTransform: 'uppercase' }}>Allowed Actors (ACL)</label>
                 <div className="flex flex-wrap gap-2 mt-2">
-                  {['Supervisor', 'Admin', 'Initiator', 'Artisan', 'Planner', 'HOD'].map(role => (
+                  {['Supervisor', 'EngSupervisor', 'Admin', 'Initiator', 'Artisan', 'PlanningOffice', 'HOD'].map(role => (
                     <label 
                       key={role} 
                       className="flex items-center gap-2 p-2 rounded-lg border border-white/5 bg-white/5 cursor-pointer hover:bg-white/10"

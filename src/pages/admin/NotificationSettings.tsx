@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import { toast } from 'react-hot-toast';
 import {
   Bell, ArrowLeft, Mail, 
   Smartphone, Save, AlertTriangle, 
@@ -58,9 +59,9 @@ export default function NotificationSettings() {
     setIsSaving(true);
     try {
       await axios.post('/api/admin/config', { key: 'notifications', value: settings });
-      alert('Notification routing updated successfully.');
+      toast.success('Notification routing updated successfully.');
     } catch (e) {
-      alert('Failed to synchronize notification engine.');
+      toast.error('Failed to synchronize notification engine.');
     } finally {
       setIsSaving(false);
     }

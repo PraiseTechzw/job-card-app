@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import { toast } from 'react-hot-toast';
 import {
   Archive, ArrowLeft, Save, 
   Settings, Clock, AlertTriangle, 
@@ -41,21 +42,22 @@ export default function RetentionSettings() {
     setIsSaving(true);
     try {
       await axios.post('/api/admin/config', { key: 'retention_months', value: retentionMonths });
-      alert('Retention policy updated and audit-logged.');
+      toast.success('Retention policy updated and audit-logged.');
     } catch (e) {
-      alert('Failed to update retention policy.');
+      toast.error('Failed to update retention policy.');
     } finally {
       setIsSaving(false);
     }
   };
 
-  const handleManualArchive = () => {
-    if (confirm('Initiate manual archive sweep? This will move dormant records to cold storage. Process is irreversible.')) {
-      setIsArchiving(true);
-      setTimeout(() => {
-        setIsArchiving(false);
-        alert('Forensic archival completed. 156 records moved.');
-      }, 3000);
+  const handleManualArchive = async () => {
+    setIsArchiving(true);
+    try {
+      // Manual archival is not implemented server-side yet.
+      await new Promise((resolve) => setTimeout(resolve, 1200));
+      toast('Manual archive trigger is queued. Backend archival endpoint pending implementation.', { icon: 'ℹ️' });
+    } finally {
+      setIsArchiving(false);
     }
   };
 

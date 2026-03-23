@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import { toast } from 'react-hot-toast';
 import {
   ShieldCheck, ArrowLeft, Lock, Info, 
   CheckCircle2, XCircle, Save, AlertTriangle, RefreshCw
@@ -12,9 +13,22 @@ const MODULES = [
   'Planning & Records', 'Reporting & Analytics', 'Archiving', 'Admin Controls'
 ];
 
-const ROLES = ['Initiator', 'Supervisor', 'Artisan', 'Planner', 'Admin', 'HOD'];
+const ROLES = ['Initiator', 'Supervisor', 'EngSupervisor', 'Artisan', 'PlanningOffice', 'Admin', 'HOD'];
 
 type PermissionMap = Record<string, Record<string, boolean>>;
+
+const buildDefaultPermissions = (): PermissionMap => {
+  const allDisabled = Object.fromEntries(MODULES.map((m) => [m, false]));
+  return {
+    Initiator: { ...allDisabled, 'Job Requests': true },
+    Supervisor: { ...allDisabled, Approvals: true, Assignments: true, 'Reporting & Analytics': true },
+    EngSupervisor: { ...allDisabled, Approvals: true, Assignments: true, 'Reporting & Analytics': true },
+    Artisan: { ...allDisabled, 'Work Execution': true },
+    PlanningOffice: { ...allDisabled, 'Planning & Records': true, 'Reporting & Analytics': true, Archiving: true },
+    HOD: { ...allDisabled, Approvals: true, 'Reporting & Analytics': true },
+    Admin: Object.fromEntries(MODULES.map((m) => [m, true])) as Record<string, boolean>,
+  };
+};
 
 export default function RolesPermissions() {
   const navigate = useNavigate();
@@ -28,17 +42,16 @@ export default function RolesPermissions() {
     async function fetchConfig() {
       try {
         const res = await axios.get('/api/admin/config');
-        if (res.data.permissions) {
-          setPermissions(res.data.permissions);
-        } else {
-          // Default init
-          setPermissions({
-            'Admin': { 'Job Requests': true, 'Work Execution': true, 'Approvals': true, 'Assignments': true, 'Planning & Records': true, 'Reporting & Analytics': true, 'Archiving': true, 'Admin Controls': true },
-            'Supervisor': { 'Job Requests': true, 'Approvals': true, 'Assignments': true, 'Planning & Records': true, 'Reporting & Analytics': true }
-          });
-        }
+        const existing = res.data.permissions || {};
+        const defaults = buildDefaultPermissions();
+        const merged: PermissionMap = { ...defaults };
+        ROLES.forEach((role) => {
+          merged[role] = { ...defaults[role], ...(existing[role] || {}) };
+        });
+        setPermissions(merged);
       } catch (e) {
         console.error('Failed to fetch permissions', e);
+        setPermissions(buildDefaultPermissions());
       } finally {
         setIsLoading(false);
       }
@@ -62,9 +75,9 @@ export default function RolesPermissions() {
     try {
       await axios.post('/api/admin/config', { key: 'permissions', value: permissions });
       setIsEditing(false);
-      alert('Security matrix synchronized successfully.');
+      toast.success('Security matrix synchronized successfully.');
     } catch (e) {
-      alert('Failed to update permissions.');
+      toast.error('Failed to update permissions.');
     } finally {
       setIsSaving(false);
     }

@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import { toast } from 'react-hot-toast';
 import {
   Database, ArrowLeft, Plus, Edit2, 
   Search, Filter, 
@@ -59,23 +60,22 @@ export default function MasterDataManager() {
   }, [activeType, search, masterData]);
 
   const toggleStatus = async (id: string) => {
-    if (confirm(`Deactivating this item will prevent future selection but preserve all historical records for audit. Proceed?`)) {
-      const updatedList = masterData[activeType].map((item: any) => 
-        item.id === id ? { ...item, active: !item.active } : item
-      );
-      const updatedData = { ...masterData, [activeType]: updatedList };
-      try {
-        await axios.post('/api/admin/config', { key: 'master_data', value: updatedData });
-        setMasterData(updatedData);
-      } catch (e) {
-        alert('Failed to update status.');
-      }
+    const updatedList = masterData[activeType].map((item: any) => 
+      item.id === id ? { ...item, active: !item.active } : item
+    );
+    const updatedData = { ...masterData, [activeType]: updatedList };
+    try {
+      await axios.post('/api/admin/config', { key: 'master_data', value: updatedData });
+      setMasterData(updatedData);
+      toast.success('Master data status updated.');
+    } catch (e) {
+      toast.error('Failed to update status.');
     }
   };
 
   const handleAddItem = async (e: React.FormEvent) => {
     e.preventDefault();
-    const id = Math.random().toString(36).substr(2, 9);
+    const id = crypto.randomUUID();
     const itemToAdd = { ...newItem, id, active: true };
     const updatedList = [...(masterData[activeType] || []), itemToAdd];
     const updatedData = { ...masterData, [activeType]: updatedList };
@@ -85,7 +85,7 @@ export default function MasterDataManager() {
       setShowAddModal(false);
       setNewItem({ code: '', name: '', department: '' });
     } catch (e) {
-      alert('Failed to add master record.');
+      toast.error('Failed to add master record.');
     }
   };
 

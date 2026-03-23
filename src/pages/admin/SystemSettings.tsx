@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import { toast } from 'react-hot-toast';
 import {
   Settings, ArrowLeft, ShieldCheck, Mail, 
   Database, LayoutTemplate, 
@@ -13,7 +14,11 @@ export default function SystemSettings() {
   const [isSaving, setIsSaving] = useState(false);
   const [activeTab, setActiveTab] = useState('General');
   const [isLoading, setIsLoading] = useState(true);
-  const [config, setConfig] = useState<any>({});
+  const [globalConfig, setGlobalConfig] = useState({
+    appName: 'Digital Job Card MMS',
+    timezone: '(GMT+02:00) Harare, Pretoria',
+    broadcastBanner: '',
+  });
   const [telemetry, setTelemetry] = useState<any>(null);
 
   useEffect(() => {
@@ -23,7 +28,9 @@ export default function SystemSettings() {
           axios.get('/api/admin/config'),
           axios.get('/api/admin/stats')
         ]);
-        setConfig(configRes.data);
+        if (configRes.data?.global) {
+          setGlobalConfig((prev) => ({ ...prev, ...configRes.data.global }));
+        }
         setTelemetry(statsRes.data?.telemetry);
       } catch (e) {
         console.error('Failed to fetch system context', e);
@@ -37,10 +44,10 @@ export default function SystemSettings() {
   const handleSave = async () => {
     setIsSaving(true);
     try {
-      await axios.post('/api/admin/config', { key: 'global', value: config });
-      alert('Technical configuration synchronized successfully.');
+      await axios.post('/api/admin/config', { key: 'global', value: globalConfig });
+      toast.success('Technical configuration synchronized successfully.');
     } catch (e) {
-      alert('Failed to update system parameters.');
+      toast.error('Failed to update system parameters.');
     } finally {
       setIsSaving(false);
     }
@@ -110,18 +117,36 @@ export default function SystemSettings() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                  <div className="form-group">
                     <label style={{ fontSize: 11, fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', marginBottom: 8, display: 'block' }}>Application Display Name</label>
-                    <input type="text" className="form-input" style={{ background: 'rgba(9,11,18,0.7)' }} defaultValue="Digital Job Card MMS" />
+                    <input
+                      type="text"
+                      className="form-input"
+                      style={{ background: 'rgba(9,11,18,0.7)' }}
+                      value={globalConfig.appName}
+                      onChange={(e) => setGlobalConfig((prev) => ({ ...prev, appName: e.target.value }))}
+                    />
                  </div>
                  <div className="form-group">
                     <label style={{ fontSize: 11, fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', marginBottom: 8, display: 'block' }}>Global Timezone Node</label>
-                    <select className="form-select" style={{ background: 'rgba(9,11,18,0.7)' }}>
+                    <select
+                      className="form-select"
+                      style={{ background: 'rgba(9,11,18,0.7)' }}
+                      value={globalConfig.timezone}
+                      onChange={(e) => setGlobalConfig((prev) => ({ ...prev, timezone: e.target.value }))}
+                    >
                        <option>(GMT+02:00) Harare, Pretoria</option>
                        <option>(GMT+00:00) London, UTC</option>
                     </select>
                  </div>
                  <div className="form-group md:col-span-2">
                     <label style={{ fontSize: 11, fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', marginBottom: 8, display: 'block' }}>Administrative Broadcast Banner</label>
-                    <textarea rows={2} className="form-textarea" style={{ background: 'rgba(9,11,18,0.7)' }} placeholder="Broadcast maintenance window or notice to all users..." />
+                    <textarea
+                      rows={2}
+                      className="form-textarea"
+                      style={{ background: 'rgba(9,11,18,0.7)' }}
+                      placeholder="Broadcast maintenance window or notice to all users..."
+                      value={globalConfig.broadcastBanner}
+                      onChange={(e) => setGlobalConfig((prev) => ({ ...prev, broadcastBanner: e.target.value }))}
+                    />
                  </div>
               </div>
             </div>
