@@ -190,7 +190,7 @@ const dispatchNotificationPlan = async (plan) => {
 
 // --- AUTH ENDPOINTS ---
 
-app.post('/api/auth/register', async (req, res) => {
+app.post('/api/auth/register', authenticateToken, authorizeRoles('Admin'), async (req, res) => {
   const { name, username, password, role, department } = req.body;
   try {
     const passwordHash = await bcrypt.hash(password, 10);

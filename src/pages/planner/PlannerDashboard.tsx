@@ -20,7 +20,11 @@ function isThisMonth(d: string) {
 }
 function isOverdue(c: JobCard) {
   if (!c.requiredCompletionDate) return false;
-  return new Date(c.requiredCompletionDate) < new Date() && !['Closed', 'Rejected'].includes(c.status);
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const due = new Date(c.requiredCompletionDate);
+  due.setHours(0, 0, 0, 0);
+  return due < today && !['Closed', 'Rejected'].includes(c.status);
 }
 
 // Tiny bar: renders a normalized horizontal bar

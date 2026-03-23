@@ -102,15 +102,12 @@ const Dashboard: React.FC = () => {
     },
   ];
 
-  const chartData = [
-    { name: 'Mon', completion: jobCards.filter(c => c.status === 'Closed' && c.updatedAt?.includes('Mon')).length || 4, faults: jobCards.filter(c => c.priority === 'Critical' && c.createdAt?.includes('Mon')).length || 6 },
-    { name: 'Tue', completion: 7, faults: 4 },
-    { name: 'Wed', completion: 5, faults: 8 },
-    { name: 'Thu', completion: 12, faults: 3 },
-    { name: 'Fri', completion: 9, faults: 5 },
-    { name: 'Sat', completion: 3, faults: 2 },
-    { name: 'Sun', completion: 2, faults: 1 },
-  ];
+  const weekdayLabels = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  const chartData = weekdayLabels.map((label, idx) => ({
+    name: label,
+    completion: jobCards.filter(c => c.status === 'Closed' && c.updatedAt && new Date(c.updatedAt).getDay() === idx).length,
+    faults: jobCards.filter(c => c.priority === 'Critical' && c.createdAt && new Date(c.createdAt).getDay() === idx).length,
+  }));
 
   return (
     <div className={styles.container}>

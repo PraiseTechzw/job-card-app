@@ -26,7 +26,12 @@ function statusLabel(s: string) {
   return ({ Pending_Supervisor: 'Submitted', Awaiting_SignOff: 'Awaiting Review' } as any)[s] || s.replace(/_/g, ' ');
 }
 function isOverdue(c: JobCard) {
-  return !!c.requiredCompletionDate && new Date(c.requiredCompletionDate) < new Date() && !['Closed', 'Rejected'].includes(c.status);
+  if (!c.requiredCompletionDate) return false;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const due = new Date(c.requiredCompletionDate);
+  due.setHours(0, 0, 0, 0);
+  return due < today && !['Closed', 'Rejected'].includes(c.status);
 }
 
 export default function JobRecordsManagement() {

@@ -44,8 +44,11 @@ const StatusBadge = ({ status }: { status: string }) => {
 
 const isOverdue = (card: JobCard) => {
   if (!card.requiredCompletionDate) return false;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
   const due = new Date(card.requiredCompletionDate);
-  return due < new Date() && !['Closed', 'Awaiting_SignOff'].includes(card.status);
+  due.setHours(0, 0, 0, 0);
+  return due < today && !['Closed', 'Awaiting_SignOff'].includes(card.status);
 };
 
 export default function SupervisorDashboard() {

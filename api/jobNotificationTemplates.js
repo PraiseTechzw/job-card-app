@@ -34,7 +34,7 @@ export function getStatusNotificationPlan({ currentStatus, nextStatus, job }) {
   switch (nextStatus) {
     case 'Pending_Supervisor':
       return {
-        targets: [{ kind: 'roles', roles: ['Supervisor'] }],
+        targets: [{ kind: 'roles', roles: ['Supervisor', 'EngSupervisor'] }],
         message: `Megapak: Job ${jobRef(job)} submitted by ${compact(job?.requested_by, 'Initiator')}. Priority ${priorityText(job?.priority)}. Supervisor review required.`,
       };
     case 'Pending_HOD':
