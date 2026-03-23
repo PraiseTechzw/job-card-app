@@ -13,7 +13,8 @@ const Approvals: React.FC = () => {
 
   const pendingCards = jobCards.filter(card => {
     const isTargetStatus = (user?.role === 'HOD' && card.status === 'Pending_HOD') ||
-                          (user?.role === 'Supervisor' && (card.status === 'Pending_Supervisor' || card.status === 'SignedOff'));
+                          (user?.role === 'Supervisor' && (card.status === 'Pending_Supervisor' || card.status === 'SignedOff')) ||
+                          (user?.role === 'Admin' && ['Pending_Supervisor', 'Pending_HOD', 'SignedOff'].includes(card.status));
     
     return isTargetStatus &&
       (card.ticketNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||

@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Search, Clock, Play, CheckCircle2, FileText, AlertCircle } from 'lucide-react';
 import { useJobCards } from '../../context/JobCardContext';
 import { useAuth } from '../../context/AuthContext';
+import { toast } from 'react-hot-toast';
 import styles from '../JobCards.module.css';
 import SEO from '../../components/SEO';
 
@@ -24,11 +25,7 @@ const ArtisanDashboard: React.FC = () => {
       // Notice: 'Awaiting_SignOff' might mean waiting for Originator in some workflows, 
       // but here it represents "Completed Pending Review"
       // Job Card System might have "Pending_Supervisor" or "Awaiting_SignOff"
-      if (!['Assigned', 'InProgress', 'Pending_Supervisor', 'Awaiting_SignOff'].includes(card.status)) {
-        // Wait, for completed jobs waiting for review, maybe they are Pending_Supervisor
-        // Let's also include them if we need to show them in "Waiting Review"
-      }
-      return true;
+      return ['Assigned', 'InProgress', 'Pending_Supervisor', 'Awaiting_SignOff'].includes(card.status);
     });
   }, [jobCards, user]);
 
@@ -69,7 +66,7 @@ const ArtisanDashboard: React.FC = () => {
       navigate(`/artisan/execute-work/${id}`);
     } catch (err: any) {
       console.error('Update failed:', err);
-      alert(err.response?.data?.error || 'Update failed');
+      toast.error(err.response?.data?.error || 'Update failed');
     }
   };
 

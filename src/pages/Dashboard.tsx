@@ -16,6 +16,8 @@ const Dashboard: React.FC = () => {
   const { jobCards } = useJobCards();
   const { user } = useAuth();
   const navigate = useNavigate();
+  const canAccessApprovals = ['Supervisor', 'HOD', 'Admin'].includes(user?.role || '');
+  const canAccessReports = ['Admin', 'Supervisor', 'HOD', 'EngSupervisor', 'PlanningOffice'].includes(user?.role || '');
 
   // Role-based landing page redirects
   if (user?.role === 'Artisan') {
@@ -226,12 +228,16 @@ const Dashboard: React.FC = () => {
                  <button className={styles.quickBtn} onClick={() => navigate('/job-cards')}>
                    <Search size={18} /> Search Jobs
                  </button>
-                 <button className={styles.quickBtn} onClick={() => navigate('/approvals')}>
-                   <CheckCircle2 size={18} /> My Approvals
-                 </button>
-                 <button className={styles.quickBtn} onClick={() => navigate('/reports')}>
-                   <FileText size={18} /> System Reports
-                 </button>
+                 {canAccessApprovals && (
+                   <button className={styles.quickBtn} onClick={() => navigate('/approvals')}>
+                     <CheckCircle2 size={18} /> My Approvals
+                   </button>
+                 )}
+                 {canAccessReports && (
+                   <button className={styles.quickBtn} onClick={() => navigate('/reports')}>
+                     <FileText size={18} /> System Reports
+                   </button>
+                 )}
                  {user?.role === 'Admin' && (
                    <button className={styles.quickBtn} onClick={() => navigate('/admin/dashboard')}>
                      <Settings size={18} /> System Control

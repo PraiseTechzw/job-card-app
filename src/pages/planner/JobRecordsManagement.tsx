@@ -1,5 +1,5 @@
-import { useState, useMemo, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useMemo, useCallback, useEffect } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
   Search, Filter, Download, Eye, Tag,
   ChevronDown, ChevronUp, X, AlertTriangle, Database
@@ -32,6 +32,7 @@ function isOverdue(c: JobCard) {
 export default function JobRecordsManagement() {
   const { jobCards } = useJobCards();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
 
   const [search, setSearch] = useState('');
   const [filterStatus, setFilterStatus] = useState('');
@@ -46,6 +47,22 @@ export default function JobRecordsManagement() {
   const [sortDir, setSortDir] = useState<SortDir>('desc');
   const [page, setPage] = useState(1);
   const PAGE_SIZE = 25;
+
+  useEffect(() => {
+    const statusParam = searchParams.get('status');
+    if (!statusParam) return;
+    if (statusParam === 'overdue') {
+      setShowOverdueOnly(true);
+      setFilterStatus('');
+      setPage(1);
+      return;
+    }
+    if (STATUSES.includes(statusParam as JobCardStatus)) {
+      setFilterStatus(statusParam);
+      setShowOverdueOnly(false);
+      setPage(1);
+    }
+  }, [searchParams]);
 
   // Unique plant list for filter dropdown
   const plants = useMemo(() =>

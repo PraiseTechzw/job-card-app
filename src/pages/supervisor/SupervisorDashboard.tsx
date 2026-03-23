@@ -52,6 +52,7 @@ export default function SupervisorDashboard() {
   const { jobCards } = useJobCards();
   const { user } = useAuth();
   const navigate = useNavigate();
+  const isEngSupervisor = user?.role === 'EngSupervisor' || user?.role === 'Admin';
 
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState<FilterKey>('all');
@@ -165,7 +166,7 @@ export default function SupervisorDashboard() {
         ))}
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 300px', gap: 24 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 24 }}>
         <div>
           {/* Filters Row */}
           <div style={{
@@ -336,12 +337,14 @@ export default function SupervisorDashboard() {
           <div style={{ background: 'rgba(15,23,42,0.6)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: 16, padding: 20 }}>
             <h3 style={{ fontSize: 11, fontWeight: 800, textTransform: 'uppercase', color: '#475569', marginBottom: 16, letterSpacing: '0.05em' }}>Supervisor Quick Actions</h3>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-              <button onClick={() => navigate('/job-cards/new')} className="btn btn-ghost" style={{ width: '100%', justifyContent: 'flex-start', fontSize: 12, padding: '10px 12px', gap: 10 }}>
-                <Activity size={16} /> Raise Emergency Job
+              <button onClick={() => navigate('/supervisor/active')} className="btn btn-ghost" style={{ width: '100%', justifyContent: 'flex-start', fontSize: 12, padding: '10px 12px', gap: 10 }}>
+                <Activity size={16} /> Live Job Monitor
               </button>
-              <button onClick={() => navigate('/assignments')} className="btn btn-ghost" style={{ width: '100%', justifyContent: 'flex-start', fontSize: 12, padding: '10px 12px', gap: 10 }}>
-                <UserPlus size={16} /> Bulk Assignments
-              </button>
+              {isEngSupervisor && (
+                <button onClick={() => navigate('/assignments')} className="btn btn-ghost" style={{ width: '100%', justifyContent: 'flex-start', fontSize: 12, padding: '10px 12px', gap: 10 }}>
+                  <UserPlus size={16} /> Bulk Assignments
+                </button>
+              )}
               <button onClick={() => navigate('/supervisor/reports')} className="btn btn-ghost" style={{ width: '100%', justifyContent: 'flex-start', fontSize: 12, padding: '10px 12px', gap: 10 }}>
                 <TrendingUp size={16} /> Efficiency Reports
               </button>

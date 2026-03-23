@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import { useJobCards } from '../../context/JobCardContext';
 import { useAuth } from '../../context/AuthContext';
+import { toast } from 'react-hot-toast';
 import styles from '../JobCards.module.css';
 
 export default function CompletionFeedback() {
@@ -40,16 +41,20 @@ export default function CompletionFeedback() {
   const canFeedback = isOwner && job.status === 'Awaiting_SignOff';
 
   const handleSubmit = async () => {
-    if (!satisfaction) { alert('Please indicate whether the work was satisfactory.'); return; }
+    if (!satisfaction) {
+      toast.error('Please indicate whether the work was satisfactory.');
+      return;
+    }
     setIsSubmitting(true);
     try {
       if (satisfaction === 'satisfied') {
-        // Close the job from initiator side — sets originatorSignOff
+        // Initiator can sign off; supervisor remains responsible for final closure.
         await updateJobCard(job.id, {
+          status: 'SignedOff',
           originatorSignOff: user?.name,
-          closedBy: user?.name,
-          closedByDate: new Date().toISOString().split('T')[0],
-          supervisorComments: feedback.trim() || undefined,
+          originatorComment: feedback.trim() || undefined,
+          originatorSignOffDate: new Date().toISOString().split('T')[0],
+          originatorSignOffTime: new Date().toLocaleTimeString(),
           performedBy: user?.name,
           userRole: user?.role,
         });
@@ -70,7 +75,7 @@ export default function CompletionFeedback() {
       }
       setDone(true);
     } catch (e: any) {
-      alert(e?.message || 'Submission failed. Please try again.');
+      toast.error(e?.response?.data?.error || e?.message || 'Submission failed. Please try again.');
     } finally {
       setIsSubmitting(false);
     }
@@ -137,7 +142,7 @@ export default function CompletionFeedback() {
         </div>
       )}
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 300px', gap: 20, alignItems: 'start' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 20, alignItems: 'start' }}>
         {/* Left: Work record summary */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
           {/* Job summary */}
@@ -207,7 +212,7 @@ export default function CompletionFeedback() {
         </div>
 
         {/* Right: Feedback action panel */}
-        <div style={{ position: 'sticky', top: 24 }}>
+        <div style={{ alignSelf: 'start' }}>
           <div style={{ background: 'rgba(15,23,42,0.6)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 16, padding: 24 }}>
             <h3 style={{ fontSize: 14, fontWeight: 700, color: '#f1f5f9', marginBottom: 6 }}>Was the Issue Resolved?</h3>
             <p style={{ fontSize: 12, color: '#64748b', marginBottom: 20, lineHeight: 1.6 }}>
