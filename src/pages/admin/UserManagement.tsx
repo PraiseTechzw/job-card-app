@@ -3,8 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import {
   Users, UserPlus, Search, Filter,
-  ShieldCheck, AlertTriangle, CheckCircle2,
-  Unlock, Edit2, LogOut, ArrowLeft, X, RefreshCw, Eye, Trash2, Mail, Phone, Hash, Briefcase, Building
+  ShieldCheck, CheckCircle2,
+  Unlock, Edit2, LogOut, ArrowLeft, X, Eye, Trash2, Mail, Phone, Hash, Briefcase, Building
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import styles from '../JobCards.module.css';
