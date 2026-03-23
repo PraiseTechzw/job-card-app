@@ -185,12 +185,12 @@ const WorkExecution: React.FC = () => {
         
         {/* Main Form */}
         <div className="lg:col-span-2 space-y-8">
-          <section className="glass-panel p-8 border border-white/10 rounded-3xl bg-slate-900/60 backdrop-blur-xl shadow-2xl">
-            <h3 className="text-white text-xl font-bold flex items-center gap-3 border-b border-white/5 pb-6 mb-8">
-              <div className="p-2 rounded-lg bg-blue-500/20 text-blue-400">
-                <PenTool size={22} />
+          <section className="glass-panel p-8 border border-white/5 rounded-3xl bg-slate-900/40 backdrop-blur-xl shadow-[0_32px_64px_-16px_rgba(0,0,0,0.5)]">
+            <h3 className="text-white text-lg font-bold flex items-center gap-3 border-b border-white/5 pb-6 mb-8 uppercase tracking-wider">
+              <div className="p-2 rounded-xl bg-blue-500/10 text-blue-400 border border-blue-500/20 shadow-lg shadow-blue-500/5">
+                <PenTool size={20} />
               </div>
-              Technical Execution Details
+              Technical Execution
             </h3>
             
             <div className="space-y-8">
@@ -443,23 +443,23 @@ const WorkExecution: React.FC = () => {
       {/* Floating Action Bar */}
       {!isReadOnly && (
         <>
-          <div className="fixed bottom-0 left-0 right-0 lg:left-[280px] p-6 bg-slate-900/80 backdrop-blur-2xl border-t border-white/10 flex flex-col sm:flex-row justify-between items-center gap-4 z-50">
+          <div className="fixed bottom-0 left-0 right-0 lg:left-[280px] p-6 bg-slate-900/90 backdrop-blur-xl border-t border-white/5 flex flex-col sm:flex-row justify-between items-center gap-4 z-50 shadow-[0_-10px_40px_rgba(0,0,0,0.4)]">
             <div className="hidden sm:block">
-              <p className="text-slate-400 text-sm font-medium">Ensure all technical details are accurate before continuing.</p>
+              <p className="text-slate-400 text-xs font-medium uppercase tracking-widest opacity-60">Maintenance Protocol: Stage 1/3</p>
             </div>
             <div className="flex items-center gap-4 w-full sm:w-auto">
               <button 
                 onClick={() => navigate('/artisan/dashboard')}
-                className="flex-1 sm:flex-none px-8 py-4 rounded-2xl bg-slate-800 text-white font-bold hover:bg-slate-700 transition-all active:scale-95"
+                className="flex-1 sm:flex-none px-8 py-4 rounded-2xl bg-slate-800/50 text-slate-300 font-bold hover:bg-slate-800 hover:text-white transition-all active:scale-95 border border-white/5"
               >
                 Discard
               </button>
               
               <button 
                 onClick={handleCompleteWork}
-                className="flex-1 sm:flex-none px-10 py-4 rounded-2xl bg-blue-600 hover:bg-blue-500 text-white font-bold flex items-center justify-center gap-3 shadow-xl shadow-blue-600/20 transition-all hover:-translate-y-1 active:translate-y-0"
+                className="flex-1 sm:flex-none px-10 py-4 rounded-2xl bg-blue-600 hover:bg-blue-500 text-white font-bold flex items-center justify-center gap-3 shadow-xl shadow-blue-600/30 transition-all hover:-translate-y-1 active:translate-y-0 active:scale-95 group"
               >
-                Log Materials <ArrowRight size={20} />
+                Log Materials <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
               </button>
             </div>
           </div>
