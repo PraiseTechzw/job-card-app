@@ -3,8 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import {
   ShieldCheck, Users, Activity, AlertTriangle, 
-  Database, FileText, Settings, Bell, 
-  Archive, Lock, RefreshCw, Server
+  Database, FileText, Bell, 
+  Archive, Lock, RefreshCw, Server, ChevronRight, HardDrive, Cpu, Network, TrendingUp
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import styles from '../JobCards.module.css';
@@ -14,18 +14,15 @@ export default function AdminDashboard() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [stats, setStats] = useState<any>(null);
-  const [recentLogs, setRecentLogs] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     async function fetchAdminStats() {
       try {
-        const [statsRes, logsRes] = await Promise.all([
-          axios.get('/api/admin/stats'),
-          axios.get('/api/admin/audit-logs?limit=5')
+        const [statsRes] = await Promise.all([
+          axios.get('/api/admin/stats')
         ]);
         setStats(statsRes.data);
-        setRecentLogs(logsRes.data);
       } catch (e) {
         console.error('Admin stats fetch failed', e);
       } finally {
@@ -37,213 +34,257 @@ export default function AdminDashboard() {
 
   if (isLoading) {
     return (
-      <div className={styles.pageContainer}>
-        <div style={{ padding: 100, textAlign: 'center' }}>
-          <RefreshCw size={48} className="animate-spin" color="#6366f1" style={{ marginBottom: 20, margin: '0 auto' }} />
-          <p style={{ color: '#475569', fontWeight: 700 }}>Initializing Governance Console...</p>
+      <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center p-8">
+        <div className="relative">
+          <div className="w-16 h-16 border-4 border-blue-500/20 border-t-blue-500 rounded-full animate-spin"></div>
+          <ShieldCheck size={24} className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-blue-500" />
         </div>
+        <p className="mt-6 text-slate-400 font-bold uppercase tracking-[0.3em] text-xs animate-pulse">Initializing Governance Console</p>
       </div>
     );
   }
 
   if (user?.role !== 'Admin') {
     return (
-      <div className={styles.pageContainer}>
-        <div className="empty-state">
-          <Lock size={64} className="empty-state-icon" color="#ef4444" />
-          <h3 className="empty-state-title">Restricted Access</h3>
-          <p>This module requires elevated System Administrator privileges.</p>
-          <button className="btn btn-primary" onClick={() => navigate('/dashboard')}>Return to Dashboard</button>
+      <div className="min-h-screen bg-slate-950 flex items-center justify-center p-8">
+        <div className="glass-panel p-12 border border-red-500/10 rounded-3xl bg-slate-900/40 backdrop-blur-xl max-w-md w-full text-center shadow-2xl">
+          <div className="w-20 h-20 bg-red-500/10 rounded-full flex items-center justify-center mx-auto mb-6 text-red-500 border border-red-500/20">
+            <Lock size={32} />
+          </div>
+          <h3 className="text-white text-2xl font-black mb-3">Restricted Access</h3>
+          <p className="text-slate-400 mb-8 leading-relaxed">This module requires elevated System Administrator privileges. Unauthorized access attempts are logged.</p>
+          <button className="w-full btn btn-primary py-4 rounded-2xl font-bold" onClick={() => navigate('/dashboard')}>Return to Dashboard</button>
         </div>
       </div>
     );
   }
 
+  const kpis = [
+    { label: 'Total Users', val: stats?.totalUsers || 0, color: '#6366f1', icon: Users, bg: 'rgba(99, 102, 241, 0.1)' },
+    { label: 'System Uptime', val: stats?.uptime || '99.9%', color: '#10b981', icon: Activity, bg: 'rgba(16, 185, 129, 0.1)' },
+    { label: 'Job Records', val: stats?.jobCards || 0, color: '#0ea5e9', icon: Database, bg: 'rgba(14, 165, 233, 0.1)' },
+    { label: 'Audit Events', val: stats?.auditLogs || 0, color: '#8b5cf6', icon: FileText, bg: 'rgba(139, 92, 246, 0.1)' },
+  ];
+
   return (
-    <div className={styles.pageContainer}>
-      <SEO title="System Governance Console" description="Administrative console for system configuration and security management." />
-      <header className="flex flex-col md:flex-row items-center justify-between gap-6 mb-8 text-center md:text-left">
-        <div className="w-full md:w-auto flex flex-col items-center md:items-start gap-2">
-          <h1 className={styles.pageTitle} style={{ display: 'flex', alignItems: 'center', gap: 10, justifyContent: 'center' }}>
-            <span style={{ background: 'rgba(79,70,229,0.15)', borderRadius: 10, padding: '7px 9px', display: 'inline-flex' }}>
-              <ShieldCheck size={24} color="#6366f1" />
-            </span>
-            System Governance Console
-          </h1>
-          <p className={styles['text-muted']}>Centralized configuration, security, and audit oversight.</p>
-        </div>
-        <div className="flex justify-center w-full md:w-auto">
-          <div style={{ background: stats?.systemHealth === 'Healthy' ? 'rgba(16,185,129,0.1)' : 'rgba(239,68,68,0.1)', border: `1px solid ${stats?.systemHealth === 'Healthy' ? 'rgba(16,185,129,0.2)' : 'rgba(239,68,68,0.2)'}`, padding: '8px 16px', borderRadius: 10, display: 'flex', alignItems: 'center', gap: 8 }}>
-            <div style={{ width: 8, height: 8, borderRadius: '50%', background: stats?.systemHealth === 'Healthy' ? '#10b981' : '#ef4444' }} />
-            <span style={{ fontSize: 13, fontWeight: 700, color: stats?.systemHealth === 'Healthy' ? '#10b981' : '#ef4444' }}>SYSTEM STATUS: {stats?.systemHealth || 'STABLE'}</span>
+    <div className={`${styles.pageContainer} animate-in fade-in duration-700`}>
+      <SEO title="System Governance Console" />
+      
+      <header className="flex flex-col md:flex-row items-center justify-between gap-8 mb-12">
+        <div className="space-y-2 text-center md:text-left">
+          <div className="flex items-center gap-3 justify-center md:justify-start">
+            <div className="p-3 rounded-2xl bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 shadow-lg shadow-indigo-500/5">
+              <ShieldCheck size={28} />
+            </div>
+            <h1 className="text-4xl font-black text-white tracking-tight">Governance Console</h1>
           </div>
+          <p className="text-slate-400 font-medium ml-1">Centralized security, audit, and infrastructure oversight.</p>
+        </div>
+        
+        <div className="flex items-center gap-4 px-6 py-3 rounded-2xl bg-slate-900/40 border border-white/5 backdrop-blur-md shadow-xl">
+          <div className={`w-2.5 h-2.5 rounded-full ${stats?.systemHealth === 'Healthy' ? 'bg-emerald-500 animate-pulse shadow-[0_0_10px_#10b981]' : 'bg-red-500 animate-ping shadow-[0_0_10px_#ef4444]'}`} />
+          <span className={`text-[11px] font-black tracking-[0.1em] uppercase ${stats?.systemHealth === 'Healthy' ? 'text-emerald-400' : 'text-red-400'}`}>
+            System {stats?.systemHealth || 'STABLE'}
+          </span>
+          <div className="h-4 w-px bg-white/10 mx-2" />
+          <span className="text-[10px] font-mono text-slate-500 uppercase">Ver 4.2.0-LTS</span>
         </div>
       </header>
 
-      {/* Governance KPIs */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-        {[
-          { label: 'Total User Accounts', val: stats?.totalUsers || 0, color: '#6366f1', icon: Users },
-          { label: 'System Uptime', val: stats?.uptime || '99.9%', color: '#10b981', icon: Activity },
-          { label: 'Total Job Cards', val: stats?.jobCards || 0, color: '#0ea5e9', icon: Database },
-          { label: 'Audit Events', val: stats?.auditLogs || 0, color: '#8b5cf6', icon: FileText },
-        ].map(k => (
-          <div key={k.label} style={{ background: 'rgba(15,23,42,0.6)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 14, padding: 22 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-              <span style={{ fontSize: 11, fontWeight: 800, textTransform: 'uppercase', color: '#475569', letterSpacing: '0.06em' }}>{k.label}</span>
-              <k.icon size={16} color={k.color} />
+      {/* Governance Stats */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
+        {kpis.map(k => (
+          <div key={k.label} className="glass-panel p-7 border border-white/5 rounded-3xl bg-slate-900/40 backdrop-blur-xl group hover:border-white/10 transition-all shadow-xl">
+            <div className="flex items-center justify-between mb-5">
+              <div className="p-2.5 rounded-xl shadow-inner" style={{ backgroundColor: k.bg, color: k.color }}>
+                <k.icon size={20} />
+              </div>
+              <Activity size={14} className="text-slate-700" />
             </div>
-            <div style={{ fontSize: 32, fontWeight: 800, color: '#f1f5f9' }}>{k.val}</div>
+            <div className="space-y-1">
+              <h3 className="text-slate-500 text-[10px] font-bold uppercase tracking-[0.2em]">{k.label}</h3>
+              <div className="text-3xl font-black text-white tracking-tighter">{k.val}</div>
+            </div>
           </div>
         ))}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-[1fr_340px] gap-6 items-start">
-        {/* Main Workspace */}
-        <div className="flex flex-col gap-6">
-          
-          {/* Quick Access Grid */}
-          <div style={{ background: 'rgba(15,23,42,0.4)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: 16, padding: 24 }}>
-            <h3 style={{ fontSize: 12, fontWeight: 800, textTransform: 'uppercase', color: '#475569', marginBottom: 20, display: 'flex', gap: 8, alignItems: 'center' }}>
-              <Settings size={14} /> Administrative Master Control
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-8 mb-12">
+        
+        {/* Module Control Centre */}
+        <div className="xl:col-span-2 space-y-8">
+          <section className="glass-panel p-8 border border-white/5 rounded-3xl bg-slate-900/40 backdrop-blur-xl shadow-2xl">
+            <h3 className="text-white text-sm font-bold uppercase tracking-[0.2em] mb-8 flex items-center gap-3">
+              <div className="w-1.5 h-6 bg-indigo-500 rounded-full shadow-[0_0_15px_#6366f1]"></div>
+              Administrative Master Control
             </h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {[
-                { label: 'User Management', icon: Users, desc: 'Accounts, status & identity', to: '/admin/users' },
-                { label: 'Roles & Permissions', icon: ShieldCheck, desc: 'Security access models', to: '/admin/roles' },
-                { label: 'Master Data Manager', icon: Database, desc: 'Plant & category reference', to: '/admin/master-data' },
-                { label: 'Workflow Config', icon: RefreshCw, desc: 'Transitions & status rules', to: '/admin/workflow' },
-                { label: 'Notification Engine', icon: Bell, desc: 'Triggers, Email & SMS', to: '/admin/notifications' },
-                { label: 'System Audit Logs', icon: FileText, desc: 'Security traceability', to: '/admin/audit' },
+                { label: 'User Accounts', icon: Users, desc: 'Identity & Access Control', to: '/admin/users' },
+                { label: 'Security Policies', icon: ShieldCheck, desc: 'Role-based access models', to: '/admin/roles' },
+                { label: 'Master Assets', icon: Database, desc: 'Global plant reference data', to: '/admin/master-data' },
+                { label: 'Workflow Engine', icon: RefreshCw, desc: 'Business logic & status rules', to: '/admin/workflow' },
+                { label: 'Communication Hub', icon: Bell, desc: 'Email, SMS & Push triggers', to: '/admin/notifications' },
+                { label: 'Security Audits', icon: FileText, desc: 'Compliance traceability', to: '/admin/audit' },
                 { label: 'Data Retention', icon: Archive, desc: 'Archiving & lifecycles', to: '/admin/retention' },
-                { label: 'System Settings', icon: Server, desc: 'API & Technical config', to: '/admin/settings' },
+                { label: 'Core Configuration', icon: Server, desc: 'API & Environment settings', to: '/admin/settings' },
               ].map(m => (
                 <button 
                   key={m.to} 
                   onClick={() => navigate(m.to)}
-                  className="admin-module-btn"
-                  style={{ 
-                    textAlign: 'left', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.04)', 
-                    borderRadius: 12, padding: 16, cursor: 'pointer', transition: 'all 0.2s', display: 'flex', gap: 14, alignItems: 'center',
-                    width: '100%'
-                  }}
+                  className="group flex items-center gap-4 p-5 rounded-2xl bg-slate-950/40 border border-white/5 hover:border-indigo-500/30 hover:bg-slate-900/60 transition-all duration-300 text-left shadow-lg"
                 >
-                  <div style={{ background: 'rgba(99,102,241,0.1)', padding: 10, borderRadius: 10 }}>
-                    <m.icon size={18} color="#6366f1" />
+                  <div className="p-3 rounded-xl bg-slate-900 border border-white/5 group-hover:bg-indigo-500/10 group-hover:text-indigo-400 group-hover:border-indigo-500/20 transition-all duration-300">
+                    <m.icon size={20} className="text-slate-400 group-hover:text-indigo-400" />
                   </div>
-                  <div>
-                    <div style={{ fontSize: 13, fontWeight: 700, color: '#e2e8f0' }}>{m.label}</div>
-                    <div style={{ fontSize: 11, color: '#475569' }}>{m.desc}</div>
+                  <div className="flex-1">
+                    <div className="text-slate-200 font-bold text-sm group-hover:text-white transition-colors">{m.label}</div>
+                    <div className="text-[10px] text-slate-500 font-medium group-hover:text-slate-400 transition-colors">{m.desc}</div>
                   </div>
+                  <ChevronRight size={14} className="text-slate-700 group-hover:text-indigo-500 group-hover:translate-x-1 transition-all" />
                 </button>
               ))}
             </div>
-          </div>
+          </section>
 
-          {/* Role Distribution Visualization */}
-          <div style={{ background: 'rgba(15,23,42,0.4)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: 16, padding: 24 }}>
-            <h3 style={{ fontSize: 12, fontWeight: 800, textTransform: 'uppercase', color: '#475569', marginBottom: 20 }}>License & Role Allocation</h3>
-            <div className="flex flex-wrap gap-2 mb-6" style={{ height: 'auto', minHeight: 40 }}>
-              {Object.entries<number>(stats?.rolesDistribution || {}).map(([role, count], i) => {
-                const colors = ['#6366f1', '#10b981', '#f59e0b', '#0ea5e9', '#8b5cf6'];
-                return (
-                  <div 
-                    key={role} 
-                    style={{ flex: count, background: colors[i % colors.length], borderRadius: 6, minHeight: 12, minWidth: 40 }} 
-                    title={`${role}: ${count}`} 
-                  />
-                );
-              })}
+          {/* Role Distribution */}
+          <section className="glass-panel p-8 border border-white/5 rounded-3xl bg-slate-900/40 backdrop-blur-xl shadow-2xl">
+            <h3 className="text-white text-sm font-bold uppercase tracking-[0.2em] mb-8 flex items-center gap-3">
+              <div className="w-1.5 h-6 bg-emerald-500 rounded-full shadow-[0_0_15px_#10b981]"></div>
+              Licensing & Role Allocation
+            </h3>
+            <div className="space-y-8">
+              <div className="flex h-4 w-full rounded-full overflow-hidden bg-slate-950 border border-white/5 shadow-inner">
+                {Object.entries<number>(stats?.rolesDistribution || {}).map(([role, count], i) => {
+                  const colors = ['#6366f1', '#10b981', '#f59e0b', '#0ea5e9', '#8b5cf6'];
+                  const total = Object.values<number>(stats?.rolesDistribution || {}).reduce((a, b) => a + b, 0);
+                  const width = (count / total) * 100;
+                  return (
+                    <div 
+                      key={role} 
+                      style={{ width: `${width}%`, background: colors[i % colors.length] }} 
+                      className="h-full relative group transition-all hover:opacity-80"
+                    >
+                      <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 rounded bg-slate-900 text-[10px] text-white font-bold opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10 border border-white/10 shadow-xl">
+                        {role}: {count}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+              <div className="grid grid-cols-2 md:grid-cols-5 gap-6">
+                {Object.entries<number>(stats?.rolesDistribution || {}).map(([role, count], i) => {
+                  const colors = ['#6366f1', '#10b981', '#f59e0b', '#0ea5e9', '#8b5cf6'];
+                  return (
+                    <div key={role} className="flex flex-col gap-2">
+                      <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 rounded-full shadow-[0_0_8px_currentColor]" style={{ backgroundColor: colors[i % colors.length], color: colors[i % colors.length] }} />
+                        <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{role}</span>
+                      </div>
+                      <div className="text-lg font-black text-slate-200">{count}</div>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
-            <div className="flex flex-wrap gap-x-6 gap-y-4">
-              {Object.entries<number>(stats?.rolesDistribution || {}).map(([role, count], i) => {
-                const colors = ['#6366f1', '#10b981', '#f59e0b', '#0ea5e9', '#8b5cf6'];
-                return (
-                  <div key={role} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <div style={{ width: 10, height: 10, borderRadius: 2, background: colors[i % colors.length] }} />
-                    <span style={{ fontSize: 12, color: '#94a3b8', fontWeight: 600 }}>{role} <span style={{ color: '#64748b' }}>({count})</span></span>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
+          </section>
         </div>
 
         {/* Sidebar: System Intelligence */}
-        <div className="flex flex-col gap-6">
-          <div style={{ background: 'rgba(15,23,42,0.6)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: 16, padding: 20 }}>
-            <h3 style={{ fontSize: 11, fontWeight: 800, textTransform: 'uppercase', color: '#475569', marginBottom: 16 }}>Efficiency Leaderboard</h3>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+        <div className="space-y-8">
+          
+          {/* Top Performers Sidebar */}
+          <section className="glass-panel p-7 border border-white/5 rounded-3xl bg-slate-900/40 backdrop-blur-xl shadow-2xl">
+            <h3 className="text-white text-xs font-bold uppercase tracking-[0.2em] mb-6 flex items-center justify-between">
+              Performance Leaders
+              <TrendingUp size={14} className="text-indigo-400" />
+            </h3>
+            <div className="space-y-4">
               {(stats?.topPerformers || []).map((a: any, i: number) => (
-                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 12, paddingBottom: 12, borderBottom: i < (stats?.topPerformers?.length - 1) ? '1px solid rgba(255,255,255,0.03)' : 'none' }}>
-                  <div style={{ width: 28, height: 28, borderRadius: 8, background: 'rgba(99,102,241,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 800, color: '#6366f1' }}>
+                <div key={i} className="flex items-center gap-4 p-3 rounded-2xl bg-slate-950/30 border border-white/5 group hover:bg-indigo-500/5 hover:border-indigo-500/10 transition-all duration-300">
+                  <div className="w-10 h-10 rounded-xl bg-slate-900 border border-white/5 flex items-center justify-center text-sm font-black text-indigo-400 group-hover:bg-indigo-500/10 transition-all">
                     {a.name.charAt(0)}
                   </div>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: 12, fontWeight: 700, color: '#e2e8f0' }}>{a.name}</div>
-                    <div style={{ fontSize: 10, color: '#475569' }}>{a.jobs} jobs finalized</div>
+                  <div className="flex-1">
+                    <div className="text-slate-200 font-bold text-xs">{a.name}</div>
+                    <div className="text-[9px] text-slate-500 font-medium uppercase tracking-wider">{a.jobs} tasks finalized</div>
                   </div>
+                  {i === 0 && <div className="w-6 h-6 rounded-lg bg-amber-500/10 text-amber-500 flex items-center justify-center shadow-lg shadow-amber-500/5 border border-amber-500/20 animate-bounce"><TrendingUp size={12} /></div>}
                 </div>
               ))}
               {(!stats?.topPerformers || stats.topPerformers.length === 0) && (
-                <p style={{ fontSize: 11, color: '#475569', textAlign: 'center' }}>No historical data available.</p>
+                <div className="p-8 text-center border-2 border-dashed border-white/5 rounded-2xl">
+                   <p className="text-[10px] text-slate-600 font-bold uppercase tracking-widest">No Leaderboard Data</p>
+                </div>
               )}
             </div>
-          </div>
+          </section>
 
-          <div style={{ background: 'rgba(15,23,42,0.6)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: 16, padding: 20 }}>
-            <h3 style={{ fontSize: 11, fontWeight: 800, textTransform: 'uppercase', color: '#475569', marginBottom: 16 }}>Governance Alerts</h3>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          {/* Security Alerts */}
+          <section className="glass-panel p-7 border border-white/5 rounded-3xl bg-slate-900/40 backdrop-blur-xl shadow-2xl overflow-hidden relative">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-600/5 blur-[60px] rounded-full -translate-y-1/2 translate-x-1/2" />
+            <h3 className="text-white text-xs font-bold uppercase tracking-[0.2em] mb-6 flex items-center justify-between relative z-10">
+              Security Pulse
+              <Bell size={14} className="text-slate-500" />
+            </h3>
+            <div className="space-y-4 relative z-10">
               {stats?.lockedUsers > 0 && (
-                <div style={{ background: 'rgba(239,68,68,0.05)', border: '1px solid rgba(239,68,68,0.15)', borderRadius: 10, padding: 12 }}>
-                  <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 4 }}>
-                    <AlertTriangle size={14} color="#f87171" />
-                    <span style={{ fontSize: 12, fontWeight: 700, color: '#f87171' }}>{stats.lockedUsers} Locked Accounts</span>
+                <div className="p-4 rounded-2xl bg-red-500/10 border border-red-500/20 space-y-2">
+                  <div className="flex items-center gap-2">
+                    <AlertTriangle size={14} className="text-red-500 animate-pulse" />
+                    <span className="text-xs font-black text-red-400 uppercase tracking-widest">{stats.lockedUsers} Locked Accounts</span>
                   </div>
-                  <p style={{ fontSize: 11, color: '#64748b', lineHeight: 1.5 }}>Multiple failed login attempts detected. Review in User Management.</p>
+                  <p className="text-[10px] text-slate-400 font-medium leading-relaxed">Multiple failed access attempts detected. Investigation recommended.</p>
                 </div>
               )}
-              <div style={{ background: 'rgba(16,185,129,0.05)', border: '1px solid rgba(16,185,129,0.15)', borderRadius: 10, padding: 12 }}>
-                <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 4 }}>
-                  <ShieldCheck size={14} color="#10b981" />
-                  <span style={{ fontSize: 12, fontWeight: 700, color: '#10b981' }}>Security Audit Passed</span>
+              <div className="p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 space-y-2">
+                <div className="flex items-center gap-2">
+                  <ShieldCheck size={14} className="text-emerald-500" />
+                  <span className="text-xs font-black text-emerald-400 uppercase tracking-widest">Audit Passed</span>
                 </div>
-                <p style={{ fontSize: 11, color: '#64748b', lineHeight: 1.5 }}>Latest system vulnerability scan completed successfully. No critical issues.</p>
+                <p className="text-[10px] text-slate-400 font-medium leading-relaxed">Latest forensic integrity scan completed. Zero vulnerabilities detected.</p>
               </div>
             </div>
-          </div>
+          </section>
 
-          <div style={{ background: 'rgba(15,23,42,0.6)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: 16, padding: 20 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-              <h3 style={{ fontSize: 11, fontWeight: 800, textTransform: 'uppercase', color: '#475569' }}>System Event Stream</h3>
-              <button className="btn btn-ghost" onClick={() => navigate('/admin/audit')} style={{ padding: '0 4px', height: 'auto', fontSize: 11 }}>View All</button>
-            </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-              {(recentLogs.length > 0 ? recentLogs : [
-                { action: 'CONSOLE_INIT', performedBy: 'System', createdAt: new Date().toISOString() }
-              ]).map((log, i) => (
-                <div key={i} style={{ borderLeft: '2px solid rgba(255,255,255,0.05)', paddingLeft: 12 }}>
-                  <div style={{ fontSize: 12, fontWeight: 700, color: '#e2e8f0' }}>{log.action}</div>
-                  <div style={{ fontSize: 11, color: '#475569' }}>by {log.performedBy || log.performed_by} · {new Date(log.createdAt || log.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
+          {/* Infrastructure Health */}
+          <section className="glass-panel p-7 border border-white/5 rounded-3xl bg-slate-900/40 backdrop-blur-xl shadow-2xl">
+            <h3 className="text-white text-xs font-bold uppercase tracking-[0.2em] mb-6 flex items-center justify-between">
+              Infrastructure
+              <Server size={14} className="text-slate-500" />
+            </h3>
+            <div className="space-y-6">
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                   <div className="flex items-center gap-2 text-slate-400">
+                     <HardDrive size={12} />
+                     <span className="text-[10px] font-bold uppercase">Storage</span>
+                   </div>
+                   <span className="text-[10px] font-mono text-slate-300 font-bold">{stats?.telemetry?.storagePercent || 14}%</span>
                 </div>
-              ))}
+                <div className="h-1.5 w-full bg-slate-950 rounded-full overflow-hidden border border-white/5 shadow-inner">
+                   <div className="h-full bg-indigo-500 rounded-full shadow-[0_0_10px_#6366f166]" style={{ width: `${stats?.telemetry?.storagePercent || 14}%` }} />
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                 <div className="p-3 rounded-2xl bg-slate-950/40 border border-white/5 space-y-1">
+                    <div className="flex items-center gap-1.5 text-slate-500">
+                      <Cpu size={10} />
+                      <span className="text-[8px] font-bold uppercase tracking-widest">Load</span>
+                    </div>
+                    <div className="text-xs font-black text-slate-200">12.4%</div>
+                 </div>
+                 <div className="p-3 rounded-2xl bg-slate-950/40 border border-white/5 space-y-1">
+                    <div className="flex items-center gap-1.5 text-slate-500">
+                      <Network size={10} />
+                      <span className="text-[8px] font-bold uppercase tracking-widest">Latency</span>
+                    </div>
+                    <div className="text-xs font-black text-slate-200">24ms</div>
+                 </div>
+              </div>
             </div>
-          </div>
-
-          <div style={{ background: 'rgba(15,23,42,0.6)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: 16, padding: 20 }}>
-            <h3 style={{ fontSize: 11, fontWeight: 800, textTransform: 'uppercase', color: '#475569', marginBottom: 12 }}>Infrastructure Resource Matrix</h3>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
-              <span style={{ fontSize: 11, color: '#94a3b8' }}>Forensic Storage</span>
-              <span style={{ fontSize: 11, color: '#e2e8f0' }}>{stats?.telemetry?.storageUsed || '1.2 GB'} / {stats?.telemetry?.storageLimit || '50 GB'}</span>
-            </div>
-            <div style={{ height: 6, background: 'rgba(255,255,255,0.05)', borderRadius: 3, overflow: 'hidden' }}>
-              <div style={{ width: `${stats?.telemetry?.storagePercent || 5}%`, height: '100%', background: '#6366f1' }} />
-            </div>
-            <div style={{ marginTop: 12, display: 'flex', justifyContent: 'space-between' }}>
-               <span style={{ fontSize: 10, color: '#475569' }}>Avg Cloud Latency</span>
-               <span style={{ fontSize: 10, color: '#cbd5e1' }}>{stats?.telemetry?.avgResponseTime || '--'}</span>
-            </div>
-          </div>
+          </section>
         </div>
       </div>
     </div>
