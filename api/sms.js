@@ -19,9 +19,14 @@ export const sendSms = async (phoneNumber, message) => {
   }
 
   // Clean phone number (removing any prefixes or adding country code if standard in Zimbabwe 263)
-  let cleanNumber = phoneNumber.replace(/[^0-9]/g, '');
+  let cleanNumber = phoneNumber.toString().replace(/[^0-9]/g, '');
+  
+  // Normalize Zimbabwe numbers
   if (cleanNumber.startsWith('0')) {
     cleanNumber = '263' + cleanNumber.substring(1);
+  } else if (cleanNumber.length === 9 && (cleanNumber.startsWith('77') || cleanNumber.startsWith('78') || cleanNumber.startsWith('71') || cleanNumber.startsWith('73'))) {
+    // If it's a 9-digit number starting with valid mobile prefixes, assume missing country code
+    cleanNumber = '263' + cleanNumber;
   }
 
   try {

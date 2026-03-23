@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { CheckCircle2, ArrowLeft, Send, PenTool, ArrowRight } from 'lucide-react';
 import { useJobCards } from '../../context/JobCardContext';
+import { toast } from 'react-hot-toast';
 import styles from '../JobCards.module.css';
 
 const ReviewSubmit: React.FC = () => {
@@ -18,20 +19,20 @@ const ReviewSubmit: React.FC = () => {
   const isReadOnly = ['Pending_Supervisor', 'Awaiting_SignOff', 'Closed'].includes(job.status);
 
   const handleSubmit = async () => {
+    const loadingToast = toast.loading('Submitting job card for review...');
     setIsSubmitting(true);
     try {
-
       await updateJobCard(job.id, {
         status: 'Pending_Supervisor',
         dateFinished: new Date().toISOString().split('T')[0],
-        // Record completion timestamp or other audit fields
       });
+      toast.success('Job card submitted successfully', { id: loadingToast });
       setShowSuccess(true);
       setTimeout(() => {
         navigate('/artisan/dashboard');
       }, 3000);
     } catch (err: any) {
-      alert('Failed to submit job for review');
+      toast.error('Failed to submit job for review', { id: loadingToast });
       setIsSubmitting(false);
     }
   };

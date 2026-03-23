@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, ArrowRight, Plus, Trash2, Box, Wrench, Users, DollarSign } from 'lucide-react';
 import { useJobCards } from '../../context/JobCardContext';
+import { toast } from 'react-hot-toast';
 import styles from '../JobCards.module.css';
 
 const MaterialsResources: React.FC = () => {
@@ -68,6 +69,7 @@ const MaterialsResources: React.FC = () => {
   };
 
   const handleSaveAndContinue = async () => {
+    const loadingToast = toast.loading('Saving materials and resources...');
     try {
       await updateJobCard(job.id, {
         sparesOrdered: orderedSpares,
@@ -76,9 +78,10 @@ const MaterialsResources: React.FC = () => {
         numAssistants: resources.numAssistants,
         // Add mapping for hoursPerDay / delayNotes if your context provides it
       });
+      toast.success('Materials saved', { id: loadingToast });
       navigate(`/artisan/review/${job.id}`);
     } catch (err: any) {
-      alert('Failed to save materials');
+      toast.error('Failed to save materials', { id: loadingToast });
     }
   };
 

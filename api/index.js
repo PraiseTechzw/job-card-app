@@ -216,7 +216,7 @@ app.post('/api/job-cards', authenticateToken, async (req, res) => {
     if (data.status && data.status !== 'Draft') {
         const ticketInfo = `[${ticketNumber}] (${data.plant_description || 'General Asset'})`;
         console.log(`[SMS DEBUG POST] New job created. Querying phones for Supervisors...`);
-        query('SELECT phone FROM users WHERE role = $1 AND phone IS NOT NULL', ['Supervisor'])
+        query('SELECT phone FROM users WHERE role = $1 AND phone IS NOT NULL AND phone != \'\'', ['Supervisor'])
           .then(res => {
             const phones = [...new Set(res.rows.map(r => r.phone).filter(Boolean))];
             console.log(`[SMS DEBUG POST] Supervisors found:`, phones);
@@ -301,13 +301,17 @@ app.patch('/api/job-cards/:id', authenticateToken, async (req, res) => {
           };
 
           const getPhonesByRole = async (role) => {
-             const res = await query('SELECT phone FROM users WHERE role = $1 AND phone IS NOT NULL', [role]);
+             const res = await query('SELECT phone FROM users WHERE role = $1 AND phone IS NOT NULL AND phone != \'\'', [role]);
              return res.rows.map(r => r.phone);
           };
 
           const getPhonesByName = async (name) => {
              if (!name) return [];
-             const res = await query('SELECT phone FROM users WHERE name = $1 UNION SELECT phone FROM artisans WHERE name = $1', [name]);
+             const res = await query(`
+               SELECT phone FROM users WHERE name = $1 AND phone IS NOT NULL AND phone != ''
+               UNION 
+               SELECT phone FROM artisans WHERE name = $1 AND phone IS NOT NULL AND phone != ''
+             `, [name]);
              return res.rows.map(r => r.phone);
           }
 
