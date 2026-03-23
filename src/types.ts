@@ -159,6 +159,9 @@ export interface JobCard {
   hasHistory?: boolean;
   furtherWorkRequired?: string;
   supervisorComments?: string;
+  failureType?: string;
+  maintenanceType?: string;
+  safetyNotes?: string;
   sparesOrdered?: SpareOrdered[];
   sparesWithdrawn?: SpareWithdrawn[];
   originatorComment?: string;

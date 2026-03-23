@@ -2,6 +2,7 @@ import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { JobCardProvider } from './context/JobCardContext';
+import { Toaster } from 'react-hot-toast';
 import MainLayout from './layouts/MainLayout';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
@@ -142,6 +143,7 @@ function App() {
     <BrowserRouter>
       <AuthProvider>
         <JobCardProvider>
+          <Toaster position="top-right" reverseOrder={false} />
           <AppContent />
         </JobCardProvider>
       </AuthProvider>

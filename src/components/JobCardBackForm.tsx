@@ -116,11 +116,37 @@ const JobCardBackForm: React.FC<JobCardBackFormProps> = ({ data, onChange, readO
                 ]}
               />
             </FormField>
+            <FormField label="Maintenance Type">
+              <Input 
+                value={data.maintenanceType} 
+                onChange={e => updateField('maintenanceType', e.target.value)} 
+                disabled={readOnly}
+                placeholder="e.g. Mechanical"
+              />
+            </FormField>
             <FormField label="Cause of Failure">
               <Input 
                 value={data.causeOfFailure} 
                 onChange={e => updateField('causeOfFailure', e.target.value)} 
                 disabled={readOnly}
+              />
+            </FormField>
+            <FormField label="Failure Type">
+              <Input 
+                value={data.failureType} 
+                onChange={e => updateField('failureType', e.target.value)} 
+                disabled={readOnly}
+                placeholder="e.g. Wear & Tear"
+              />
+            </FormField>
+          </div>
+          <div className="mt-4">
+            <FormField label="Safety Notes / Hazards Checked">
+              <Input 
+                value={data.safetyNotes} 
+                onChange={e => updateField('safetyNotes', e.target.value)} 
+                disabled={readOnly}
+                placeholder="e.g. LOTO Applied"
               />
             </FormField>
           </div>
