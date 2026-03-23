@@ -203,7 +203,6 @@ app.post('/api/job-cards', authenticateToken, async (req, res) => {
   const values = [id, ticketNumber, ...Object.values(data).map(v => (typeof v === 'object' && v !== null) ? JSON.stringify(v) : v)];
   const placeholders = values.map((_, i) => `$${i + 1}`).join(', ');
 
-  const client = await pool.connect();
   try {
     const result = await query(
       `INSERT INTO job_cards (${fields.join(', ')}) VALUES (${placeholders}) RETURNING *`,
@@ -789,7 +788,13 @@ app.get('/api/admin/config', authenticateToken, authorizeRoles('Admin'), async (
   try {
     const result = await query('SELECT * FROM system_config');
     const config = {};
-    result.rows.forEach(r => config[r.key] = r.value);
+    result.rows.forEach(r => {
+      try {
+        config[r.key] = typeof r.value === 'string' ? JSON.parse(r.value) : r.value;
+      } catch {
+        config[r.key] = r.value;
+      }
+    });
     res.json(config);
   } catch (err) {
     res.status(500).json({ error: err.message });

@@ -42,13 +42,14 @@ export default function JobApproval() {
     );
   }
 
-  const notApprovable = !['Pending_Supervisor', 'Draft'].includes(job.status);
+  const canReviewRole = user?.role === 'Supervisor' || user?.role === 'Admin';
+  const notApprovable = !canReviewRole || !['Pending_Supervisor', 'Draft'].includes(job.status);
 
   const handleApprove = async () => {
     setIsSubmitting(true);
     try {
       await updateJobCard(job.id, {
-        status: 'Approved',
+        status: 'Pending_HOD',
         approvedBySupervisor: user?.name,
         performedBy: user?.name,
         userRole: user?.role,
@@ -159,13 +160,13 @@ export default function JobApproval() {
           <div>
             <strong>This job cannot be approved</strong>
             <p style={{ fontSize: 12, marginTop: 2, color: '#94a3b8' }}>
-              Current status: <strong>{job.status}</strong>. Only Pending_Supervisor jobs can be approved here.
+              Current status: <strong>{job.status}</strong>. Only Supervisors/Admin can review jobs that are pending supervisor approval.
             </p>
           </div>
         </div>
       )}
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 320px', gap: 20 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 20 }}>
         {/* Left: Details */}
         <div style={{ background: 'rgba(15,23,42,0.6)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 16, padding: 28 }}>
           <h2 style={{ fontSize: 16, fontWeight: 700, marginBottom: 4, color: '#f1f5f9' }}>
@@ -218,8 +219,8 @@ export default function JobApproval() {
               <span style={{ fontWeight: 700, color: '#10b981', fontSize: 15 }}>Approve Job</span>
             </div>
             <p style={{ color: '#64748b', fontSize: 12, marginBottom: 20, lineHeight: 1.6 }}>
-              Approving will authorize this job and move it to <strong style={{ color: '#94a3b8' }}>Approved</strong> status, 
-              ready for planning and assignment. Your name and timestamp will be recorded.
+              Approving will move this request to <strong style={{ color: '#94a3b8' }}>Pending HOD</strong> for final approval.
+              Your name and timestamp will be recorded.
             </p>
             <button
               className="btn btn-primary"

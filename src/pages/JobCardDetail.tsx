@@ -3,6 +3,7 @@ import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import type { JobCard, JobCardStatus } from '../types';
 import { useJobCards } from '../context/JobCardContext';
 import { useAuth } from '../context/AuthContext';
+import axios from 'axios';
 import { Printer, Edit3, ArrowLeft, Save, ShieldCheck, UserCheck, Play, CheckCircle2, History, ClipboardList, Zap, Wrench, FileText, User, Settings, Component, AlertTriangle } from 'lucide-react';
 import WorkflowTracker from '../components/WorkflowTracker';
 import JobCardBackForm from '../components/JobCardBackForm';
@@ -37,6 +38,15 @@ const JobCardDetail: React.FC = () => {
         getAssignments(id).then(res => {
           if (res && res.length > 0) setAssignment(res[0]);
         });
+      } else {
+        axios.get(`/api/job-cards/${id}`)
+          .then(res => {
+            setCard(res.data);
+            setBackData(res.data);
+          })
+          .catch(() => {
+            setCard(null);
+          });
       }
     }
   }, [id, getJobCard, getAuditLogs, getAssignments]);

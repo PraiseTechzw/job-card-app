@@ -20,6 +20,7 @@ export default function JobAssignment() {
 
   const [artisanRoster, setArtisanRoster] = useState<string[]>([]);
   const [artisanName, setArtisanName] = useState('');
+  const [customArtisanName, setCustomArtisanName] = useState('');
   const [section, setSection] = useState('');
   const [priority, setPriority] = useState('');
   const [expectedStart, setExpectedStart] = useState('');
@@ -60,7 +61,7 @@ export default function JobAssignment() {
   }
 
   const isReassign = ['Assigned', 'InProgress'].includes(job.status);
-  const canAssign = ['Registered', 'Approved', 'Assigned', 'InProgress'].includes(job.status);
+  const canAssign = ['Registered', 'Assigned', 'InProgress'].includes(job.status);
 
   // Build artisan workload from assignments context
   const workloadMap: Record<string, number> = {};
@@ -72,12 +73,13 @@ export default function JobAssignment() {
 
   const handleAssign = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!artisanName.trim()) { alert('Please select or enter an artisan name.'); return; }
+    const resolvedArtisanName = artisanName === '__custom' ? customArtisanName.trim() : artisanName.trim();
+    if (!resolvedArtisanName) { alert('Please select or enter an artisan name.'); return; }
     setIsSubmitting(true);
     try {
       await addAssignment({
         jobCardId: job.id,
-        artisanName: artisanName.trim(),
+        artisanName: resolvedArtisanName,
         section: section.trim(),
         assignedBy: user?.name || 'Supervisor',
         assignedDate: new Date().toISOString().split('T')[0],
@@ -89,7 +91,7 @@ export default function JobAssignment() {
 
       await updateJobCard(job.id, {
         status: 'Assigned',
-        issuedTo: artisanName.trim(),
+        issuedTo: resolvedArtisanName,
         priority: (priority as any) || job.priority,
         performedBy: user?.name,
         userRole: user?.role,
@@ -99,9 +101,10 @@ export default function JobAssignment() {
         jobCardId: job.id,
         action: isReassign ? 'JOB_REASSIGNED' : 'JOB_ASSIGNED',
         performedBy: user?.name || 'Supervisor',
-        details: `${isReassign ? 'Reassigned' : 'Assigned'} to ${artisanName} by ${user?.name}. Instructions: ${instructions || 'None'}`,
+        details: `${isReassign ? 'Reassigned' : 'Assigned'} to ${resolvedArtisanName} by ${user?.name}. Instructions: ${instructions || 'None'}`,
       });
 
+      setArtisanName(resolvedArtisanName);
       setDone(true);
       setTimeout(() => navigate('/supervisor/dashboard'), 2500);
     } catch (e: any) {
@@ -166,7 +169,7 @@ export default function JobAssignment() {
         </div>
       )}
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 20 }}>
         {/* Job Summary */}
         <div style={{ background: 'rgba(15,23,42,0.6)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 16, padding: 24 }}>
           <h2 style={{ fontSize: 14, fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 18 }}>Job Details</h2>
@@ -224,7 +227,8 @@ export default function JobAssignment() {
                   className="form-input"
                   style={{ marginTop: 8 }}
                   placeholder="Enter artisan name"
-                  onChange={e => setArtisanName(e.target.value)}
+                  value={customArtisanName}
+                  onChange={e => setCustomArtisanName(e.target.value)}
                 />
               )}
             </div>
@@ -252,7 +256,7 @@ export default function JobAssignment() {
             </div>
 
             {/* Dates */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 10 }}>
               <div>
                 <label className="form-label"><CalendarDays size={11} style={{ display: 'inline', marginRight: 4 }} />Expected Start</label>
                 <input type="date" className="form-input" value={expectedStart} onChange={e => setExpectedStart(e.target.value)} />

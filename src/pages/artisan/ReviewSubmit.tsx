@@ -23,7 +23,7 @@ const ReviewSubmit: React.FC = () => {
     setIsSubmitting(true);
     try {
       await updateJobCard(job.id, {
-        status: 'Pending_Supervisor',
+        status: 'Awaiting_SignOff',
         dateFinished: new Date().toISOString().split('T')[0],
       });
       toast.success('Job card submitted successfully', { id: loadingToast });

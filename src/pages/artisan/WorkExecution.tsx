@@ -134,7 +134,7 @@ const WorkExecution: React.FC = () => {
       });
       
       toast.success('Work details recorded', { id: loadingToast });
-      navigate(`/artisan/materials-resources/${job.id}`);
+      navigate(`/artisan/materials/${job.id}`);
     } catch (err: any) {
       toast.error('Failed to update job card', { id: loadingToast });
     }
