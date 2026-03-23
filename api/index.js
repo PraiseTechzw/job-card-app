@@ -9,6 +9,7 @@ import { isValidTransition } from './workflow.js';
 import { createAuditLog } from './audit.js';
 import { sanitizeJobCardData } from './validation.js';
 import { sendSms } from './sms.js';
+import { getCreationNotificationPlan, getStatusNotificationPlan } from './jobNotificationTemplates.js';
 
 if (!process.env.DATABASE_URL) {
   console.error('CRITICAL: DATABASE_URL environment variable is missing.');
@@ -106,6 +107,85 @@ const toSnake = (obj) => {
     newObj[snakeKey] = obj[key];
   }
   return newObj;
+};
+
+const notifyPhones = async (phones, message) => {
+  const uniquePhones = [...new Set((phones || []).filter(Boolean))];
+  if (!message || uniquePhones.length === 0) return;
+  for (const phone of uniquePhones) {
+    try {
+      await sendSms(phone, message);
+    } catch (err) {
+      console.error(`[SMS] Failed to send to ${phone}:`, err);
+    }
+  }
+};
+
+const getPhonesByRoles = async (roles) => {
+  if (!Array.isArray(roles) || roles.length === 0) return [];
+  const res = await query(
+    `SELECT DISTINCT phone
+     FROM users
+     WHERE role = ANY($1::text[])
+       AND phone IS NOT NULL
+       AND phone != ''
+       AND COALESCE(status, 'Active') = 'Active'`,
+    [roles]
+  );
+  return res.rows.map((r) => r.phone);
+};
+
+const getPhonesByName = async (name, { includeUsers = true, includeArtisans = true } = {}) => {
+  if (!name) return [];
+  const phones = [];
+
+  if (includeUsers) {
+    const userRes = await query(
+      `SELECT phone
+       FROM users
+       WHERE name = $1
+         AND phone IS NOT NULL
+         AND phone != ''
+         AND COALESCE(status, 'Active') = 'Active'`,
+      [name]
+    );
+    phones.push(...userRes.rows.map((r) => r.phone));
+  }
+
+  if (includeArtisans) {
+    const artisanRes = await query(
+      `SELECT phone
+       FROM artisans
+       WHERE name = $1
+         AND phone IS NOT NULL
+         AND phone != ''`,
+      [name]
+    );
+    phones.push(...artisanRes.rows.map((r) => r.phone));
+  }
+
+  return [...new Set(phones)];
+};
+
+const dispatchNotificationPlan = async (plan) => {
+  if (!plan || !Array.isArray(plan.targets) || !plan.message) return;
+  const allPhones = [];
+  for (const target of plan.targets) {
+    if (!target) continue;
+    if (target.kind === 'roles') {
+      const rolePhones = await getPhonesByRoles(target.roles || []);
+      allPhones.push(...rolePhones);
+      continue;
+    }
+    if (target.kind === 'person') {
+      const personPhones = await getPhonesByName(target.name, {
+        includeUsers: target.includeUsers !== false,
+        includeArtisans: target.includeArtisans !== false,
+      });
+      allPhones.push(...personPhones);
+    }
+  }
+  await notifyPhones(allPhones, plan.message);
 };
 
 // --- AUTH ENDPOINTS ---
@@ -213,17 +293,13 @@ app.post('/api/job-cards', authenticateToken, async (req, res) => {
     await createAuditLog(pool, id, 'Initial Creation', performedBy || req.user?.name || 'System', { ticketNumber });
 
     if (data.status && data.status !== 'Draft') {
-        const ticketInfo = `[${ticketNumber}] (${data.plant_description || 'General Asset'})`;
-        console.log(`[SMS DEBUG POST] New job created. Querying phones for Supervisors...`);
-        query('SELECT phone FROM users WHERE role = $1 AND phone IS NOT NULL AND phone != \'\'', ['Supervisor'])
-          .then(res => {
-            const phones = [...new Set(res.rows.map(r => r.phone).filter(Boolean))];
-            console.log(`[SMS DEBUG POST] Supervisors found:`, phones);
-            phones.forEach(p => {
-               console.log(`[SMS DEBUG POST] Sending to ${p}...`);
-               sendSms(p, `Megapak Notification: Critical Job Request ${ticketInfo} has been officially recorded and awaits your immediate supervisor review.`).catch(e => console.error(`[SMS DEBUG POST] Failed sending to ${p}:`, e));
-             });
-          }).catch(err => console.error(`[SMS DEBUG POST] Failed querying supervisor phones:`, err));
+      try {
+        const createdJob = result.rows[0];
+        const plan = getCreationNotificationPlan(createdJob);
+        await dispatchNotificationPlan(plan);
+      } catch (err) {
+        console.error('[SMS] Create notification dispatcher failed:', err);
+      }
     }
 
     res.status(201).json(toCamel(result.rows[0]));
@@ -280,94 +356,16 @@ app.patch('/api/job-cards/:id', authenticateToken, async (req, res) => {
       
       await createAuditLog(pool, req.params.id, action, performedBy || req.user?.name || 'System', auditDetails);
       
-      // 5. Send SMS Notifications covering the entire pipeline
+      // 5. Send role-aware SMS notifications for status transitions
       const updatedJob = updateResult.rows[0];
       if (nextStatus && nextStatus !== currentStatus) {
         try {
-          const notify = async (phones, msg) => {
-             console.log(`[SMS DEBUG PATCH] Attempting notify to broad list:`, phones);
-             const uniquePhones = [...new Set(phones)].filter(Boolean);
-             if (uniquePhones.length === 0) {
-                 console.log(`[SMS DEBUG PATCH] Notification aborted - No valid target phones mapped.`);
-                 return;
-             }
-             for (const p of uniquePhones) {
-                 console.log(`[SMS DEBUG PATCH] Dispatch target: ${p} | Message: ${msg}`);
-                 await sendSms(p, msg).catch((err) => {
-                     console.error(`[SMS DEBUG PATCH] Dispatch failure to ${p}:`, err);
-                 });
-             }
-          };
-
-          const getPhonesByRole = async (role) => {
-             const res = await query('SELECT phone FROM users WHERE role = $1 AND phone IS NOT NULL AND phone != \'\'', [role]);
-             return res.rows.map(r => r.phone);
-          };
-
-          const getPhonesByName = async (name) => {
-             if (!name) return [];
-             const res = await query(`
-               SELECT phone FROM users WHERE name = $1 AND phone IS NOT NULL AND phone != ''
-               UNION 
-               SELECT phone FROM artisans WHERE name = $1 AND phone IS NOT NULL AND phone != ''
-             `, [name]);
-             return res.rows.map(r => r.phone);
-          }
-
-          const ticketInfo = `[${updatedJob.ticket_number}] (${updatedJob.plant_description})`;
-
-          switch (nextStatus) {
-            case 'Pending_Supervisor': {
-              const phones = await getPhonesByRole('Supervisor');
-              notify(phones, `Megapak Notification: Job Request ${ticketInfo} has been submitted by ${updatedJob.requested_by || 'an initiator'} and awaits your official approval.`);
-              break;
-            }
-            case 'Pending_HOD': {
-              const phones = await getPhonesByRole('HOD');
-              notify(phones, `Megapak Notification: Critical Job Request ${ticketInfo} has been flagged for mandatory Department Head endorsement. Please review via the portal.`);
-              break;
-            }
-            case 'Approved': {
-              const phones = await getPhonesByRole('PlanningOffice');
-              notify(phones, `Megapak Notification: Job Request ${ticketInfo} has been formally approved. Please proceed with system registration and technical planning.`);
-              break;
-            }
-            case 'Registered': {
-              const phones = await getPhonesByRole('EngSupervisor');
-              notify(phones, `Megapak Notification: Technical Planning for Job ${ticketInfo} is now complete. It is fully ready for Artisan allocation.`);
-              break;
-            }
-            case 'Assigned': {
-              const artisanPhones = await getPhonesByName(updatedJob.issued_to);
-              notify(artisanPhones, `Megapak Action Required: You have been officially assigned to execute Job ${ticketInfo} with ${updatedJob.priority?.toUpperCase() || 'NORMAL'} priority. Please check the engineering portal.`);
-              break;
-            }
-            case 'InProgress': {
-              const initiatorPhones = await getPhonesByName(updatedJob.requested_by);
-              notify(initiatorPhones, `Megapak Update: Work has officially commenced on your Job Request ${ticketInfo}. Our technical team is actively handling the defect.`);
-              break;
-            }
-            case 'Awaiting_SignOff': {
-              const initiatorPhones = await getPhonesByName(updatedJob.requested_by);
-              notify(initiatorPhones, `Megapak Action Required: The assigned artisan has completed Job ${ticketInfo}. Please log into the portal to review and officially Sign Off on the work quality.`);
-              break;
-            }
-            case 'SignedOff': {
-              const artisanPhones = await getPhonesByName(updatedJob.issued_to);
-              notify(artisanPhones, `Megapak Update: Job ${ticketInfo} has been successfully validated and signed off by the Originator. Thank you for your service.`);
-              break;
-            }
-            case 'Closed': {
-              const initiatorPhones = await getPhonesByName(updatedJob.requested_by);
-              notify(initiatorPhones, `Megapak Update: Your Job Request ${ticketInfo} has essentially been resolved, formally approved, and officially ARCHIVED (Closed) by the Supervisor.`);
-              break;
-            }
-            case 'Rejected': {
-              const initiatorPhones = await getPhonesByName(updatedJob.requested_by);
-              notify(initiatorPhones, `Megapak Alert: Unfortunately, your Job Request ${ticketInfo} has been REJECTED. Please check the portal comments for further instructions.`);
-              break;
-            }
-          }
+          const plan = getStatusNotificationPlan({
+            currentStatus,
+            nextStatus,
+            job: updatedJob,
+          });
+          await dispatchNotificationPlan(plan);
         } catch(e) {
           console.error('[SMS] Notification dispatcher failed:', e);
         }

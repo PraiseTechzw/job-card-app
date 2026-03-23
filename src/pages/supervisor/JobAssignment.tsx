@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import { useJobCards } from '../../context/JobCardContext';
 import { useAuth } from '../../context/AuthContext';
+import { toast } from 'react-hot-toast';
 import styles from '../JobCards.module.css';
 
 // We strictly fetch from backend database now. No hardcoded users.
@@ -74,7 +75,10 @@ export default function JobAssignment() {
   const handleAssign = async (e: React.FormEvent) => {
     e.preventDefault();
     const resolvedArtisanName = artisanName === '__custom' ? customArtisanName.trim() : artisanName.trim();
-    if (!resolvedArtisanName) { alert('Please select or enter an artisan name.'); return; }
+    if (!resolvedArtisanName) {
+      toast.error('Please select or enter an artisan name.');
+      return;
+    }
     setIsSubmitting(true);
     try {
       await addAssignment({
@@ -108,7 +112,7 @@ export default function JobAssignment() {
       setDone(true);
       setTimeout(() => navigate('/supervisor/dashboard'), 2500);
     } catch (e: any) {
-      alert(e?.message || 'Assignment failed. Please try again.');
+      toast.error(e?.response?.data?.error || e?.message || 'Assignment failed. Please try again.');
     } finally {
       setIsSubmitting(false);
     }

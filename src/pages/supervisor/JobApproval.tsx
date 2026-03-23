@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import { useJobCards } from '../../context/JobCardContext';
 import { useAuth } from '../../context/AuthContext';
+import { toast } from 'react-hot-toast';
 import styles from '../JobCards.module.css';
 
 const priorityColor = (p: string) => {
@@ -63,14 +64,17 @@ export default function JobApproval() {
       setDone('approved');
       setTimeout(() => navigate('/supervisor/dashboard'), 2500);
     } catch (e: any) {
-      alert(e?.message || 'Approval failed. Please try again.');
+      toast.error(e?.response?.data?.error || e?.message || 'Approval failed. Please try again.');
     } finally {
       setIsSubmitting(false);
     }
   };
 
   const handleReject = async () => {
-    if (!rejectionReason.trim()) { alert('Please provide a reason for rejection.'); return; }
+    if (!rejectionReason.trim()) {
+      toast.error('Please provide a reason for rejection.');
+      return;
+    }
     setIsSubmitting(true);
     try {
       await updateJobCard(job.id, {
@@ -88,7 +92,7 @@ export default function JobApproval() {
       setDone('rejected');
       setTimeout(() => navigate('/supervisor/dashboard'), 2500);
     } catch (e: any) {
-      alert(e?.message || 'Rejection failed. Please try again.');
+      toast.error(e?.response?.data?.error || e?.message || 'Rejection failed. Please try again.');
     } finally {
       setIsSubmitting(false);
     }
