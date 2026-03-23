@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import axios from 'axios';
+import { toast } from 'react-hot-toast';
 import type { JobCard, AllocationSheet, Assignment } from '../types';
 
 const API_BASE = '/api';
@@ -34,7 +35,7 @@ export const JobCardProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchData = async () => {
+  const fetchData = async (isManualRefresh = false) => {
     try {
       setIsLoading(true);
       setError(null);
@@ -46,9 +47,12 @@ export const JobCardProvider: React.FC<{ children: React.ReactNode }> = ({ child
       setJobCards(Array.isArray(cardsRes.data) ? cardsRes.data : []);
       setAllocationSheets(Array.isArray(sheetsRes.data) ? sheetsRes.data : []);
       setAssignments(Array.isArray(assignRes.data) ? assignRes.data : []);
+      if (isManualRefresh) toast.success('Data synced with server');
     } catch (err: any) {
       console.error('Failed to fetch data from API:', err);
-      setError(err.response?.data?.error || 'Failed to sync with server');
+      const errMsg = err.response?.data?.error || 'Failed to sync with server';
+      setError(errMsg);
+      toast.error(errMsg);
     } finally {
       setIsLoading(false);
     }
@@ -57,6 +61,10 @@ export const JobCardProvider: React.FC<{ children: React.ReactNode }> = ({ child
   useEffect(() => {
     fetchData();
   }, []);
+
+  const refreshData = async () => {
+    await fetchData(true);
+  };
 
   const addJobCard = async (data: Partial<JobCard>) => {
     try {
@@ -153,7 +161,7 @@ export const JobCardProvider: React.FC<{ children: React.ReactNode }> = ({ child
       addAllocationSheet,
       updateAllocationSheet,
       deleteAllocationSheet,
-      refreshData: fetchData,
+      refreshData,
       addAuditLog,
       getAuditLogs,
       assignments,

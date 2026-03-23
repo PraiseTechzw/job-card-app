@@ -28,35 +28,6 @@ export const AuthProvider: React.FC<{children: ReactNode}> = ({ children }) => {
     setIsLoading(false);
   }, []);
 
-  // Axios Interceptor for Auth
-  useEffect(() => {
-    const requestInterceptor = axios.interceptors.request.use(
-      (config) => {
-        const token = localStorage.getItem('token');
-        if (token) {
-          config.headers.Authorization = `Bearer ${token}`;
-        }
-        return config;
-      },
-      (error) => Promise.reject(error)
-    );
-
-    const responseInterceptor = axios.interceptors.response.use(
-      (response) => response,
-      (error) => {
-        if (error.response?.status === 401) {
-          logout();
-        }
-        return Promise.reject(error);
-      }
-    );
-
-    return () => {
-      axios.interceptors.request.eject(requestInterceptor);
-      axios.interceptors.response.eject(responseInterceptor);
-    };
-  }, []);
-
   const login = async (username: string, password: string) => {
     try {
       const res = await axios.post(`${API_BASE}/login`, { username, password });
