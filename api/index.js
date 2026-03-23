@@ -109,6 +109,91 @@ const toSnake = (obj) => {
   return newObj;
 };
 
+const ADMIN_CONFIG_KEYS = new Set([
+  'permissions',
+  'workflow',
+  'notifications',
+  'retention_months',
+  'global',
+  'master_data',
+]);
+
+const isPlainObject = (value) => !!value && typeof value === 'object' && !Array.isArray(value);
+
+const isBoolean = (value) => typeof value === 'boolean';
+
+const isStringArray = (value) => Array.isArray(value) && value.every((v) => typeof v === 'string');
+
+const validatePermissionsConfig = (value) => {
+  if (!isPlainObject(value)) return 'permissions must be an object.';
+  for (const role of Object.keys(value)) {
+    if (!isPlainObject(value[role])) return `permissions.${role} must be an object.`;
+    for (const moduleKey of Object.keys(value[role])) {
+      if (!isBoolean(value[role][moduleKey])) return `permissions.${role}.${moduleKey} must be boolean.`;
+    }
+  }
+  return null;
+};
+
+const validateWorkflowConfig = (value) => {
+  if (!isPlainObject(value)) return 'workflow must be an object.';
+  for (const step of Object.keys(value)) {
+    const rule = value[step];
+    if (!isPlainObject(rule)) return `workflow.${step} must be an object.`;
+    if (rule.requiredRoles && !isStringArray(rule.requiredRoles)) return `workflow.${step}.requiredRoles must be string array.`;
+    if (rule.mandatoryFields && !isStringArray(rule.mandatoryFields)) return `workflow.${step}.mandatoryFields must be string array.`;
+    if (rule.nextStatus && typeof rule.nextStatus !== 'string') return `workflow.${step}.nextStatus must be string.`;
+    if (rule.returnStatus && typeof rule.returnStatus !== 'string') return `workflow.${step}.returnStatus must be string.`;
+    if (rule.emailNotify !== undefined && !isBoolean(rule.emailNotify)) return `workflow.${step}.emailNotify must be boolean.`;
+  }
+  return null;
+};
+
+const validateNotificationsConfig = (value) => {
+  if (!isPlainObject(value)) return 'notifications must be an object.';
+  for (const eventName of Object.keys(value)) {
+    const eventCfg = value[eventName];
+    if (!isPlainObject(eventCfg)) return `notifications.${eventName} must be an object.`;
+    if (eventCfg.email !== undefined && !isBoolean(eventCfg.email)) return `notifications.${eventName}.email must be boolean.`;
+    if (eventCfg.inApp !== undefined && !isBoolean(eventCfg.inApp)) return `notifications.${eventName}.inApp must be boolean.`;
+    if (eventCfg.sms !== undefined && !isBoolean(eventCfg.sms)) return `notifications.${eventName}.sms must be boolean.`;
+    if (eventCfg.recipients !== undefined && !isStringArray(eventCfg.recipients)) return `notifications.${eventName}.recipients must be string array.`;
+  }
+  return null;
+};
+
+const validateGlobalConfig = (value) => {
+  if (!isPlainObject(value)) return 'global must be an object.';
+  if (value.appName !== undefined && typeof value.appName !== 'string') return 'global.appName must be string.';
+  if (value.timezone !== undefined && typeof value.timezone !== 'string') return 'global.timezone must be string.';
+  if (value.broadcastBanner !== undefined && typeof value.broadcastBanner !== 'string') return 'global.broadcastBanner must be string.';
+  return null;
+};
+
+const validateMasterDataConfig = (value) => {
+  if (!isPlainObject(value)) return 'master_data must be an object.';
+  for (const group of Object.keys(value)) {
+    if (!Array.isArray(value[group])) return `master_data.${group} must be an array.`;
+  }
+  return null;
+};
+
+const validateAdminConfig = (key, value) => {
+  if (!ADMIN_CONFIG_KEYS.has(key)) return `Unsupported config key: ${key}`;
+  if (key === 'retention_months') {
+    if (!Number.isInteger(value) || value < 6 || value > 120) {
+      return 'retention_months must be an integer between 6 and 120.';
+    }
+    return null;
+  }
+  if (key === 'permissions') return validatePermissionsConfig(value);
+  if (key === 'workflow') return validateWorkflowConfig(value);
+  if (key === 'notifications') return validateNotificationsConfig(value);
+  if (key === 'global') return validateGlobalConfig(value);
+  if (key === 'master_data') return validateMasterDataConfig(value);
+  return null;
+};
+
 const notifyPhones = async (phones, message) => {
   const uniquePhones = [...new Set((phones || []).filter(Boolean))];
   if (!message || uniquePhones.length === 0) return;
@@ -801,6 +886,10 @@ app.get('/api/admin/config', authenticateToken, authorizeRoles('Admin'), async (
 
 app.post('/api/admin/config', authenticateToken, authorizeRoles('Admin'), async (req, res) => {
   const { key, value } = req.body;
+  if (!key) return res.status(400).json({ error: 'Missing config key' });
+  const validationError = validateAdminConfig(key, value);
+  if (validationError) return res.status(400).json({ error: validationError });
+
   try {
     await query(
       'INSERT INTO system_config (key, value, updated_at) VALUES ($1, $2, NOW()) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = NOW()',
@@ -808,6 +897,49 @@ app.post('/api/admin/config', authenticateToken, authorizeRoles('Admin'), async 
     );
     await createAuditLog(pool, null, 'SYSTEM_CONFIG_UPDATED', req.user?.name || 'Admin', { key });
     res.json({ message: 'Config updated' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post('/api/admin/retention/manual-archive', authenticateToken, authorizeRoles('Admin'), async (req, res) => {
+  try {
+    const configResult = await query('SELECT value FROM system_config WHERE key = $1 LIMIT 1', ['retention_months']);
+    let retentionMonths = 24;
+    if (configResult.rows[0]?.value !== undefined) {
+      try {
+        const parsed = typeof configResult.rows[0].value === 'string'
+          ? JSON.parse(configResult.rows[0].value)
+          : configResult.rows[0].value;
+        if (Number.isInteger(parsed)) retentionMonths = parsed;
+      } catch {
+        // keep default
+      }
+    }
+
+    const candidateResult = await query(
+      `SELECT id, ticket_number, closed_by_date
+       FROM job_cards
+       WHERE status IN ('Closed', 'SignedOff')
+         AND COALESCE(closed_by_date::date, updated_at::date, created_at::date) < (CURRENT_DATE - ($1::int || ' months')::interval)
+       ORDER BY COALESCE(closed_by_date::date, updated_at::date, created_at::date) ASC
+       LIMIT 500`,
+      [retentionMonths]
+    );
+
+    const candidates = candidateResult.rows;
+    await createAuditLog(pool, null, 'MANUAL_ARCHIVE_SWEEP_TRIGGERED', req.user?.name || 'Admin', {
+      retentionMonths,
+      candidateCount: candidates.length,
+      candidateSample: candidates.slice(0, 20).map((c) => c.ticket_number),
+    });
+
+    res.json({
+      message: 'Manual archive sweep executed in preview mode.',
+      retentionMonths,
+      candidateCount: candidates.length,
+      candidates: candidates.slice(0, 50),
+    });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

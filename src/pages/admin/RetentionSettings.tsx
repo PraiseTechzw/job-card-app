@@ -17,6 +17,7 @@ export default function RetentionSettings() {
   const [isArchiving, setIsArchiving] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [telemetry, setTelemetry] = useState<any>(null);
+  const [lastArchiveResult, setLastArchiveResult] = useState<{ candidateCount: number; retentionMonths: number } | null>(null);
 
   useEffect(() => {
     async function fetchConfig() {
@@ -53,9 +54,12 @@ export default function RetentionSettings() {
   const handleManualArchive = async () => {
     setIsArchiving(true);
     try {
-      // Manual archival is not implemented server-side yet.
-      await new Promise((resolve) => setTimeout(resolve, 1200));
-      toast('Manual archive trigger is queued. Backend archival endpoint pending implementation.', { icon: 'ℹ️' });
+      const res = await axios.post('/api/admin/retention/manual-archive');
+      setLastArchiveResult({
+        candidateCount: res.data?.candidateCount || 0,
+        retentionMonths: res.data?.retentionMonths || retentionMonths,
+      });
+      toast.success(`Archive sweep completed: ${res.data?.candidateCount || 0} candidate record(s) identified.`);
     } finally {
       setIsArchiving(false);
     }
@@ -154,6 +158,12 @@ export default function RetentionSettings() {
                    <div style={{ fontSize: 10, color: '#64748b', fontWeight: 400 }}>Export CSV of all cold records.</div>
                 </button>
              </div>
+             {lastArchiveResult && (
+               <div style={{ marginTop: 14, fontSize: 12, color: '#94a3b8' }}>
+                 Last sweep found <strong style={{ color: '#e2e8f0' }}>{lastArchiveResult.candidateCount}</strong> record(s)
+                 older than <strong style={{ color: '#e2e8f0' }}>{lastArchiveResult.retentionMonths}</strong> months.
+               </div>
+             )}
           </div>
         </div>
 
