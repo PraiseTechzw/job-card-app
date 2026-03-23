@@ -487,7 +487,7 @@ app.get('/api/allocation-sheets', authenticateToken, async (req, res) => {
   }
 });
 
-app.post('/api/allocation-sheets', authenticateToken, authorizeRoles('Supervisor', 'Admin'), async (req, res) => {
+app.post('/api/allocation-sheets', authenticateToken, authorizeRoles('Supervisor', 'EngSupervisor', 'Admin'), async (req, res) => {
   const { supervisor, section, date, rows } = req.body;
   const sheetId = Math.random().toString(36).substr(2, 9);
   
@@ -526,7 +526,7 @@ app.post('/api/allocation-sheets', authenticateToken, authorizeRoles('Supervisor
   }
 });
 
-app.patch('/api/allocation-sheets/:id', authenticateToken, authorizeRoles('Supervisor', 'Admin'), async (req, res) => {
+app.patch('/api/allocation-sheets/:id', authenticateToken, authorizeRoles('Supervisor', 'EngSupervisor', 'Admin'), async (req, res) => {
   const { supervisor, section, date, rows } = req.body;
   const sheetId = req.params.id;
   
@@ -561,7 +561,7 @@ app.patch('/api/allocation-sheets/:id', authenticateToken, authorizeRoles('Super
   }
 });
 
-app.delete('/api/allocation-sheets/:id', authenticateToken, authorizeRoles('Supervisor', 'Admin'), async (req, res) => {
+app.delete('/api/allocation-sheets/:id', authenticateToken, authorizeRoles('Supervisor', 'EngSupervisor', 'Admin'), async (req, res) => {
   try {
     await query('DELETE FROM allocation_sheets WHERE id = $1', [req.params.id]);
     await createAuditLog(pool, null, 'ALLOCATION_SHEET_DELETED', req.user?.name || 'System', { sheetId: req.params.id });
@@ -623,7 +623,7 @@ app.get('/api/assignments/:jobCardId', authenticateToken, async (req, res) => {
   }
 });
 
-app.post('/api/assignments', authenticateToken, authorizeRoles('EngSupervisor', 'Admin'), async (req, res) => {
+app.post('/api/assignments', authenticateToken, authorizeRoles('Supervisor', 'EngSupervisor', 'Admin'), async (req, res) => {
   const data = toSnake(req.body);
   const id = Math.random().toString(36).substr(2, 9);
   const fields = ['id', ...Object.keys(data)];
@@ -641,7 +641,7 @@ app.post('/api/assignments', authenticateToken, authorizeRoles('EngSupervisor', 
   }
 });
 
-app.patch('/api/assignments/:id', authenticateToken, authorizeRoles('EngSupervisor', 'Admin'), async (req, res) => {
+app.patch('/api/assignments/:id', authenticateToken, authorizeRoles('Supervisor', 'EngSupervisor', 'Admin'), async (req, res) => {
   const updates = toSnake(req.body);
   const fields = Object.keys(updates);
   if (fields.length === 0) return res.status(400).json({ error: 'No fields to update' });
