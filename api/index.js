@@ -37,8 +37,16 @@ pool.on('error', (err) => {
 // Replacement query function that uses the secure WebSocket driver
 const query = (text, params) => pool.query(text, params);
 
-// Auto-migrate to ensure phone column exists for SMS functionality
-query('ALTER TABLE users ADD COLUMN IF NOT EXISTS phone VARCHAR(20)').catch(() => {});
+// Auto-migrate to ensure necessary columns exist
+ query('ALTER TABLE users ADD COLUMN IF NOT EXISTS phone VARCHAR(20)').catch(() => {});
+ query('ALTER TABLE users ADD COLUMN IF NOT EXISTS email VARCHAR(255)').catch(() => {});
+ query('ALTER TABLE users ADD COLUMN IF NOT EXISTS employee_id VARCHAR(50)').catch(() => {});
+ query('ALTER TABLE users ADD COLUMN IF NOT EXISTS last_login TIMESTAMP').catch(() => {});
+ query('ALTER TABLE users ADD COLUMN IF NOT EXISTS status VARCHAR(20) DEFAULT \'Active\'').catch(() => {});
+ 
+ // Ensure artisans table has email
+ query('ALTER TABLE artisans ADD COLUMN IF NOT EXISTS email VARCHAR(255)').catch(() => {});
+ query('ALTER TABLE artisans ADD COLUMN IF NOT EXISTS employee_id VARCHAR(50)').catch(() => {});
 
 
 // --- AUTH MIDDLEWARE ---
@@ -645,16 +653,16 @@ app.post('/api/admin/users', authenticateToken, authorizeRoles('Admin'), async (
     if (role === 'Artisan') {
       try {
         await query(
-          'INSERT INTO artisans (name, phone, trade, status) VALUES ($1, $2, $3, $4)',
-          [name, phone || '', department || 'General', 'Active']
+          'INSERT INTO artisans (name, phone, email, employee_id, trade, status) VALUES ($1, $2, $3, $4, $5, $6)',
+          [name, phone || '', email || '', employeeId || '', department || 'General', 'Active']
         );
       } catch (artisansErr) {
         console.error('Artisan insert failed:', artisansErr.message);
         // Fallback if ID is strongly typed as string and required
         try {
           await query(
-            'INSERT INTO artisans (id, name, phone, trade, status) VALUES ($1, $2, $3, $4, $5)',
-            [id, name, phone || '', department || 'General', 'Active']
+            'INSERT INTO artisans (id, name, phone, email, employee_id, trade, status) VALUES ($1, $2, $3, $4, $5, $6, $7)',
+            [id, name, phone || '', email || '', employeeId || '', department || 'General', 'Active']
           );
         } catch (fallbackErr) {
            console.error('Artisan fallback insert also failed:', fallbackErr.message);
