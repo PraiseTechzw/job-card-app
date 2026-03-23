@@ -172,6 +172,26 @@ export default function AdminDashboard() {
         {/* Sidebar: System Intelligence */}
         <div className="flex flex-col gap-6">
           <div style={{ background: 'rgba(15,23,42,0.6)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: 16, padding: 20 }}>
+            <h3 style={{ fontSize: 11, fontWeight: 800, textTransform: 'uppercase', color: '#475569', marginBottom: 16 }}>Efficiency Leaderboard</h3>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              {(stats?.topPerformers || []).map((a: any, i: number) => (
+                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 12, paddingBottom: 12, borderBottom: i < (stats?.topPerformers?.length - 1) ? '1px solid rgba(255,255,255,0.03)' : 'none' }}>
+                  <div style={{ width: 28, height: 28, borderRadius: 8, background: 'rgba(99,102,241,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 800, color: '#6366f1' }}>
+                    {a.name.charAt(0)}
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: 12, fontWeight: 700, color: '#e2e8f0' }}>{a.name}</div>
+                    <div style={{ fontSize: 10, color: '#475569' }}>{a.jobs} jobs finalized</div>
+                  </div>
+                </div>
+              ))}
+              {(!stats?.topPerformers || stats.topPerformers.length === 0) && (
+                <p style={{ fontSize: 11, color: '#475569', textAlign: 'center' }}>No historical data available.</p>
+              )}
+            </div>
+          </div>
+
+          <div style={{ background: 'rgba(15,23,42,0.6)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: 16, padding: 20 }}>
             <h3 style={{ fontSize: 11, fontWeight: 800, textTransform: 'uppercase', color: '#475569', marginBottom: 16 }}>Governance Alerts</h3>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
               {stats?.lockedUsers > 0 && (

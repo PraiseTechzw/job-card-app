@@ -582,12 +582,24 @@ app.get('/api/admin/stats', authenticateToken, authorizeRoles('Admin'), async (r
     const rolesObj = {};
     usersByRole.rows.forEach(r => rolesObj[r.role] = parseInt(r.count));
 
+    // Calculate Top Performers
+    const topPerformersRes = await query(`
+      SELECT issued_to as name, COUNT(*) as jobs 
+      FROM job_cards 
+      WHERE status IN ('Closed', 'SignedOff') 
+      AND issued_to IS NOT NULL 
+      GROUP BY issued_to 
+      ORDER BY jobs DESC 
+      LIMIT 5
+    `);
+
     res.json({
       totalUsers: parseInt(usersCount.rows[0].count),
       lockedUsers: parseInt(lockedCount.rows[0].count),
       jobCards: parseInt(jobCount.rows[0].count),
       auditLogs: parseInt(auditCount.rows[0].count),
       rolesDistribution: rolesObj,
+      topPerformers: topPerformersRes.rows,
       systemHealth: 'Healthy',
       uptime: '99.99%',
       telemetry: {

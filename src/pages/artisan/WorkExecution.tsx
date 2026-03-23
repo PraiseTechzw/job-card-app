@@ -28,7 +28,7 @@ const WorkExecution: React.FC = () => {
 
   const [isPaused, setIsPaused] = useState(false);
   const [elapsedTime, setElapsedTime] = useState('00:00:00');
-  const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const timerRef = useRef<any>(null);
 
   useEffect(() => {
     if (job) {
