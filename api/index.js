@@ -701,6 +701,76 @@ app.post('/api/admin/users/:id/status', authenticateToken, authorizeRoles('Admin
   }
 });
 
+app.patch('/api/admin/users/:id', authenticateToken, authorizeRoles('Admin'), async (req, res) => {
+  const updates = toSnake(req.body);
+  const fields = Object.keys(updates);
+  if (fields.length === 0) return res.status(400).json({ error: 'No fields to update' });
+  
+  // If password is being updated, hash it
+  if (updates.password) {
+    updates.password_hash = await bcrypt.hash(updates.password, 10);
+    delete updates.password;
+  }
+  
+  const setQuery = Object.keys(updates).map((f, i) => `${f} = $${i + 2}`).join(', ');
+
+  try {
+    const result = await query(
+      `UPDATE users SET ${setQuery} WHERE id = $1 RETURNING id, name, username, role, department, email, employee_id, phone, status`,
+      [req.params.id, ...Object.values(updates)]
+    );
+    if (result.rows.length === 0) return res.status(404).json({ error: 'User not found' });
+    
+    const user = result.rows[0];
+    // Sync with artisans table if role is Artisan
+    if (user.role === 'Artisan') {
+      await query(
+        'UPDATE artisans SET name = $1, phone = $2, email = $3, employee_id = $4, trade = $5 WHERE id = $6 OR name = $1',
+        [user.name, user.phone, user.email, user.employee_id, user.department, user.id]
+      ).catch(e => console.error('Artisan sync failed:', e.message));
+    }
+
+    await createAuditLog(pool, null, 'USER_UPDATED', req.user?.name || 'Admin', { userId: req.params.id, updates: Object.keys(updates) });
+    res.json(toCamel(user));
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.delete('/api/admin/users/:id', authenticateToken, authorizeRoles('Admin'), async (req, res) => {
+  try {
+    const userRes = await query('SELECT name, role FROM users WHERE id = $1', [req.params.id]);
+    if (userRes.rows.length === 0) return res.status(404).json({ error: 'User not found' });
+    const user = userRes.rows[0];
+
+    await query('DELETE FROM users WHERE id = $1', [req.params.id]);
+    
+    // Also delete from artisans if it was an artisan
+    if (user.role === 'Artisan') {
+      await query('DELETE FROM artisans WHERE id = $1 OR name = $2', [req.params.id, user.name]).catch(() => {});
+    }
+
+    await createAuditLog(pool, null, 'USER_DELETED', req.user?.name || 'Admin', { userId: req.params.id, userName: user.name });
+    res.json({ message: 'User deleted successfully' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post('/api/admin/users/:id/unlock', authenticateToken, authorizeRoles('Admin'), async (req, res) => {
+  try {
+    const userRes = await query('SELECT name FROM users WHERE id = $1', [req.params.id]);
+    if (userRes.rows.length === 0) return res.status(404).json({ error: 'User not found' });
+
+    await query("UPDATE users SET status = 'Active' WHERE id = $1", [req.params.id]);
+
+    await createAuditLog(pool, null, 'USER_UNLOCKED', req.user?.name || 'Admin', { userId: req.params.id, userName: userRes.rows[0].name });
+    res.json({ message: 'User account unlocked' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 app.get('/api/admin/audit-logs', authenticateToken, authorizeRoles('Admin'), async (req, res) => {
   const limit = parseInt(req.query.limit) || 50;
   try {
