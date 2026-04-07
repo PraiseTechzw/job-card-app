@@ -51,6 +51,15 @@ export interface AuditLog {
   ipAddress?: string;
 }
 
+export interface AuditTrailEntry {
+  id: string;
+  jobCardId?: string | null;
+  action: string;
+  performedBy: string;
+  details?: string | Record<string, unknown> | null;
+  createdAt: string;
+}
+
 export interface MasterDataItem {
   id: string;
   type: 'Department' | 'Plant' | 'Asset' | 'EquipmentCategory' | 'JobType' | 'FailureCode' | 'RootCause' | 'MaintenanceCategory' | 'Section';
@@ -58,7 +67,7 @@ export interface MasterDataItem {
   name: string;
   description?: string;
   isActive: boolean;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 export interface WorkflowRule {
@@ -214,3 +223,13 @@ export interface Assignment {
   createdAt: string;
 }
 
+export interface RegisterUserInput {
+  name: string;
+  username: string;
+  password: string;
+  role: User['role'];
+  department?: string;
+  email?: string;
+  employeeId?: string;
+  phone?: string;
+}

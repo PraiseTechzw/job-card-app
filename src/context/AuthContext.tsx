@@ -1,52 +1,60 @@
-import React, { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
+import React, { createContext, useContext, useState, type ReactNode } from 'react';
 import axios from 'axios';
-import type { User } from '../types';
+import type { RegisterUserInput, User } from '../types';
+import { getErrorMessage } from '../utils/http';
 
 interface AuthContextType {
   user: User | null;
   isLoading: boolean;
   login: (username: string, password: string) => Promise<void>;
   logout: () => void;
-  register: (data: any) => Promise<void>;
+  register: (data: RegisterUserInput) => Promise<void>;
 }
 
 const API_BASE = '/api/auth';
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export const AuthProvider: React.FC<{children: ReactNode}> = ({ children }) => {
-  const [user, setUser] = useState<User | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+const getStoredUser = () => {
+  const savedToken = localStorage.getItem('token');
+  const savedUser = localStorage.getItem('user');
 
-  useEffect(() => {
-    const savedToken = localStorage.getItem('token');
-    const savedUser = localStorage.getItem('user');
-    
-    if (savedToken && savedUser) {
-      setUser(JSON.parse(savedUser));
-    }
-    setIsLoading(false);
-  }, []);
+  if (!savedToken || !savedUser) {
+    return null;
+  }
+
+  try {
+    return JSON.parse(savedUser) as User;
+  } catch {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    return null;
+  }
+};
+
+export const AuthProvider: React.FC<{children: ReactNode}> = ({ children }) => {
+  const [user, setUser] = useState<User | null>(() => getStoredUser());
+  const isLoading = false;
 
   const login = async (username: string, password: string) => {
     try {
-      const res = await axios.post(`${API_BASE}/login`, { username, password });
+      const res = await axios.post(`${API_BASE}/login`, { username: username.trim(), password });
       const { token, user: userData } = res.data;
       
       localStorage.setItem('token', token);
       localStorage.setItem('user', JSON.stringify(userData));
       
       setUser(userData);
-    } catch (err: any) {
-      throw new Error(err.response?.data?.error || 'Login failed');
+    } catch (error) {
+      throw new Error(getErrorMessage(error, 'Login failed'));
     }
   };
 
-  const register = async (data: any) => {
+  const register = async (data: RegisterUserInput) => {
     try {
       await axios.post(`${API_BASE}/register`, data);
-    } catch (err: any) {
-      throw new Error(err.response?.data?.error || 'Registration failed');
+    } catch (error) {
+      throw new Error(getErrorMessage(error, 'Registration failed'));
     }
   };
 

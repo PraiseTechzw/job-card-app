@@ -1,10 +1,11 @@
 import React from 'react';
-import { Eye, Edit3, Plus } from 'lucide-react';
+import { Eye, Edit3, Plus, Search } from 'lucide-react';
 import { useNavigate, Link } from 'react-router-dom';
 import styles from './JobCards.module.css';
-import type { JobCard } from '../types';
+import type { JobCard, Trade } from '../types';
 import { useJobCards } from '../context/JobCardContext';
 import { useAuth } from '../context/AuthContext';
+import SEO from '../components/SEO';
 
 const getStatusBadgeClass = (status: JobCard['status']) => {
   switch (status) {
@@ -33,8 +34,13 @@ const getPriorityBadgeClass = (priority: JobCard['priority']) => {
   }
 };
 
-import { Search } from 'lucide-react';
-import SEO from '../components/SEO';
+const SECTION_OPTIONS: Trade[] = [
+  'Fitting',
+  'Electrical',
+  'Tooling',
+  'Inst & Cntrl',
+  'Machine Shop',
+];
 
 const JobCards: React.FC = () => {
   const { jobCards: cards } = useJobCards();
@@ -63,9 +69,7 @@ const JobCards: React.FC = () => {
     const statusMatch = statusFilter === 'All' || card.status === statusFilter;
     const priorityMatch = priorityFilter === 'All' || card.priority === priorityFilter;
     
-    // Check for section in multiple possible places (fitting, electrical, etc are booleans in types but we might want a simpler check)
-    // Actually, JobCard has 'fitting', 'tooling', etc. Let's assume sectionFilter is one of those or 'All'
-    const sectionMatch = sectionFilter === 'All' || (card as any)[sectionFilter.toLowerCase()] === true;
+    const sectionMatch = sectionFilter === 'All' || card.allocatedTrades?.includes(sectionFilter as Trade);
 
     const dateMatch = (!dateFrom || card.dateRaised >= dateFrom) && 
                      (!dateTo || card.dateRaised <= dateTo);
@@ -157,11 +161,9 @@ const JobCards: React.FC = () => {
               className="form-select"
             >
               <option value="All">All Sections</option>
-              <option value="Fitting">Fitting</option>
-              <option value="Electrical">Electrical</option>
-              <option value="Tooling">Tooling</option>
-              <option value="InstAndControl">Inst & Control</option>
-              <option value="MachineShop">Machine Shop</option>
+              {SECTION_OPTIONS.map((section) => (
+                <option key={section} value={section}>{section}</option>
+              ))}
             </select>
           </div>
         )}
@@ -204,7 +206,7 @@ const JobCards: React.FC = () => {
             </tr>
           </thead>
           <tbody>
-            {[...filteredCards].reverse().map(card => (
+            {filteredCards.map(card => (
               <tr key={card.id}>
                 <td className={styles.ticketNumber}>{card.ticketNumber}</td>
                 <td>
@@ -260,4 +262,3 @@ const JobCards: React.FC = () => {
 };
 
 export default JobCards;
-

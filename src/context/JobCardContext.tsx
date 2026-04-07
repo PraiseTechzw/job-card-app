@@ -1,7 +1,8 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import axios from 'axios';
 import { toast } from 'react-hot-toast';
-import type { JobCard, AllocationSheet, Assignment } from '../types';
+import type { JobCard, AllocationSheet, Assignment, AuditTrailEntry } from '../types';
+import { getErrorMessage } from '../utils/http';
 
 const API_BASE = '/api';
 
@@ -10,19 +11,19 @@ interface JobCardContextType {
   allocationSheets: AllocationSheet[];
   isLoading: boolean;
   error: string | null;
-  addJobCard: (jobCard: Partial<JobCard>) => Promise<void>;
-  updateJobCard: (id: string, updates: Partial<JobCard>) => Promise<void>;
+  addJobCard: (jobCard: Partial<JobCard>) => Promise<JobCard>;
+  updateJobCard: (id: string, updates: Partial<JobCard>) => Promise<JobCard>;
   getJobCard: (id: string) => JobCard | undefined;
   getJobCardByNumber: (ticketNumber: string) => JobCard | undefined;
-  addAllocationSheet: (sheet: Partial<AllocationSheet>) => Promise<void>;
-  updateAllocationSheet: (id: string, updates: Partial<AllocationSheet>) => Promise<void>;
+  addAllocationSheet: (sheet: Partial<AllocationSheet>) => Promise<AllocationSheet>;
+  updateAllocationSheet: (id: string, updates: Partial<AllocationSheet>) => Promise<AllocationSheet>;
   deleteAllocationSheet: (id: string) => Promise<void>;
   refreshData: () => Promise<void>;
   addAuditLog: (log: { jobCardId: string; action: string; performedBy: string; details?: string }) => Promise<void>;
-  getAuditLogs: (jobCardId: string) => Promise<any[]>;
+  getAuditLogs: (jobCardId: string) => Promise<AuditTrailEntry[]>;
   assignments: Assignment[];
-  addAssignment: (assignment: Partial<Assignment>) => Promise<void>;
-  updateAssignment: (id: string, updates: Partial<Assignment>) => Promise<void>;
+  addAssignment: (assignment: Partial<Assignment>) => Promise<Assignment>;
+  updateAssignment: (id: string, updates: Partial<Assignment>) => Promise<Assignment>;
   getAssignments: (jobCardId: string) => Promise<Assignment[]>;
 }
 
@@ -48,9 +49,9 @@ export const JobCardProvider: React.FC<{ children: React.ReactNode }> = ({ child
       setAllocationSheets(Array.isArray(sheetsRes.data) ? sheetsRes.data : []);
       setAssignments(Array.isArray(assignRes.data) ? assignRes.data : []);
       if (isManualRefresh) toast.success('Data synced with server');
-    } catch (err: any) {
-      console.error('Failed to fetch data from API:', err);
-      const errMsg = err.response?.data?.error || 'Failed to sync with server';
+    } catch (error) {
+      console.error('Failed to fetch data from API:', error);
+      const errMsg = getErrorMessage(error, 'Failed to sync with server');
       setError(errMsg);
       toast.error(errMsg);
     } finally {
@@ -70,9 +71,10 @@ export const JobCardProvider: React.FC<{ children: React.ReactNode }> = ({ child
     try {
       const res = await axios.post(`${API_BASE}/job-cards`, data);
       setJobCards(prev => [...prev, res.data]);
-    } catch (err: any) {
-      console.error('Add failed', err);
-      throw err;
+      return res.data;
+    } catch (error) {
+      console.error('Add failed', error);
+      throw error;
     }
   };
 
@@ -80,10 +82,11 @@ export const JobCardProvider: React.FC<{ children: React.ReactNode }> = ({ child
     try {
       const res = await axios.patch(`${API_BASE}/job-cards/${id}`, updates);
       setJobCards(prev => prev.map(card => card.id === id ? res.data : card));
-    } catch (err) {
-      console.error('[JobCardContext] updateJobCard explicitly failed:', err);
+      return res.data;
+    } catch (error) {
+      console.error('[JobCardContext] updateJobCard explicitly failed:', error);
       // Do NOT silently merge broken requests into local memory. Throw it beautifully!
-      throw err;
+      throw error;
     }
   };
 
@@ -94,9 +97,10 @@ export const JobCardProvider: React.FC<{ children: React.ReactNode }> = ({ child
     try {
       const res = await axios.post(`${API_BASE}/allocation-sheets`, data);
       setAllocationSheets(prev => [...prev, res.data]);
-    } catch (err: any) {
-      console.error('Failed to add sheet:', err);
-      throw err;
+      return res.data;
+    } catch (error) {
+      console.error('Failed to add sheet:', error);
+      throw error;
     }
   };
 
@@ -104,9 +108,10 @@ export const JobCardProvider: React.FC<{ children: React.ReactNode }> = ({ child
     try {
       const res = await axios.patch(`${API_BASE}/allocation-sheets/${id}`, updates);
       setAllocationSheets(prev => prev.map(s => s.id === id ? res.data : s));
-    } catch (err: any) {
-      console.error('Failed to update sheet:', err);
-      throw err;
+      return res.data;
+    } catch (error) {
+      console.error('Failed to update sheet:', error);
+      throw error;
     }
   };
 
@@ -114,18 +119,18 @@ export const JobCardProvider: React.FC<{ children: React.ReactNode }> = ({ child
     try {
       await axios.delete(`${API_BASE}/allocation-sheets/${id}`);
       setAllocationSheets(prev => prev.filter(s => s.id !== id));
-    } catch (err: any) {
-      console.error('Delete failed:', err);
-      throw err;
+    } catch (error) {
+      console.error('Delete failed:', error);
+      throw error;
     }
   };
 
   const addAuditLog = async (log: { jobCardId: string; action: string; performedBy: string; details?: string }) => {
     try {
       await axios.post(`${API_BASE}/audit-logs`, log);
-    } catch (err: any) {
-      console.error('Failed to add audit log:', err);
-      throw err;
+    } catch (error) {
+      console.error('Failed to add audit log:', error);
+      throw error;
     }
   };
 
@@ -133,16 +138,17 @@ export const JobCardProvider: React.FC<{ children: React.ReactNode }> = ({ child
     try {
       const res = await axios.get(`${API_BASE}/audit-logs/${jobCardId}`);
       return res.data;
-    } catch (err) { return []; }
+    } catch { return []; }
   };
 
   const addAssignment = async (data: Partial<Assignment>) => {
     try {
       const res = await axios.post(`${API_BASE}/assignments`, data);
       setAssignments(prev => [...prev, res.data]);
-    } catch (err: any) {
-      console.error('Failed to add assignment:', err);
-      throw err;
+      return res.data;
+    } catch (error) {
+      console.error('Failed to add assignment:', error);
+      throw error;
     }
   };
 
@@ -150,9 +156,10 @@ export const JobCardProvider: React.FC<{ children: React.ReactNode }> = ({ child
     try {
       const res = await axios.patch(`${API_BASE}/assignments/${id}`, updates);
       setAssignments(prev => prev.map(a => a.id === id ? res.data : a));
-    } catch (err: any) {
-      console.error('Failed to update assignment:', err);
-      throw err;
+      return res.data;
+    } catch (error) {
+      console.error('Failed to update assignment:', error);
+      throw error;
     }
   };
 
@@ -160,7 +167,7 @@ export const JobCardProvider: React.FC<{ children: React.ReactNode }> = ({ child
     try {
       const res = await axios.get(`${API_BASE}/assignments/${jobCardId}`);
       return res.data;
-    } catch (err) { return []; }
+    } catch { return []; }
   };
 
   return (

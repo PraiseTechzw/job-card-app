@@ -10,6 +10,7 @@ import { createAuditLog } from './audit.js';
 import { sanitizeJobCardData } from './validation.js';
 import { sendSms } from './sms.js';
 import { getCreationNotificationPlan, getStatusNotificationPlan } from './jobNotificationTemplates.js';
+import { STARTUP_MIGRATIONS } from './startupMigrations.js';
 
 if (!process.env.DATABASE_URL) {
   console.error('CRITICAL: DATABASE_URL environment variable is missing.');
@@ -38,16 +39,9 @@ pool.on('error', (err) => {
 // Replacement query function that uses the secure WebSocket driver
 const query = (text, params) => pool.query(text, params);
 
-// Auto-migrate to ensure necessary columns exist
- query('ALTER TABLE users ADD COLUMN IF NOT EXISTS phone VARCHAR(20)').catch(() => {});
- query('ALTER TABLE users ADD COLUMN IF NOT EXISTS email VARCHAR(255)').catch(() => {});
- query('ALTER TABLE users ADD COLUMN IF NOT EXISTS employee_id VARCHAR(50)').catch(() => {});
- query('ALTER TABLE users ADD COLUMN IF NOT EXISTS last_login TIMESTAMP').catch(() => {});
- query('ALTER TABLE users ADD COLUMN IF NOT EXISTS status VARCHAR(20) DEFAULT \'Active\'').catch(() => {});
- 
- // Ensure artisans table has email
- query('ALTER TABLE artisans ADD COLUMN IF NOT EXISTS email VARCHAR(255)').catch(() => {});
- query('ALTER TABLE artisans ADD COLUMN IF NOT EXISTS employee_id VARCHAR(50)').catch(() => {});
+for (const statement of STARTUP_MIGRATIONS) {
+  query(statement).catch(() => {});
+}
 
 
 // --- AUTH MIDDLEWARE ---
@@ -206,6 +200,8 @@ const notifyPhones = async (phones, message) => {
   }
 };
 
+const normalizeUsername = (username) => username?.trim();
+
 const getPhonesByRoles = async (roles) => {
   if (!Array.isArray(roles) || roles.length === 0) return [];
   const res = await query(
@@ -277,13 +273,19 @@ const dispatchNotificationPlan = async (plan) => {
 
 app.post('/api/auth/register', authenticateToken, authorizeRoles('Admin'), async (req, res) => {
   const { name, username, password, role, department } = req.body;
+  const normalizedUsername = normalizeUsername(username);
+
+  if (!name || !normalizedUsername || !password || !role) {
+    return res.status(400).json({ error: 'Name, username, password, and role are required.' });
+  }
+
   try {
     const passwordHash = await bcrypt.hash(password, 10);
     const id = Math.random().toString(36).substr(2, 9);
     
     await query(
       'INSERT INTO users (id, name, username, password_hash, role, department) VALUES ($1, $2, $3, $4, $5, $6)',
-      [id, name, username, passwordHash, role, department]
+      [id, name.trim(), normalizedUsername, passwordHash, role, department?.trim() || null]
     );
     
     res.status(201).json({ message: 'User registered successfully' });
@@ -295,13 +297,27 @@ app.post('/api/auth/register', authenticateToken, authorizeRoles('Admin'), async
 
 app.post('/api/auth/login', async (req, res) => {
   const { username, password } = req.body;
+  const normalizedUsername = normalizeUsername(username);
+
+  if (!normalizedUsername || !password) {
+    return res.status(400).json({ error: 'Username and password are required.' });
+  }
+
   try {
-    const result = await query('SELECT * FROM users WHERE username = $1', [username]);
+    const result = await query('SELECT * FROM users WHERE username = $1', [normalizedUsername]);
     if (result.rows.length === 0) return res.status(401).json({ error: 'Invalid credentials' });
     
     const user = result.rows[0];
+    const accountStatus = user.status || 'Active';
+    if (accountStatus !== 'Active') {
+      return res.status(403).json({ error: `Account is ${accountStatus.toLowerCase()}. Please contact an administrator.` });
+    }
+
     const valid = await bcrypt.compare(password, user.password_hash);
     if (!valid) return res.status(401).json({ error: 'Invalid credentials' });
+
+    const loginTimestamp = new Date().toISOString();
+    await query('UPDATE users SET last_login = $1 WHERE id = $2', [loginTimestamp, user.id]);
     
     const token = jwt.sign(
       { id: user.id, username: user.username, role: user.role, name: user.name },
@@ -310,7 +326,7 @@ app.post('/api/auth/login', async (req, res) => {
     );
     
     const { password_hash, ...userNoPass } = user;
-    res.json({ token, user: toCamel(userNoPass) });
+    res.json({ token, user: toCamel({ ...userNoPass, last_login: loginTimestamp }) });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Login failed' });
@@ -429,31 +445,32 @@ app.patch('/api/job-cards/:id', authenticateToken, async (req, res) => {
       `UPDATE job_cards SET ${setQuery}, updated_at = NOW() WHERE id = $1 RETURNING *`,
       [req.params.id, ...updateValues]
     );
+    if (updateResult.rows.length === 0) {
+      return res.status(404).json({ error: 'Card not found' });
+    }
     
     // 4. Record Audit Log
-    if (updateResult.rows.length > 0) {
-      const action = nextStatus && nextStatus !== currentStatus ? 'Status Update' : 'Fields Update';
-      const auditDetails = {
-        fromStatus: currentStatus,
-        toStatus: nextStatus || currentStatus,
-        changedFields: fields
-      };
-      
-      await createAuditLog(pool, req.params.id, action, performedBy || req.user?.name || 'System', auditDetails);
-      
-      // 5. Send role-aware SMS notifications for status transitions
-      const updatedJob = updateResult.rows[0];
-      if (nextStatus && nextStatus !== currentStatus) {
-        try {
-          const plan = getStatusNotificationPlan({
-            currentStatus,
-            nextStatus,
-            job: updatedJob,
-          });
-          await dispatchNotificationPlan(plan);
-        } catch(e) {
-          console.error('[SMS] Notification dispatcher failed:', e);
-        }
+    const action = nextStatus && nextStatus !== currentStatus ? 'Status Update' : 'Fields Update';
+    const auditDetails = {
+      fromStatus: currentStatus,
+      toStatus: nextStatus || currentStatus,
+      changedFields: fields
+    };
+    
+    await createAuditLog(pool, req.params.id, action, performedBy || req.user?.name || 'System', auditDetails);
+    
+    // 5. Send role-aware SMS notifications for status transitions
+    const updatedJob = updateResult.rows[0];
+    if (nextStatus && nextStatus !== currentStatus) {
+      try {
+        const plan = getStatusNotificationPlan({
+          currentStatus,
+          nextStatus,
+          job: updatedJob,
+        });
+        await dispatchNotificationPlan(plan);
+      } catch(e) {
+        console.error('[SMS] Notification dispatcher failed:', e);
       }
     }
 
@@ -953,5 +970,4 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
     console.log(`Backend server running on port ${PORT} (exposed to network)`);
   });
 }
-
 

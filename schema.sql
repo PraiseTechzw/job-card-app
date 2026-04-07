@@ -45,6 +45,9 @@ CREATE TABLE IF NOT EXISTS job_cards (
     date_finished TEXT,
     start_hours TEXT,
     cause_of_failure TEXT,
+    maintenance_type TEXT,
+    failure_type TEXT,
+    safety_notes TEXT,
     machine_downtime TEXT,
     num_artisans INTEGER DEFAULT 0,
     num_apprentices INTEGER DEFAULT 0,
@@ -91,6 +94,8 @@ CREATE TABLE IF NOT EXISTS artisans (
     id TEXT PRIMARY KEY,
     name TEXT NOT NULL UNIQUE,
     phone TEXT,
+    email TEXT,
+    employee_id TEXT,
     trade TEXT,
     status TEXT DEFAULT 'Active',
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP

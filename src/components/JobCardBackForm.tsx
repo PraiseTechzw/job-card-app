@@ -15,12 +15,18 @@ const JobCardBackForm: React.FC<JobCardBackFormProps> = ({ data, onChange, readO
   const sparesOrdered = data.sparesOrdered || [];
   const sparesWithdrawn = data.sparesWithdrawn || [];
 
-  const updateField = (field: keyof JobCard, value: any) => {
+  const updateField = <K extends keyof JobCard>(field: K, value: JobCard[K]) => {
     onChange({ [field]: value });
   };
 
+  const parseNumberInput = (value: string) => {
+    if (!value.trim()) return 0;
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : 0;
+  };
+
   // Labours management
-  const handleResourceChange = (id: string, field: keyof ResourceUsage, value: any) => {
+  const handleResourceChange = <K extends keyof ResourceUsage>(id: string, field: K, value: ResourceUsage[K]) => {
     const updated = resources.map(r => r.id === id ? { ...r, [field]: value } : r);
     updateField('resourceUsage', updated);
   };
@@ -51,7 +57,7 @@ const JobCardBackForm: React.FC<JobCardBackFormProps> = ({ data, onChange, readO
     updateField('sparesOrdered', [...sparesOrdered, newSpare]);
   };
 
-  const updateSpareOrdered = (id: string, field: keyof SpareOrdered, value: any) => {
+  const updateSpareOrdered = <K extends keyof SpareOrdered>(id: string, field: K, value: SpareOrdered[K]) => {
     const updated = sparesOrdered.map(s => s.id === id ? { ...s, [field]: value } : s);
     updateField('sparesOrdered', updated);
   };
@@ -73,7 +79,7 @@ const JobCardBackForm: React.FC<JobCardBackFormProps> = ({ data, onChange, readO
     updateField('sparesWithdrawn', [...sparesWithdrawn, newSpare]);
   };
 
-  const updateSpareWithdrawn = (id: string, field: keyof SpareWithdrawn, value: any) => {
+  const updateSpareWithdrawn = <K extends keyof SpareWithdrawn>(id: string, field: K, value: SpareWithdrawn[K]) => {
     const updated = sparesWithdrawn.map(s => s.id === id ? { ...s, [field]: value } : s);
     updateField('sparesWithdrawn', updated);
   };
@@ -170,7 +176,7 @@ const JobCardBackForm: React.FC<JobCardBackFormProps> = ({ data, onChange, readO
                 <tr key={res.id}>
                   <td><input type="date" value={res.date} onChange={e => handleResourceChange(res.id, 'date', e.target.value)} disabled={readOnly} /></td>
                   <td><input type="text" value={res.artisanName} onChange={e => handleResourceChange(res.id, 'artisanName', e.target.value)} disabled={readOnly} /></td>
-                  <td><input type="number" value={res.hoursWorked} onChange={e => handleResourceChange(res.id, 'hoursWorked', parseFloat(e.target.value))} disabled={readOnly} /></td>
+                  <td><input type="number" value={res.hoursWorked} onChange={e => handleResourceChange(res.id, 'hoursWorked', parseNumberInput(e.target.value))} disabled={readOnly} /></td>
                   {!readOnly && (
                     <td><button type="button" onClick={() => removeResource(res.id)} className={styles.removeBtn}><Trash2 size={16} /></button></td>
                   )}
@@ -196,9 +202,9 @@ const JobCardBackForm: React.FC<JobCardBackFormProps> = ({ data, onChange, readO
         </div>
 
         <div className={styles.grid}>
-          <FormField label="No. Artisans"><Input type="number" value={data.numArtisans} onChange={e => updateField('numArtisans', parseInt(e.target.value))} disabled={readOnly} /></FormField>
-          <FormField label="No. Apprentices"><Input type="number" value={data.numApprentices} onChange={e => updateField('numApprentices', parseInt(e.target.value))} disabled={readOnly} /></FormField>
-          <FormField label="No. Assistants"><Input type="number" value={data.numAssistants} onChange={e => updateField('numAssistants', parseInt(e.target.value))} disabled={readOnly} /></FormField>
+          <FormField label="No. Artisans"><Input type="number" value={data.numArtisans} onChange={e => updateField('numArtisans', parseNumberInput(e.target.value))} disabled={readOnly} /></FormField>
+          <FormField label="No. Apprentices"><Input type="number" value={data.numApprentices} onChange={e => updateField('numApprentices', parseNumberInput(e.target.value))} disabled={readOnly} /></FormField>
+          <FormField label="No. Assistants"><Input type="number" value={data.numAssistants} onChange={e => updateField('numAssistants', parseNumberInput(e.target.value))} disabled={readOnly} /></FormField>
         </div>
       </div>
 
