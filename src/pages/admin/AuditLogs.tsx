@@ -7,6 +7,7 @@ import {
   ChevronRight, RefreshCw
 } from 'lucide-react';
 import styles from '../JobCards.module.css';
+import adminStyles from './AdminTheme.module.css';
 
 export default function AuditLogs() {
   const navigate = useNavigate();
@@ -52,27 +53,35 @@ export default function AuditLogs() {
   const uniqueUsers = useMemo(() => Array.from(new Set(logs.map(l => l.performed_by))), [logs]);
 
   return (
-    <div className={styles.pageContainer}>
-      <header className="flex flex-col md:flex-row items-start justify-between gap-4 mb-6">
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+    <div className={`${styles.pageContainer} ${adminStyles.page}`}>
+      <div className={adminStyles.hero}>
+        <header className={adminStyles.header}>
+          <div className={adminStyles.headerMain}>
           <button className="btn btn-ghost" onClick={() => navigate('/admin/dashboard')} style={{ padding: '8px' }}>
             <ArrowLeft size={18} />
           </button>
-          <div>
-            <h1 className={styles.pageTitle} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-              <ShieldCheck size={24} color="#6366f1" />
-              Administrative Audit Registry
-            </h1>
-            <p className={styles['text-muted']}>Immutable records of all security and data-sensitive operations.</p>
+            <div className={adminStyles.headerText}>
+              <p className={adminStyles.eyebrow}>System Governance</p>
+              <div className={adminStyles.titleRow}>
+                <span className={adminStyles.titleIcon}>
+                  <ShieldCheck size={20} />
+                </span>
+                <div>
+                  <h1 className={adminStyles.title}>Administrative Audit Registry</h1>
+                  <p className={adminStyles.subtitle}>Immutable records of security, configuration, and sensitive data operations.</p>
+                </div>
+              </div>
+            </div>
           </div>
-        </div>
-        <button className="btn btn-ghost" style={{ gap: 8, border: '1px solid rgba(255,255,255,0.08)' }}>
-           <Download size={16} /> Export CSV
-        </button>
-      </header>
+          <div className={adminStyles.headerActions}>
+            <button className={`btn btn-ghost ${adminStyles.compactButton}`} style={{ gap: 8, border: '1px solid rgba(148,163,184,0.14)' }}>
+              <Download size={16} /> Export CSV
+            </button>
+          </div>
+        </header>
+      </div>
 
-      {/* Compliance Note */}
-      <div style={{ background: 'rgba(15,23,42,0.4)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 14, padding: 18, marginBottom: 24, display: 'flex', gap: 14 }}>
+      <div className={adminStyles.note}>
          <Info size={20} color="#6366f1" style={{ minWidth: 20 }} />
          <div style={{ fontSize: 12, color: '#64748b', lineHeight: 1.6 }}>
            <strong>Compliance Rule:</strong> Audit logs are read-only and immutable. Deletion of audit records via UI is <strong>restricted</strong>. 
@@ -80,32 +89,33 @@ export default function AuditLogs() {
          </div>
       </div>
 
-      {/* Filters */}
-      <div className="flex flex-col lg:flex-row gap-4 mb-6 p-4 rounded-xl" style={{ background: 'rgba(15,23,42,0.5)', border: '1px solid rgba(255,255,255,0.05)' }}>
-        <div className="search-container flex-1">
+      <div className={adminStyles.panel}>
+        <div className={adminStyles.toolbar}>
+          <div className="search-container flex-1">
           <Search size={14} className="search-icon" />
           <input 
             type="text" placeholder="Search by entity, user or details…" 
             className="form-input outline-none shadow-inner pl-12 pr-4"
             value={search} onChange={(e) => setSearch(e.target.value)}
           />
-        </div>
-        <div className="flex gap-4">
-          <select className="form-select" style={{ fontSize: 13, minWidth: 160 }} value={filterAction} onChange={(e) => setFilterAction(e.target.value)}>
-            <option value="">All Actions</option>
-            {uniqueActions.map(a => <option key={a} value={a}>{a.replace(/_/g, ' ')}</option>)}
-          </select>
-          <select className="form-select" style={{ fontSize: 13, minWidth: 160 }} value={filterUser} onChange={(e) => setFilterUser(e.target.value)}>
-            <option value="">All Users</option>
-            {uniqueUsers.map(u => <option key={u} value={u}>{u}</option>)}
-          </select>
-          <button className="btn btn-ghost" onClick={() => { setSearch(''); setFilterAction(''); setFilterUser(''); fetchLogs(); }}>
-             <RefreshCw size={14} />
-          </button>
+          </div>
+          <div className={adminStyles.toolbarGroup}>
+            <select className="form-select" style={{ fontSize: 13, minWidth: 160 }} value={filterAction} onChange={(e) => setFilterAction(e.target.value)}>
+              <option value="">All Actions</option>
+              {uniqueActions.map(a => <option key={a} value={a}>{a.replace(/_/g, ' ')}</option>)}
+            </select>
+            <select className="form-select" style={{ fontSize: 13, minWidth: 160 }} value={filterUser} onChange={(e) => setFilterUser(e.target.value)}>
+              <option value="">All Users</option>
+              {uniqueUsers.map(u => <option key={u} value={u}>{u}</option>)}
+            </select>
+            <button className={`btn btn-ghost ${adminStyles.compactButton}`} onClick={() => { setSearch(''); setFilterAction(''); setFilterUser(''); fetchLogs(); }}>
+               <RefreshCw size={14} />
+            </button>
+          </div>
         </div>
       </div>
 
-      <div className="overflow-x-auto" style={{ background: 'rgba(15,23,42,0.4)', borderRadius: 16, border: '1px solid rgba(255,255,255,0.04)' }}>
+      <div className={`${adminStyles.panel} ${adminStyles.tableShell}`}>
         {isLoading ? (
           <div style={{ padding: 60, textAlign: 'center' }}>
             <RefreshCw size={32} className="animate-spin" color="#6366f1" style={{ margin: '0 auto 16px' }} />
@@ -164,7 +174,7 @@ export default function AuditLogs() {
         )}
       </div>
 
-      <div style={{ marginTop: 20, display: 'flex', justifyContent: 'flex-end', gap: 12 }}>
+      <div className={adminStyles.toolbarGroup} style={{ justifyContent: 'flex-end' }}>
          <button className="btn btn-ghost" disabled={true} style={{ fontSize: 13 }}>Previous</button>
          <button className="btn btn-ghost" style={{ fontSize: 13, background: 'rgba(255,255,255,0.04)' }}>Next Page <ChevronRight size={14} /></button>
       </div>

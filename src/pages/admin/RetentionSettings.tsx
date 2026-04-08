@@ -9,6 +9,7 @@ import {
   RefreshCw
 } from 'lucide-react';
 import styles from '../JobCards.module.css';
+import adminStyles from './AdminTheme.module.css';
 
 export default function RetentionSettings() {
   const navigate = useNavigate();
@@ -77,29 +78,38 @@ export default function RetentionSettings() {
   }
 
   return (
-    <div className={styles.pageContainer}>
-      <header className="flex flex-col md:flex-row items-start justify-between gap-4 mb-6">
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+    <div className={`${styles.pageContainer} ${adminStyles.page}`}>
+      <div className={adminStyles.hero}>
+        <header className={adminStyles.header}>
+          <div className={adminStyles.headerMain}>
           <button className="btn btn-ghost" onClick={() => navigate('/admin/dashboard')} style={{ padding: '8px' }}>
             <ArrowLeft size={18} />
           </button>
-          <div>
-            <h1 className={styles.pageTitle} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-              <Archive size={24} color="#6366f1" />
-              Dataset Lifecycle Registry
-            </h1>
-            <p className={styles['text-muted']}>Manage operational data life cycles and cold storage migration.</p>
+            <div className={adminStyles.headerText}>
+              <p className={adminStyles.eyebrow}>System Governance</p>
+              <div className={adminStyles.titleRow}>
+                <span className={adminStyles.titleIcon}>
+                  <Archive size={20} />
+                </span>
+                <div>
+                  <h1 className={adminStyles.title}>Dataset Lifecycle Registry</h1>
+                  <p className={adminStyles.subtitle}>Retention controls now follow the same governance theme and collapse cleanly beside the sidebar.</p>
+                </div>
+              </div>
+            </div>
           </div>
-        </div>
-        <button className="btn btn-primary" onClick={handleSave} disabled={isSaving}>
-          <Save size={16} style={{ marginRight: 6 }} /> {isSaving ? 'Updating...' : 'Save Policy'}
-        </button>
-      </header>
+          <div className={adminStyles.headerActions}>
+            <button className="btn btn-primary" onClick={handleSave} disabled={isSaving}>
+              <Save size={16} style={{ marginRight: 6 }} /> {isSaving ? 'Updating...' : 'Save Policy'}
+            </button>
+          </div>
+        </header>
+      </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-[1fr_340px] gap-6">
-        <div className="flex flex-col gap-6">
+      <div className={adminStyles.contentGrid}>
+        <div className={adminStyles.stack}>
           {/* Retention Rules */}
-          <div style={{ background: 'rgba(15,23,42,0.4)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: 16, padding: 24 }}>
+          <div className={adminStyles.panel}>
              <h3 style={{ fontSize: 12, fontWeight: 800, textTransform: 'uppercase', color: '#475569', marginBottom: 24, display: 'flex', gap: 8, alignItems: 'center' }}>
                 <Settings size={14} /> Global Persistence Rules
              </h3>
@@ -136,7 +146,7 @@ export default function RetentionSettings() {
              </div>
           </div>
 
-          <div style={{ background: 'rgba(15,23,42,0.4)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: 16, padding: 24 }}>
+          <div className={adminStyles.panel}>
              <h3 style={{ fontSize: 12, fontWeight: 800, textTransform: 'uppercase', color: '#475569', marginBottom: 20 }}>Governance Utilities</h3>
              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <button 
@@ -168,8 +178,8 @@ export default function RetentionSettings() {
         </div>
 
         {/* Sidebar Status */}
-        <div className="flex flex-col gap-6">
-           <div style={{ background: 'rgba(15,23,42,0.6)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: 16, padding: 20 }}>
+        <div className={adminStyles.stack}>
+           <div className={adminStyles.panel}>
               <h3 style={{ fontSize: 10, fontWeight: 800, textTransform: 'uppercase', color: '#475569', marginBottom: 16 }}>Infrastructure Health</h3>
               <div className="flex flex-col gap-4">
                  {[
@@ -189,7 +199,7 @@ export default function RetentionSettings() {
               </div>
            </div>
 
-           <div style={{ background: 'rgba(239,68,68,0.05)', border: '1px solid rgba(239,68,68,0.15)', borderRadius: 16, padding: 20, display: 'flex', gap: 14 }}>
+           <div className={adminStyles.warning}>
               <AlertTriangle size={18} color="#f87171" style={{ minWidth: 18 }} />
               <div style={{ fontSize: 11, color: '#64748b', lineHeight: 1.6 }}>
                  <strong>Forensic Rule:</strong> Restoration from cold storage is a specialized administrative action. Expect up to 12 hours for data availability upon justification approval.

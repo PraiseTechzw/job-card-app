@@ -8,6 +8,7 @@ import {
   AlertTriangle, Power, Tag, RefreshCw, X
 } from 'lucide-react';
 import styles from '../JobCards.module.css';
+import adminStyles from './AdminTheme.module.css';
 
 const DATA_TYPES = [
   'Departments', 'Plants / Assets', 'Equipment Categories', 
@@ -90,28 +91,37 @@ export default function MasterDataManager() {
   };
 
   return (
-    <div className={styles.pageContainer}>
-      <header className="flex flex-col md:flex-row items-start justify-between gap-4 mb-6">
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+    <div className={`${styles.pageContainer} ${adminStyles.page}`}>
+      <div className={adminStyles.hero}>
+        <header className={adminStyles.header}>
+          <div className={adminStyles.headerMain}>
           <button className="btn btn-ghost" onClick={() => navigate('/admin/dashboard')} style={{ padding: '8px' }}>
             <ArrowLeft size={18} />
           </button>
-          <div>
-            <h1 className={styles.pageTitle} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-              <Database size={24} color="#6366f1" />
-              Master Data Registry
-            </h1>
-            <p className={styles['text-muted']}>Centralized repository for operational categories and plant assets.</p>
+            <div className={adminStyles.headerText}>
+              <p className={adminStyles.eyebrow}>System Governance</p>
+              <div className={adminStyles.titleRow}>
+                <span className={adminStyles.titleIcon}>
+                  <Database size={20} />
+                </span>
+                <div>
+                  <h1 className={adminStyles.title}>Master Data Registry</h1>
+                  <p className={adminStyles.subtitle}>Reference data now uses the same governance theme and stacks cleanly when space gets tight.</p>
+                </div>
+              </div>
+            </div>
           </div>
-        </div>
-        <button className="btn btn-primary" onClick={() => setShowAddModal(true)} style={{ gap: 8 }}>
-          <Plus size={16} /> Add {activeType.slice(0, -1)}
-        </button>
-      </header>
+          <div className={adminStyles.headerActions}>
+            <button className="btn btn-primary" onClick={() => setShowAddModal(true)} style={{ gap: 8 }}>
+              <Plus size={16} /> Add {activeType.slice(0, -1)}
+            </button>
+          </div>
+        </header>
+      </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-[260px_1fr] gap-6 items-start">
+      <div className={adminStyles.sidebarGrid}>
         {/* Data Types Selector */}
-        <div className="flex flex-col gap-2" style={{ background: 'rgba(15,23,42,0.5)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: 16, padding: 12 }}>
+        <div className={adminStyles.panel}>
           <h3 style={{ fontSize: 11, fontWeight: 800, textTransform: 'uppercase', color: '#475569', margin: '14px 10px', letterSpacing: '0.06em' }}>Registry Sections</h3>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-1 gap-1">
             {DATA_TYPES.map(type => (
@@ -132,8 +142,8 @@ export default function MasterDataManager() {
         </div>
 
         {/* List Content */}
-        <div className="flex flex-col gap-6">
-          <div style={{ background: 'rgba(15,23,42,0.4)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: 16, padding: 20 }}>
+        <div className={adminStyles.stack}>
+          <div className={adminStyles.panel}>
             <div className="flex flex-col md:flex-row gap-4 mb-6">
               <div className="search-container flex-1">
                 <Search size={14} className="search-icon" />
@@ -201,7 +211,7 @@ export default function MasterDataManager() {
             </div>
           </div>
 
-          <div style={{ background: 'rgba(239,68,68,0.04)', border: '1px solid rgba(239,68,68,0.1)', borderRadius: 14, padding: 18, display: 'flex', gap: 14 }}>
+          <div className={adminStyles.warning}>
              <AlertTriangle size={20} color="#f87171" style={{ minWidth: 20 }} />
              <div style={{ fontSize: 12, color: '#64748b', lineHeight: 1.6 }}>
                <strong>Data Integrity Guard:</strong> Modification of master codes is restricted for items referenced in existing Job Cards. 

@@ -8,6 +8,7 @@ import {
   Clock, History, RefreshCw
 } from 'lucide-react';
 import styles from '../JobCards.module.css';
+import adminStyles from './AdminTheme.module.css';
 
 const ALERT_CATEGORIES = [
   'Job Submission', 'Approval Pending', 'Job Assignment', 
@@ -79,29 +80,38 @@ export default function NotificationSettings() {
   }
 
   return (
-    <div className={styles.pageContainer}>
-      <header className="flex flex-col md:flex-row items-start justify-between gap-4 mb-6">
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+    <div className={`${styles.pageContainer} ${adminStyles.page}`}>
+      <div className={adminStyles.hero}>
+        <header className={adminStyles.header}>
+          <div className={adminStyles.headerMain}>
           <button className="btn btn-ghost" onClick={() => navigate('/admin/dashboard')} style={{ padding: '8px' }}>
             <ArrowLeft size={18} />
           </button>
-          <div>
-            <h1 className={styles.pageTitle} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-              <Bell size={24} color="#6366f1" />
-              Alert & Notification Engine
-            </h1>
-            <p className={styles['text-muted']}>Control automated communication triggers and distribution clusters.</p>
+            <div className={adminStyles.headerText}>
+              <p className={adminStyles.eyebrow}>System Governance</p>
+              <div className={adminStyles.titleRow}>
+                <span className={adminStyles.titleIcon}>
+                  <Bell size={20} />
+                </span>
+                <div>
+                  <h1 className={adminStyles.title}>Alert & Notification Engine</h1>
+                  <p className={adminStyles.subtitle}>Consistent admin messaging controls with cleaner hierarchy on desktop and mobile.</p>
+                </div>
+              </div>
+            </div>
           </div>
-        </div>
-        <button className="btn btn-primary" onClick={handleSave} disabled={isSaving}>
-          <Save size={16} style={{ marginRight: 6 }} /> {isSaving ? 'Deploying...' : 'Save Configuration'}
-        </button>
-      </header>
+          <div className={adminStyles.headerActions}>
+            <button className="btn btn-primary" onClick={handleSave} disabled={isSaving}>
+              <Save size={16} style={{ marginRight: 6 }} /> {isSaving ? 'Deploying...' : 'Save Configuration'}
+            </button>
+          </div>
+        </header>
+      </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-[1fr_340px] gap-6 items-start">
-        <div className="flex flex-col gap-6">
+      <div className={adminStyles.contentGrid}>
+        <div className={adminStyles.stack}>
           {/* Main Matrix */}
-          <div style={{ background: 'rgba(15,23,42,0.4)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: 16, padding: '24px 0' }}>
+          <div className={adminStyles.panel} style={{ padding: '24px 0' }}>
             <h3 style={{ fontSize: 12, fontWeight: 800, textTransform: 'uppercase', color: '#475569', marginBottom: 20, padding: '0 24px' }}>Event Triggers & Routing</h3>
             
             <div className="overflow-x-auto">
@@ -138,7 +148,7 @@ export default function NotificationSettings() {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-6 rounded-2xl" style={{ background: 'rgba(15,23,42,0.6)', border: '1px solid rgba(255,255,255,0.05)' }}>
+          <div className={adminStyles.twoCol}>
              <div style={{ background: 'rgba(9,11,18,0.7)', padding: 20, borderRadius: 16 }}>
                 <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 12 }}>
                    <Clock size={16} color="#6366f1" />
@@ -175,8 +185,8 @@ export default function NotificationSettings() {
         </div>
 
         {/* Channel Health and Status */}
-        <div className="flex flex-col gap-6">
-           <div style={{ background: 'rgba(15,23,42,0.6)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: 16, padding: 20 }}>
+        <div className={adminStyles.stack}>
+           <div className={adminStyles.panel}>
               <h3 style={{ fontSize: 11, fontWeight: 800, textTransform: 'uppercase', color: '#475569', marginBottom: 16 }}>Provisioning Status</h3>
               <div className="flex flex-col gap-4">
                  {[
@@ -195,14 +205,14 @@ export default function NotificationSettings() {
               </div>
            </div>
 
-           <div style={{ background: 'rgba(239,68,68,0.04)', border: '1px solid rgba(239,68,68,0.1)', borderRadius: 16, padding: 20, display: 'flex', gap: 14 }}>
+           <div className={adminStyles.warning}>
               <AlertTriangle size={20} color="#f87171" style={{ minWidth: 20 }} />
               <div style={{ fontSize: 11, color: '#64748b', lineHeight: 1.6 }}>
                  <strong>Forensic Limit:</strong> SMS traffic for non-critical assets is capped at 100/day per plant to prevent system flooding. Critical plant alerts remain unlimited.
               </div>
            </div>
 
-           <div style={{ background: 'rgba(15,23,42,0.6)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: 16, padding: 20 }}>
+           <div className={adminStyles.panel}>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 10 }}>
                 <span style={{ fontSize: 11, color: '#94a3b8' }}>Mtd Alert Volume</span>
                 <span style={{ fontSize: 11, color: '#e2e8f0', fontWeight: 700 }}>1,248</span>

@@ -7,6 +7,7 @@ import {
   CheckCircle2, XCircle, Save, AlertTriangle, RefreshCw
 } from 'lucide-react';
 import styles from '../JobCards.module.css';
+import adminStyles from './AdminTheme.module.css';
 
 const MODULES = [
   'Job Requests', 'Approvals', 'Assignments', 'Work Execution', 
@@ -95,44 +96,51 @@ export default function RolesPermissions() {
   }
 
   return (
-    <div className={styles.pageContainer}>
-      <header className="flex flex-col md:flex-row items-start justify-between gap-4 mb-6">
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+    <div className={`${styles.pageContainer} ${adminStyles.page}`}>
+      <div className={adminStyles.hero}>
+        <header className={adminStyles.header}>
+          <div className={adminStyles.headerMain}>
           <button className="btn btn-ghost" onClick={() => navigate('/admin/dashboard')} style={{ padding: '8px' }}>
             <ArrowLeft size={18} />
           </button>
-          <div>
-            <h1 className={styles.pageTitle} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-              <ShieldCheck size={24} color="#6366f1" />
-              Global Access Matrix
-            </h1>
-            <p className={styles['text-muted']}>Define structured capabilities and role-based module accessibility.</p>
+            <div className={adminStyles.headerText}>
+              <p className={adminStyles.eyebrow}>System Governance</p>
+              <div className={adminStyles.titleRow}>
+                <span className={adminStyles.titleIcon}>
+                  <ShieldCheck size={20} />
+                </span>
+                <div>
+                  <h1 className={adminStyles.title}>Global Access Matrix</h1>
+                  <p className={adminStyles.subtitle}>Standardize administrative access with a clearer, responsive security matrix.</p>
+                </div>
+              </div>
+            </div>
           </div>
-        </div>
-        <div style={{ display: 'flex', gap: 10 }}>
-          {!isEditing ? (
-            <button className="btn btn-primary" onClick={() => setIsEditing(true)}>Edit Permissions</button>
-          ) : (
-            <>
-              <button className="btn btn-ghost" onClick={() => setIsEditing(false)}>Cancel</button>
-              <button className="btn btn-primary" onClick={handleSave} disabled={isSaving}>
-                <Save size={16} style={{ marginRight: 6 }} /> {isSaving ? 'Applying...' : 'Apply Matrix'}
-              </button>
-            </>
-          )}
-        </div>
-      </header>
+          <div className={adminStyles.headerActions}>
+            {!isEditing ? (
+              <button className="btn btn-primary" onClick={() => setIsEditing(true)}>Edit Permissions</button>
+            ) : (
+              <>
+                <button className="btn btn-ghost" onClick={() => setIsEditing(false)}>Cancel</button>
+                <button className="btn btn-primary" onClick={handleSave} disabled={isSaving}>
+                  <Save size={16} style={{ marginRight: 6 }} /> {isSaving ? 'Applying...' : 'Apply Matrix'}
+                </button>
+              </>
+            )}
+          </div>
+        </header>
+      </div>
 
       {isEditing && (
-        <div style={{ background: 'rgba(239,68,68,0.05)', border: '1px solid rgba(239,68,68,0.15)', borderRadius: 16, padding: '14px 20px', marginBottom: 20, display: 'flex', gap: 12, alignItems: 'center' }}>
+        <div className={adminStyles.warning}>
           <AlertTriangle size={18} color="#f87171" style={{ minWidth: 18 }} />
           <span style={{ fontSize: 13, fontWeight: 700, color: '#f87171' }}>Critical Alert: Security policy modification affects all active sessions. Forensic audit is forced.</span>
         </div>
       )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-[260px_1fr] gap-6 items-start">
+      <div className={adminStyles.sidebarGrid}>
         {/* Role Selector */}
-        <div className="flex flex-col gap-1 p-3 rounded-2xl bg-white/5 border border-white/5">
+        <div className={adminStyles.panel}>
           <h3 style={{ fontSize: 10, fontWeight: 800, textTransform: 'uppercase', color: '#475569', margin: '10px', letterSpacing: '0.06em' }}>System Entities</h3>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-1 gap-1">
             {ROLES.map(role => (
@@ -153,8 +161,8 @@ export default function RolesPermissions() {
         </div>
 
         {/* Matrix Detail */}
-        <div className="flex flex-col gap-6">
-          <div style={{ background: 'rgba(15,23,42,0.4)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: 16, padding: 24 }}>
+        <div className={adminStyles.stack}>
+          <div className={adminStyles.panel}>
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
               <h2 style={{ fontSize: 16, fontWeight: 800, color: '#f1f5f9' }}>Capabilities for {activeRole}</h2>
               {activeRole === 'Admin' && (
@@ -193,7 +201,7 @@ export default function RolesPermissions() {
             </div>
           </div>
 
-          <div style={{ background: 'rgba(15,23,42,0.4)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: 16, padding: 20, display: 'flex', gap: 14 }}>
+          <div className={adminStyles.note}>
              <Info size={20} color="#6366f1" style={{ minWidth: 20 }} />
              <div style={{ fontSize: 11, color: '#64748b', lineHeight: 1.6 }}>
                Permissions follow the <strong>Principle of Least Privilege</strong>. All changes propagate to the application's RBAC engine immediately. 

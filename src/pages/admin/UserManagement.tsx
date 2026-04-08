@@ -8,6 +8,8 @@ import {
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import styles from '../JobCards.module.css';
+import adminStyles from './AdminTheme.module.css';
+import pageStyles from './UserManagement.module.css';
 
 export default function UserManagement() {
   const navigate = useNavigate();
@@ -171,36 +173,73 @@ export default function UserManagement() {
     }
   };
 
+  const summary = {
+    total: users.length,
+    filtered: filteredUsers.length,
+    locked: users.filter((u) => u.status === 'Locked').length,
+    admins: users.filter((u) => u.role === 'Admin').length,
+  };
+
   return (
-    <div className={`${styles.pageContainer} animate-in fade-in duration-500`}>
-      <header className="flex flex-col md:flex-row items-center justify-between gap-6 mb-10">
-        <div className="flex items-center gap-4">
+    <div className={`${styles.pageContainer} ${adminStyles.page} animate-in fade-in duration-500`}>
+      <div className={adminStyles.hero}>
+        <header className={adminStyles.header}>
+          <div className={adminStyles.headerMain}>
           <button 
             onClick={() => navigate('/admin/dashboard')}
             className="p-3 rounded-xl bg-slate-800/50 hover:bg-slate-700 text-slate-300 transition-all border border-white/5 hover:scale-105 active:scale-95"
           >
             <ArrowLeft size={20} />
           </button>
-          <div>
-            <h1 className="text-3xl font-black text-white tracking-tight flex items-center gap-3">
-              <div className="p-2.5 rounded-xl bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 shadow-lg">
-                <Users size={24} />
+            <div className={adminStyles.headerText}>
+              <p className={adminStyles.eyebrow}>System Governance</p>
+              <div className={adminStyles.titleRow}>
+                <span className={adminStyles.titleIcon}>
+                  <Users size={20} />
+                </span>
+                <div>
+                  <h1 className={adminStyles.title}>Identity Governance</h1>
+                  <p className={adminStyles.subtitle}>{users.length} active system identities across the maintenance platform.</p>
+                </div>
               </div>
-              Identity Governance
-            </h1>
-            <p className="text-slate-400 font-medium">{users.length} active system identities</p>
+            </div>
           </div>
+          <div className={adminStyles.headerActions}>
+            <button 
+              className="px-6 py-3 rounded-2xl bg-blue-600 hover:bg-blue-500 text-white font-bold shadow-xl shadow-blue-600/20 transition-all hover:-translate-y-1 active:translate-y-0 flex items-center gap-2"
+              onClick={() => { resetForm(); setShowCreateModal(true); }}
+            >
+              <UserPlus size={18} /> Provision Account
+            </button>
+          </div>
+        </header>
+      </div>
+
+      <div className={pageStyles.summaryGrid}>
+        <div className={pageStyles.summaryCard}>
+          <div className={pageStyles.summaryLabel}>Directory Size</div>
+          <div className={pageStyles.summaryValue}>{summary.total}</div>
+          <div className={pageStyles.summaryMeta}>All provisioned accounts</div>
         </div>
-        <button 
-          className="px-6 py-3 rounded-2xl bg-blue-600 hover:bg-blue-500 text-white font-bold shadow-xl shadow-blue-600/20 transition-all hover:-translate-y-1 active:translate-y-0 flex items-center gap-2"
-          onClick={() => { resetForm(); setShowCreateModal(true); }}
-        >
-          <UserPlus size={18} /> Provision Account
-        </button>
-      </header>
+        <div className={pageStyles.summaryCard}>
+          <div className={pageStyles.summaryLabel}>Filtered Result</div>
+          <div className={pageStyles.summaryValue}>{summary.filtered}</div>
+          <div className={pageStyles.summaryMeta}>Matching the current controls</div>
+        </div>
+        <div className={pageStyles.summaryCard}>
+          <div className={pageStyles.summaryLabel}>Locked Accounts</div>
+          <div className={pageStyles.summaryValue}>{summary.locked}</div>
+          <div className={pageStyles.summaryMeta}>Need administrator attention</div>
+        </div>
+        <div className={pageStyles.summaryCard}>
+          <div className={pageStyles.summaryLabel}>Admin Roles</div>
+          <div className={pageStyles.summaryValue}>{summary.admins}</div>
+          <div className={pageStyles.summaryMeta}>Elevated governance identities</div>
+        </div>
+      </div>
 
       {/* Filter and Search Bar */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10 p-6 rounded-3xl bg-slate-900/40 border border-white/5 backdrop-blur-xl shadow-2xl">
+      <div className={`${adminStyles.panel} grid grid-cols-1 md:grid-cols-3 gap-6`}>
         <div className="md:col-span-2 relative group">
           <Search size={18} className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-blue-400 transition-colors" />
           <input 
@@ -224,73 +263,73 @@ export default function UserManagement() {
       </div>
 
       {/* Table Section */}
-      <div className="glass-panel border border-white/5 rounded-3xl bg-slate-900/40 backdrop-blur-xl overflow-hidden shadow-2xl mb-12">
+      <div className={`${adminStyles.panel} ${pageStyles.tablePanel}`}>
         {isLoading ? (
           <div className="py-32 text-center">
             <div className="w-12 h-12 border-4 border-blue-500/20 border-t-blue-500 rounded-full animate-spin mx-auto mb-6"></div>
             <p className="text-slate-500 font-bold uppercase tracking-[0.2em] text-xs">Synchronizing Directory</p>
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
+          <div className={pageStyles.tableWrap}>
+            <table className={pageStyles.table}>
               <thead>
-                <tr className="bg-slate-950/30 text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em]">
-                  <th className="px-8 py-5">Corporate Identity</th>
-                  <th className="px-8 py-5">Section</th>
-                  <th className="px-8 py-5">Access Level</th>
-                  <th className="px-8 py-5 text-center">Status</th>
-                  <th className="px-8 py-5 text-right">Management</th>
+                <tr className={pageStyles.tableHeadRow}>
+                  <th className={pageStyles.tableHeadCell}>Corporate Identity</th>
+                  <th className={pageStyles.tableHeadCell}>Section</th>
+                  <th className={pageStyles.tableHeadCell}>Access Level</th>
+                  <th className={`${pageStyles.tableHeadCell} text-center`}>Status</th>
+                  <th className={`${pageStyles.tableHeadCell} text-right`}>Management</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-white/5">
+              <tbody>
                 {filteredUsers.map(u => (
-                  <tr key={u.id} className="group hover:bg-white/[0.02] transition-colors">
-                    <td className="px-8 py-6">
-                      <div className="flex items-center gap-4">
-                        <div className="w-10 h-10 rounded-2xl bg-indigo-500/10 flex items-center justify-center text-indigo-400 font-black text-lg shadow-inner">
+                  <tr key={u.id} className={pageStyles.row}>
+                    <td className={pageStyles.cell}>
+                      <div className={pageStyles.identityCell}>
+                        <div className={pageStyles.avatar}>
                           {u.name?.charAt(0) || '?'}
                         </div>
                         <div>
-                          <div className="text-slate-200 font-bold text-sm">{u.name}</div>
-                          <div className="text-[10px] text-slate-500 font-medium uppercase tracking-wider">{u.employeeId || 'NO-ID'} · {u.username}</div>
+                          <div className={pageStyles.identityName}>{u.name}</div>
+                          <div className={pageStyles.identityMeta}>{u.employeeId || 'NO-ID'} · {u.username}</div>
                         </div>
                       </div>
                     </td>
-                    <td className="px-8 py-6">
-                      <div className="text-slate-400 font-medium text-sm">{u.department}</div>
+                    <td className={pageStyles.cell}>
+                      <div className={pageStyles.department}>{u.department}</div>
                     </td>
-                    <td className="px-8 py-6">
-                      <span className="px-3 py-1 rounded-lg bg-slate-800 text-slate-300 text-[10px] font-black uppercase tracking-widest border border-white/5">
+                    <td className={pageStyles.cell}>
+                      <span className={pageStyles.roleBadge}>
                         {u.role}
                       </span>
                     </td>
-                    <td className="px-8 py-6">
-                      <div className="flex items-center justify-center gap-2">
-                        <div className="w-2 h-2 rounded-full" style={{ backgroundColor: statusColor(u.status), boxShadow: `0 0 10px ${statusColor(u.status)}44` }} />
-                        <span className="text-[10px] font-bold uppercase tracking-tighter" style={{ color: statusColor(u.status) }}>{u.status}</span>
+                    <td className={pageStyles.cell}>
+                      <div className={pageStyles.statusWrap}>
+                        <div className={pageStyles.statusDot} style={{ backgroundColor: statusColor(u.status), boxShadow: `0 0 10px ${statusColor(u.status)}44` }} />
+                        <span className={pageStyles.statusText} style={{ color: statusColor(u.status) }}>{u.status}</span>
                       </div>
                     </td>
-                    <td className="px-8 py-6">
-                      <div className="flex items-center justify-end gap-2">
-                        <button onClick={() => openDetailsModal(u)} className="p-2.5 rounded-xl bg-slate-800/50 text-slate-400 hover:text-white hover:bg-slate-700 transition-all border border-white/5" title="View Profile">
+                    <td className={pageStyles.cell}>
+                      <div className={pageStyles.actions}>
+                        <button onClick={() => openDetailsModal(u)} className={`${pageStyles.actionBtn} ${pageStyles.actionInfo}`} title="View Profile">
                           <Eye size={14} />
                         </button>
-                        <button onClick={() => openEditModal(u)} className="p-2.5 rounded-xl bg-slate-800/50 text-slate-400 hover:text-blue-400 hover:bg-blue-500/10 transition-all border border-white/5" title="Edit Profile">
+                        <button onClick={() => openEditModal(u)} className={`${pageStyles.actionBtn} ${pageStyles.actionEdit}`} title="Edit Profile">
                           <Edit2 size={14} />
                         </button>
                         {u.status === 'Locked' && (
-                          <button onClick={() => handleUnlockUser(u)} className="p-2.5 rounded-xl bg-amber-500/10 text-amber-500 hover:bg-amber-500 hover:text-white transition-all border border-amber-500/20 shadow-lg shadow-amber-500/5" title="Unlock Account">
+                          <button onClick={() => handleUnlockUser(u)} className={`${pageStyles.actionBtn} ${pageStyles.actionWarn}`} title="Unlock Account">
                             <Unlock size={14} />
                           </button>
                         )}
                         <button 
-                          className={`p-2.5 rounded-xl border transition-all ${u.status === 'Active' ? 'bg-red-500/10 text-red-400 border-red-500/20 hover:bg-red-500 hover:text-white' : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20 hover:bg-emerald-500 hover:text-white'}`} 
+                          className={`${pageStyles.actionBtn} ${u.status === 'Active' ? pageStyles.actionDanger : pageStyles.actionSuccess}`}
                           onClick={() => handleToggleStatus(u)}
                           title={u.status === 'Active' ? 'Deactivate Account' : 'Activate Account'}
                         >
                           {u.status === 'Active' ? <LogOut size={14} /> : <CheckCircle2 size={14} />}
                         </button>
-                        <button onClick={() => handleDeleteUser(u)} className="p-2.5 rounded-xl bg-slate-800/50 text-slate-500 hover:text-red-500 hover:bg-red-500/10 transition-all border border-white/5" title="Purge Profile">
+                        <button onClick={() => handleDeleteUser(u)} className={`${pageStyles.actionBtn} ${pageStyles.actionDanger}`} title="Purge Profile">
                           <Trash2 size={14} />
                         </button>
                       </div>
@@ -302,14 +341,14 @@ export default function UserManagement() {
           </div>
         )}
         {!isLoading && filteredUsers.length === 0 && (
-          <div className="py-20 text-center text-slate-500 italic text-sm">
+          <div className={pageStyles.emptyState}>
             No system accounts matching the current governance criteria.
           </div>
         )}
       </div>
 
       {/* Governance Notice */}
-      <div className="p-8 rounded-3xl bg-emerald-500/5 border border-emerald-500/10 flex items-start gap-6 shadow-xl mb-24">
+      <div className={`${adminStyles.note} ${pageStyles.notice}`}>
         <div className="p-3 rounded-2xl bg-emerald-500/10 text-emerald-400">
           <ShieldCheck size={24} />
         </div>
@@ -324,110 +363,107 @@ export default function UserManagement() {
 
       {/* Create / Edit Modal */}
       {(showCreateModal || showEditModal) && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/80 backdrop-blur-md p-4 animate-in fade-in duration-300">
-          <div className="bg-slate-900 border border-white/10 rounded-3xl shadow-2xl relative w-full max-w-2xl overflow-hidden flex flex-col max-h-[90vh]">
-            <div className="flex items-center justify-between p-8 border-b border-white/5 bg-slate-900/50">
-              <div className="flex items-center gap-4">
-                <div className="p-3 rounded-2xl bg-indigo-500/10 text-indigo-400">
+        <div className={pageStyles.modalOverlay}>
+          <div className={pageStyles.modalShell}>
+            <div className={pageStyles.modalHeader}>
+              <div className={pageStyles.modalHeaderMain}>
+                <div className={pageStyles.modalIcon}>
                   {showCreateModal ? <UserPlus size={24} /> : <Edit2 size={24} />}
                 </div>
                 <div>
-                  <h2 className="text-2xl font-black text-white tracking-tight">
+                  <h2 className={pageStyles.modalTitle}>
                     {showCreateModal ? 'Provision Identity' : 'Modify Profile'}
                   </h2>
-                  <p className="text-slate-500 text-xs font-bold uppercase tracking-widest">Global Directory Services</p>
+                  <p className={pageStyles.modalSubtitle}>Global Directory Services</p>
                 </div>
               </div>
-              <button className="p-2 rounded-xl bg-slate-800 text-slate-400 hover:text-white transition-all" onClick={() => { resetForm(); setShowCreateModal(false); setShowEditModal(false); }}>
+              <button className={pageStyles.closeBtn} onClick={() => { resetForm(); setShowCreateModal(false); setShowEditModal(false); }}>
                 <X size={20} />
               </button>
             </div>
             
-            <form onSubmit={showCreateModal ? handleCreateUser : handleUpdateUser} className="p-8 overflow-y-auto space-y-8">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                <div className="space-y-2 group">
-                  <label className="text-[10px] uppercase font-bold text-slate-500 group-focus-within:text-blue-400 transition-colors block ml-1">Full Legal Name</label>
-                  <div className="relative">
-                    <Users size={14} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-600" />
-                    <input required className="w-full bg-slate-950/50 border border-white/5 rounded-2xl py-4 pl-12 pr-6 text-white text-sm focus:border-blue-500/50 focus:ring-4 focus:ring-blue-500/10 transition-all shadow-inner" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} />
+            <form onSubmit={showCreateModal ? handleCreateUser : handleUpdateUser} className={pageStyles.modalBody}>
+              <div className={pageStyles.formGrid}>
+                <div className={pageStyles.fieldGroup}>
+                  <label className={pageStyles.fieldLabel}>Full Legal Name</label>
+                  <div className={pageStyles.fieldShell}>
+                    <Users size={14} className={pageStyles.fieldIcon} />
+                    <input required className={pageStyles.fieldInput} value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} />
                   </div>
                 </div>
-                <div className="space-y-2 group">
-                  <label className="text-[10px] uppercase font-bold text-slate-500 group-focus-within:text-blue-400 transition-colors block ml-1">Corporate ID</label>
-                  <div className="relative">
-                    <Hash size={14} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-600" />
-                    <input required className="w-full bg-slate-950/50 border border-white/5 rounded-2xl py-4 pl-12 pr-6 text-white text-sm focus:border-blue-500/50 focus:ring-4 focus:ring-blue-500/10 transition-all shadow-inner" value={formData.employeeId} onChange={e => setFormData({...formData, employeeId: e.target.value})} />
+                <div className={pageStyles.fieldGroup}>
+                  <label className={pageStyles.fieldLabel}>Corporate ID</label>
+                  <div className={pageStyles.fieldShell}>
+                    <Hash size={14} className={pageStyles.fieldIcon} />
+                    <input required className={pageStyles.fieldInput} value={formData.employeeId} onChange={e => setFormData({...formData, employeeId: e.target.value})} />
                   </div>
                 </div>
-              </div>
 
-              <div className="space-y-2 group">
-                <label className="text-[10px] uppercase font-bold text-slate-500 group-focus-within:text-blue-400 transition-colors block ml-1">Directory Username</label>
-                <div className="relative">
-                  <Briefcase size={14} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-600" />
-                  <input required className="w-full bg-slate-950/50 border border-white/5 rounded-2xl py-4 pl-12 pr-6 text-white text-sm focus:border-blue-500/50 focus:ring-4 focus:ring-blue-500/10 transition-all shadow-inner" value={formData.username} onChange={e => setFormData({...formData, username: e.target.value})} />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                <div className="space-y-2 group">
-                  <label className="text-[10px] uppercase font-bold text-slate-500 group-focus-within:text-blue-400 transition-colors block ml-1">Professional Email</label>
-                  <div className="relative">
-                    <Mail size={14} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-600" />
-                    <input required type="email" className="w-full bg-slate-950/50 border border-white/5 rounded-2xl py-4 pl-12 pr-6 text-white text-sm focus:border-blue-500/50 focus:ring-4 focus:ring-blue-500/10 transition-all shadow-inner" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} />
+                <div className={`${pageStyles.fieldGroup} ${pageStyles.fieldFull}`}>
+                  <label className={pageStyles.fieldLabel}>Directory Username</label>
+                  <div className={pageStyles.fieldShell}>
+                    <Briefcase size={14} className={pageStyles.fieldIcon} />
+                    <input required className={pageStyles.fieldInput} value={formData.username} onChange={e => setFormData({...formData, username: e.target.value})} />
                   </div>
                 </div>
-                <div className="space-y-2 group">
-                  <label className="text-[10px] uppercase font-bold text-slate-500 group-focus-within:text-blue-400 transition-colors block ml-1">SMS Gateway Target</label>
-                  <div className="relative">
-                    <Phone size={14} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-600" />
-                    <input required type="tel" className="w-full bg-slate-950/50 border border-white/5 rounded-2xl py-4 pl-12 pr-6 text-white text-sm focus:border-blue-500/50 focus:ring-4 focus:ring-blue-500/10 transition-all shadow-inner" placeholder="+26377000000" value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value})} />
+
+                <div className={pageStyles.fieldGroup}>
+                  <label className={pageStyles.fieldLabel}>Professional Email</label>
+                  <div className={pageStyles.fieldShell}>
+                    <Mail size={14} className={pageStyles.fieldIcon} />
+                    <input required type="email" className={pageStyles.fieldInput} value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} />
                   </div>
                 </div>
-              </div>
+                <div className={pageStyles.fieldGroup}>
+                  <label className={pageStyles.fieldLabel}>SMS Gateway Target</label>
+                  <div className={pageStyles.fieldShell}>
+                    <Phone size={14} className={pageStyles.fieldIcon} />
+                    <input required type="tel" className={pageStyles.fieldInput} placeholder="+26377000000" value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value})} />
+                  </div>
+                </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                <div className="space-y-2 group">
-                  <label className="text-[10px] uppercase font-bold text-slate-500 group-focus-within:text-blue-400 transition-colors block ml-1">Security Role</label>
-                  <div className="relative">
-                    <ShieldCheck size={14} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-600" />
-                    <select required className="w-full bg-slate-950/50 border border-white/5 rounded-2xl py-4 pl-12 pr-6 text-white text-sm focus:border-blue-500/50 focus:ring-4 focus:ring-blue-500/10 transition-all shadow-inner appearance-none cursor-pointer" value={formData.role} onChange={e => setFormData({...formData, role: e.target.value})}>
+                <div className={pageStyles.fieldGroup}>
+                  <label className={pageStyles.fieldLabel}>Security Role</label>
+                  <div className={pageStyles.fieldShell}>
+                    <ShieldCheck size={14} className={pageStyles.fieldIcon} />
+                    <select required className={pageStyles.fieldInput} value={formData.role} onChange={e => setFormData({...formData, role: e.target.value})}>
                       {['Admin', 'Supervisor', 'EngSupervisor', 'Artisan', 'Initiator', 'PlanningOffice', 'HOD'].map(r => (
                         <option key={r} value={r} className="bg-slate-900">{r}</option>
                       ))}
                     </select>
                   </div>
                 </div>
-                <div className="space-y-2 group">
-                  <label className="text-[10px] uppercase font-bold text-slate-500 group-focus-within:text-blue-400 transition-colors block ml-1">Section / Dept</label>
-                  <div className="relative">
-                    <Building size={14} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-600" />
-                    <select required className="w-full bg-slate-950/50 border border-white/5 rounded-2xl py-4 pl-12 pr-6 text-white text-sm focus:border-blue-500/50 focus:ring-4 focus:ring-blue-500/10 transition-all shadow-inner appearance-none cursor-pointer" value={formData.department} onChange={e => setFormData({...formData, department: e.target.value})}>
+                <div className={pageStyles.fieldGroup}>
+                  <label className={pageStyles.fieldLabel}>Section / Dept</label>
+                  <div className={pageStyles.fieldShell}>
+                    <Building size={14} className={pageStyles.fieldIcon} />
+                    <select required className={pageStyles.fieldInput} value={formData.department} onChange={e => setFormData({...formData, department: e.target.value})}>
                       {['Mechanical', 'Electrical', 'Production', 'IT', 'Planning', 'Quality', 'HSE'].map(d => (
                         <option key={d} value={d} className="bg-slate-900">{d}</option>
                       ))}
                     </select>
                   </div>
                 </div>
-              </div>
 
-              <div className="space-y-2 group">
-                <label className="text-[10px] uppercase font-bold text-slate-500 group-focus-within:text-blue-400 transition-colors block ml-1">
+                <div className={`${pageStyles.fieldGroup} ${pageStyles.fieldFull}`}>
+                  <label className={pageStyles.fieldLabel}>
                   {showEditModal ? 'Update Credentials (Optional)' : 'Security Credential'}
-                </label>
-                <div className="relative">
-                  <Unlock size={14} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-600" />
+                  </label>
+                  <div className={pageStyles.fieldShell}>
+                    <Unlock size={14} className={pageStyles.fieldIcon} />
                   <input 
                     required={showCreateModal} 
                     type="password" 
                     placeholder={showEditModal ? 'Leave blank to retain existing...' : 'System default: default123'} 
-                    className="w-full bg-slate-950/50 border border-white/5 rounded-2xl py-4 pl-12 pr-6 text-white text-sm focus:border-blue-500/50 focus:ring-4 focus:ring-blue-500/10 transition-all shadow-inner" 
+                    className={pageStyles.fieldInput}
                     value={formData.password} onChange={e => setFormData({...formData, password: e.target.value})} 
                   />
+                  </div>
                 </div>
+
               </div>
 
-              <div className="flex justify-end gap-4 mt-10 pt-8 border-t border-white/5">
+              <div className={pageStyles.modalFooter}>
                 <button type="button" className="px-8 py-4 rounded-2xl bg-slate-800 text-slate-300 font-bold hover:bg-slate-700 transition-all" onClick={() => { resetForm(); setShowCreateModal(false); setShowEditModal(false); }}>
                   Cancel
                 </button>
@@ -442,41 +478,44 @@ export default function UserManagement() {
 
       {/* Details Modal */}
       {showDetailsModal && selectedUser && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/80 backdrop-blur-md p-4 animate-in fade-in duration-300">
-          <div className="bg-slate-900 border border-white/10 rounded-3xl shadow-2xl relative w-full max-w-md overflow-hidden shadow-[0_32px_64px_-16px_rgba(0,0,0,0.5)]">
-            <div className="p-8 pb-0 flex justify-end">
-              <button className="p-2 rounded-xl bg-slate-800 text-slate-400 hover:text-white transition-all" onClick={() => setShowDetailsModal(false)}>
+        <div className={pageStyles.modalOverlay}>
+          <div className={`${pageStyles.modalShell} ${pageStyles.modalShellNarrow}`}>
+            <div className={pageStyles.modalHeader}>
+              <div />
+              <button className={pageStyles.closeBtn} onClick={() => setShowDetailsModal(false)}>
                 <X size={20} />
               </button>
             </div>
             
-            <div className="p-8 pt-0 flex flex-col items-center text-center">
-              <div className="w-24 h-24 rounded-3xl bg-indigo-500/10 flex items-center justify-center text-indigo-400 font-black text-4xl shadow-inner mb-6">
+            <div className={pageStyles.detailsBody}>
+              <div className={pageStyles.detailsHero}>
+                <div className={pageStyles.detailsAvatar}>
                 {selectedUser.name?.charAt(0)}
+                </div>
+                <h2 className={pageStyles.detailsName}>{selectedUser.name}</h2>
+                <p className={pageStyles.detailsRole}>{selectedUser.role} · {selectedUser.department}</p>
               </div>
-              <h2 className="text-2xl font-black text-white tracking-tight mb-1">{selectedUser.name}</h2>
-              <p className="text-slate-500 text-[10px] font-bold uppercase tracking-[0.3em] mb-8">{selectedUser.role} · {selectedUser.department}</p>
               
-              <div className="w-full space-y-4">
-                <div className="flex items-center justify-between p-4 rounded-2xl bg-slate-950/40 border border-white/5">
-                  <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Employee ID</span>
-                  <span className="text-sm font-bold text-slate-200">{selectedUser.employeeId || '—'}</span>
+              <div className={pageStyles.detailsList}>
+                <div className={pageStyles.detailsRow}>
+                  <span className={pageStyles.detailsKey}>Employee ID</span>
+                  <span className={pageStyles.detailsValue}>{selectedUser.employeeId || '—'}</span>
                 </div>
-                <div className="flex items-center justify-between p-4 rounded-2xl bg-slate-950/40 border border-white/5">
-                  <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Username</span>
-                  <span className="text-sm font-bold text-slate-200">{selectedUser.username}</span>
+                <div className={pageStyles.detailsRow}>
+                  <span className={pageStyles.detailsKey}>Username</span>
+                  <span className={pageStyles.detailsValue}>{selectedUser.username}</span>
                 </div>
-                <div className="flex items-center justify-between p-4 rounded-2xl bg-slate-950/40 border border-white/5">
-                  <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Email</span>
-                  <span className="text-sm font-bold text-blue-400">{selectedUser.email || '—'}</span>
+                <div className={pageStyles.detailsRow}>
+                  <span className={pageStyles.detailsKey}>Email</span>
+                  <span className={pageStyles.detailsValue} style={{ color: '#93c5fd' }}>{selectedUser.email || '—'}</span>
                 </div>
-                <div className="flex items-center justify-between p-4 rounded-2xl bg-slate-950/40 border border-white/5">
-                  <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Phone</span>
-                  <span className="text-sm font-bold text-slate-200">{selectedUser.phone || '—'}</span>
+                <div className={pageStyles.detailsRow}>
+                  <span className={pageStyles.detailsKey}>Phone</span>
+                  <span className={pageStyles.detailsValue}>{selectedUser.phone || '—'}</span>
                 </div>
-                <div className="flex items-center justify-between p-4 rounded-2xl bg-slate-950/40 border border-white/5">
-                  <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Last Auth</span>
-                  <span className="text-sm font-bold text-slate-200">
+                <div className={pageStyles.detailsRow}>
+                  <span className={pageStyles.detailsKey}>Last Auth</span>
+                  <span className={pageStyles.detailsValue}>
                     {selectedUser.lastLogin ? new Date(selectedUser.lastLogin).toLocaleDateString() : 'Never'}
                   </span>
                 </div>
@@ -484,7 +523,7 @@ export default function UserManagement() {
 
               <button 
                 onClick={() => { setShowDetailsModal(false); openEditModal(selectedUser); }}
-                className="w-full mt-10 px-8 py-4 rounded-2xl bg-slate-800 text-white font-bold hover:bg-slate-700 transition-all flex items-center justify-center gap-2"
+                className={`btn btn-ghost ${pageStyles.detailsAction}`}
               >
                 <Edit2 size={18} /> Edit Detailed Profile
               </button>

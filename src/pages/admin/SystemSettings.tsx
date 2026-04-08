@@ -8,6 +8,7 @@ import {
   Cloud, Save, Key, AlertTriangle, RefreshCw
 } from 'lucide-react';
 import styles from '../JobCards.module.css';
+import adminStyles from './AdminTheme.module.css';
 
 export default function SystemSettings() {
   const navigate = useNavigate();
@@ -65,28 +66,37 @@ export default function SystemSettings() {
   }
 
   return (
-    <div className={styles.pageContainer}>
-      <header className="flex flex-col md:flex-row items-start justify-between gap-4 mb-6">
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+    <div className={`${styles.pageContainer} ${adminStyles.page}`}>
+      <div className={adminStyles.hero}>
+        <header className={adminStyles.header}>
+          <div className={adminStyles.headerMain}>
           <button className="btn btn-ghost" onClick={() => navigate('/admin/dashboard')} style={{ padding: '8px' }}>
             <ArrowLeft size={18} />
           </button>
-          <div>
-            <h1 className={styles.pageTitle} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-              <Settings size={24} color="#6366f1" />
-              Technical Core Governance
-            </h1>
-            <p className={styles['text-muted']}>Manage backend parameters, service integrations, and technical security.</p>
+            <div className={adminStyles.headerText}>
+              <p className={adminStyles.eyebrow}>System Governance</p>
+              <div className={adminStyles.titleRow}>
+                <span className={adminStyles.titleIcon}>
+                  <Settings size={20} />
+                </span>
+                <div>
+                  <h1 className={adminStyles.title}>Technical Core Governance</h1>
+                  <p className={adminStyles.subtitle}>Unified settings visuals and less cramped layout behavior across the full admin stack.</p>
+                </div>
+              </div>
+            </div>
           </div>
-        </div>
-        <button className="btn btn-primary" onClick={handleSave} disabled={isSaving}>
-          <Save size={16} style={{ marginRight: 6 }} /> {isSaving ? 'Applying...' : 'Save Configuration'}
-        </button>
-      </header>
+          <div className={adminStyles.headerActions}>
+            <button className="btn btn-primary" onClick={handleSave} disabled={isSaving}>
+              <Save size={16} style={{ marginRight: 6 }} /> {isSaving ? 'Applying...' : 'Save Configuration'}
+            </button>
+          </div>
+        </header>
+      </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-[260px_1fr] gap-6 items-start">
+      <div className={adminStyles.sidebarGrid}>
         {/* Navigation */}
-        <div className="flex flex-col gap-1 p-3 rounded-2xl bg-white/5 border border-white/5">
+        <div className={adminStyles.panel}>
           {[
             { id: 'General', icon: LayoutTemplate, label: 'General & Branding' },
             { id: 'Auth', icon: Key, label: 'Authentication & SSO' },
@@ -110,9 +120,9 @@ export default function SystemSettings() {
         </div>
 
         {/* Dynamic Panel Content */}
-        <div className="flex flex-col gap-6">
+        <div className={adminStyles.stack}>
           {activeTab === 'General' && (
-            <div style={{ background: 'rgba(15,23,42,0.4)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: 16, padding: 24 }}>
+            <div className={adminStyles.panel}>
               <h3 style={{ fontSize: 12, fontWeight: 800, textTransform: 'uppercase', color: '#475569', marginBottom: 24 }}>System Branding & Locale</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                  <div className="form-group">
@@ -153,7 +163,7 @@ export default function SystemSettings() {
           )}
 
           {activeTab === 'Auth' && (
-            <div style={{ background: 'rgba(15,23,42,0.4)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: 16, padding: 24 }}>
+            <div className={adminStyles.panel}>
               <h3 style={{ fontSize: 12, fontWeight: 800, textTransform: 'uppercase', color: '#475569', marginBottom: 24 }}>Identity Protocols</h3>
               <div className="flex flex-col gap-4">
                  {[
@@ -191,7 +201,7 @@ export default function SystemSettings() {
           )}
 
           {activeTab === 'ERP' && (
-            <div style={{ background: 'rgba(15,23,42,0.4)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: 16, padding: 24 }}>
+            <div className={adminStyles.panel}>
                <h3 style={{ fontSize: 12, fontWeight: 800, textTransform: 'uppercase', color: '#475569', marginBottom: 24 }}>Enterprise Connector (SAP)</h3>
                <div className="flex flex-col gap-6">
                   <div style={{ background: 'rgba(239,68,68,0.05)', borderRadius: 16, padding: 18, border: '1px solid rgba(239,68,68,0.15)', display: 'flex', gap: 14 }}>
@@ -223,9 +233,9 @@ export default function SystemSettings() {
             </div>
           )}
 
-          <div style={{ background: 'rgba(15,23,42,0.6)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: 16, padding: 24 }}>
+          <div className={adminStyles.panel}>
              <h3 style={{ fontSize: 11, fontWeight: 800, textTransform: 'uppercase', color: '#475569', marginBottom: 20 }}>Infrastructure Telemetry</h3>
-             <div className="grid grid-cols-3 gap-6">
+             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div>
                    <div style={{ fontSize: 10, color: '#475569', marginBottom: 4 }}>MAIN NODE UPTIME</div>
                    <div style={{ fontSize: 20, fontWeight: 800, color: '#10b981' }}>{telemetry?.databaseUptime || '100%'}</div>

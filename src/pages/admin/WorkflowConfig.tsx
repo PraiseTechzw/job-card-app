@@ -7,6 +7,7 @@ import {
   ArrowRight, Save, MessageSquare
 } from 'lucide-react';
 import styles from '../JobCards.module.css';
+import adminStyles from './AdminTheme.module.css';
 
 const WORKFLOW_STEPS = [
   'Draft', 'Pending_Supervisor', 'Pending_HOD', 'Approved', 
@@ -71,32 +72,41 @@ export default function WorkflowConfig() {
   }
 
   return (
-    <div className={styles.pageContainer}>
-      <header className="flex flex-col md:flex-row items-start justify-between gap-4 mb-6">
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+    <div className={`${styles.pageContainer} ${adminStyles.page}`}>
+      <div className={adminStyles.hero}>
+        <header className={adminStyles.header}>
+          <div className={adminStyles.headerMain}>
           <button className="btn btn-ghost" onClick={() => navigate('/admin/dashboard')} style={{ padding: '8px' }}>
             <ArrowLeft size={18} />
           </button>
-          <div>
-            <h1 className={styles.pageTitle} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-              <RefreshCw size={24} color="#6366f1" />
-              Operational Workflow Governance
-            </h1>
-            <p className={styles['text-muted']}>Control state transitions, approval thresholds and validation rules.</p>
+            <div className={adminStyles.headerText}>
+              <p className={adminStyles.eyebrow}>System Governance</p>
+              <div className={adminStyles.titleRow}>
+                <span className={adminStyles.titleIcon}>
+                  <RefreshCw size={20} />
+                </span>
+                <div>
+                  <h1 className={adminStyles.title}>Operational Workflow Governance</h1>
+                  <p className={adminStyles.subtitle}>A cleaner transition console with more consistent spacing, tone, and mobile behavior.</p>
+                </div>
+              </div>
+            </div>
           </div>
-        </div>
-        {!isEditing ? (
-          <button className="btn btn-primary" onClick={() => setIsEditing(true)}>Edit Workflow Rules</button>
-        ) : (
-          <div style={{ display: 'flex', gap: 10 }}>
-            <button className="btn btn-ghost" onClick={() => setIsEditing(false)}>Cancel</button>
-            <button className="btn btn-primary" onClick={handleSave}><Save size={16} style={{ marginRight: 6 }} /> Save Configuration</button>
+          <div className={adminStyles.headerActions}>
+            {!isEditing ? (
+              <button className="btn btn-primary" onClick={() => setIsEditing(true)}>Edit Workflow Rules</button>
+            ) : (
+              <>
+                <button className="btn btn-ghost" onClick={() => setIsEditing(false)}>Cancel</button>
+                <button className="btn btn-primary" onClick={handleSave}><Save size={16} style={{ marginRight: 6 }} /> Save Configuration</button>
+              </>
+            )}
           </div>
-        )}
-      </header>
+        </header>
+      </div>
 
       {/* Workflow Visualization Strip */}
-      <div className="overflow-x-auto mb-6" style={{ background: 'rgba(15,23,42,0.6)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 16, padding: '24px 30px' }}>
+      <div className={`${adminStyles.panel} overflow-x-auto`} style={{ padding: '24px 30px' }}>
         <div className="flex items-center gap-0">
           {WORKFLOW_STEPS.map((step, i) => (
             <div key={step} className="flex items-center">
@@ -122,10 +132,10 @@ export default function WorkflowConfig() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-6 items-start">
+      <div className={adminStyles.contentGrid}>
         {/* Step Configuration Detail */}
-        <div className="flex flex-col gap-6">
-          <div style={{ background: 'rgba(15,23,42,0.4)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: 16, padding: 24 }}>
+        <div className={adminStyles.stack}>
+          <div className={adminStyles.panel}>
             <h3 style={{ fontSize: 12, fontWeight: 800, textTransform: 'uppercase', color: '#475569', marginBottom: 24, display: 'flex', justifyContent: 'space-between' }}>
               Governance for: {activeStep.replace(/_/g, ' ')}
               <span className="badge badge-info" style={{ opacity: 0.7 }}>Level 1 Validation</span>
@@ -201,7 +211,7 @@ export default function WorkflowConfig() {
             </div>
           </div>
           
-          <div style={{ background: 'rgba(99,102,241,0.06)', border: '1px solid rgba(99,102,241,0.15)', borderRadius: 16, padding: 20, display: 'flex', gap: 14 }}>
+          <div className={adminStyles.note}>
              <ShieldCheck size={20} color="#818cf8" />
              <div style={{ fontSize: 12, color: '#64748b', lineHeight: 1.6 }}>
                <strong>Resilience Note:</strong> Modifying the <em>Success Path</em> on stages with active job cards will result in re-validation of those cards upon their next action. 
@@ -211,8 +221,8 @@ export default function WorkflowConfig() {
         </div>
 
         {/* Sidebar: Metadata & Analytics */}
-        <div className="flex flex-col gap-6">
-          <div style={{ background: 'rgba(15,23,42,0.6)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: 16, padding: 20 }}>
+        <div className={adminStyles.stack}>
+          <div className={adminStyles.panel}>
             <h3 style={{ fontSize: 11, fontWeight: 800, textTransform: 'uppercase', color: '#475569', marginBottom: 16 }}>SLA Governance</h3>
             <div className="flex flex-col gap-4">
                <div style={{ background: 'rgba(15,23,42,0.4)', borderRadius: 10, padding: 12 }}>
@@ -228,7 +238,7 @@ export default function WorkflowConfig() {
             </div>
           </div>
 
-          <div style={{ background: 'rgba(15,23,42,0.6)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: 16, padding: 20 }}>
+          <div className={adminStyles.panel}>
             <h3 style={{ fontSize: 11, fontWeight: 800, textTransform: 'uppercase', color: '#475569', marginBottom: 16, display: 'flex', gap: 6, alignItems: 'center' }}>
               <MessageSquare size={13} /> Change History
             </h3>

@@ -105,18 +105,17 @@ export default function InitiatorDashboard() {
 
   return (
     <div className={styles.pageContainer}>
-      {/* Header */}
-      <header style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 28, flexWrap: 'wrap', gap: 12 }}>
-        <div>
-          <h1 className={styles.pageTitle} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <span style={{ background: 'rgba(99,102,241,0.15)', borderRadius: 10, padding: '6px 8px', display: 'inline-flex' }}>
-              <FilePlus size={22} color="#6366f1" />
+      <header className={styles.hero}>
+        <div className={styles.heroContent}>
+          <div className={styles.heroTitleRow}>
+            <span className={styles.heroIcon}>
+              <FilePlus size={22} />
             </span>
-            My Maintenance Requests
-          </h1>
-          <p className={styles['text-muted']}>Welcome back, {user?.name} · Track and manage your submitted job requests</p>
+            <h1 className={styles.pageTitle}>My Maintenance Requests</h1>
+          </div>
+          <p className={styles.heroSubtitle}>Welcome back, {user?.name}. Track drafts, active work, and jobs waiting on your sign-off from one place.</p>
         </div>
-        <div style={{ display: 'flex', gap: 8 }}>
+        <div className={styles.heroActions}>
           <button className="btn btn-ghost" onClick={() => navigate('/initiator/history')} style={{ gap: 6, fontSize: 13 }}>
             <Clock size={14} /> My History
           </button>
@@ -126,69 +125,65 @@ export default function InitiatorDashboard() {
         </div>
       </header>
 
-      {/* KPI strip */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: 12, marginBottom: 24 }}>
+      <div className={styles.statsGrid}>
         {kpis.map(k => (
           <button
             key={k.key}
             onClick={() => setFilter(filter === k.key ? 'all' : k.key)}
+            className={`${styles.statCard} ${styles.statCardStack}`}
             style={{
               background: filter === k.key ? k.bg : 'rgba(15,23,42,0.5)',
               border: `1px solid ${filter === k.key ? k.color + '44' : 'rgba(255,255,255,0.05)'}`,
-              borderRadius: 12, padding: '14px 16px',
-              display: 'flex', flexDirection: 'column', gap: 6,
               cursor: 'pointer', transition: 'all 0.15s', textAlign: 'left',
               transform: filter === k.key ? 'translateY(-2px)' : 'none',
             }}
           >
-            <span style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: '#64748b' }}>{k.label}</span>
-            <span style={{ fontSize: 28, fontWeight: 800, color: filter === k.key ? k.color : '#f1f5f9', lineHeight: 1 }}>{k.count}</span>
+            <span className={styles.statLabel}>{k.label}</span>
+            <span className={styles.statValue} style={{ color: filter === k.key ? k.color : '#f1f5f9' }}>{k.count}</span>
           </button>
         ))}
       </div>
 
-      {/* Search + Tab bar */}
-      <div style={{ display: 'flex', gap: 12, marginBottom: 16, flexWrap: 'wrap', alignItems: 'center' }}>
-        <div style={{ position: 'relative', flex: 1, minWidth: 220 }}>
-          <Search size={14} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: '#64748b', pointerEvents: 'none' }} />
-          <input
-            type="text" placeholder="Search by job #, plant, keyword…"
-            value={search} onChange={e => setSearch(e.target.value)}
-            style={{ background: 'rgba(9,11,18,0.6)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 8, padding: '8px 12px 8px 34px', color: '#f1f5f9', fontSize: 13, width: '100%', outline: 'none', fontFamily: 'inherit' }}
-          />
+      <div className={styles.filterPanel}>
+        <div className={styles.filterRow}>
+          <div className={styles.searchWrap}>
+            <Search size={14} className={styles.searchIcon} />
+            <input
+              type="text" placeholder="Search by job #, plant, keyword..."
+              value={search} onChange={e => setSearch(e.target.value)}
+              className={styles.searchInput}
+            />
+          </div>
+          <div className={styles.chipRow}>
+            {tabs.map(t => (
+              <button
+                key={t.key}
+                onClick={() => setFilter(t.key)}
+                className={`${styles.chip} ${filter === t.key ? styles.chipActive : ''}`}
+              >
+                {t.label}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
-      {/* Filter tabs */}
-      <div style={{ display: 'flex', gap: 4, marginBottom: 18, overflowX: 'auto', paddingBottom: 2 }}>
-        {tabs.map(t => (
-          <button key={t.key} onClick={() => setFilter(t.key)} style={{
-            padding: '6px 13px', borderRadius: 7, fontSize: 12, fontWeight: 600,
-            whiteSpace: 'nowrap', cursor: 'pointer', transition: 'all 0.15s',
-            background: filter === t.key ? '#4f46e5' : 'rgba(255,255,255,0.04)',
-            color: filter === t.key ? '#fff' : '#64748b',
-            border: `1px solid ${filter === t.key ? '#4f46e5' : 'rgba(255,255,255,0.06)'}`,
-          }}>{t.label}</button>
-        ))}
-      </div>
-
-      {/* Returned for clarification alert */}
       {rejected.length > 0 && (filter === 'all' || filter === 'Rejected') && (
-        <div style={{ background: 'rgba(239,68,68,0.07)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: 12, padding: '12px 18px', marginBottom: 16, display: 'flex', gap: 12, alignItems: 'center' }}>
+        <div className={`${styles.notice} ${styles.noticeDanger}`}>
           <AlertTriangle size={18} color="#ef4444" />
           <div>
             <div style={{ fontWeight: 700, fontSize: 13, color: '#f87171' }}>{rejected.length} request{rejected.length > 1 ? 's' : ''} rejected</div>
-            <div style={{ fontSize: 12, color: '#94a3b8', marginTop: 2 }}>Review the rejection reasons and raise a new request if needed.</div>
+            <div style={{ fontSize: 12, color: '#94a3b8', marginTop: 2 }}>Review the rejection reasons and raise a corrected request if needed.</div>
           </div>
         </div>
       )}
 
       {signoff.length > 0 && (filter === 'all' || filter === 'Awaiting_SignOff') && (
-        <div style={{ background: 'rgba(167,139,250,0.08)', border: '1px solid rgba(167,139,250,0.2)', borderRadius: 12, padding: '12px 18px', marginBottom: 16, display: 'flex', gap: 12, alignItems: 'center' }}>
+        <div className={`${styles.notice} ${styles.noticeInfo}`} style={{ alignItems: 'center' }}>
           <RotateCcw size={18} color="#a78bfa" />
           <div>
-            <div style={{ fontWeight: 700, fontSize: 13, color: '#a78bfa' }}>{signoff.length} job{signoff.length > 1 ? 's' : ''} awaiting your sign-off</div>
-            <div style={{ fontSize: 12, color: '#94a3b8', marginTop: 2 }}>Work is complete — review and confirm the job was satisfactorily resolved.</div>
+            <div style={{ fontWeight: 700, fontSize: 13, color: '#c4b5fd' }}>{signoff.length} job{signoff.length > 1 ? 's' : ''} awaiting your sign-off</div>
+            <div style={{ fontSize: 12, color: '#94a3b8', marginTop: 2 }}>Work is complete. Review and confirm the resolution when you are satisfied.</div>
           </div>
           <button className="btn btn-primary" style={{ marginLeft: 'auto', padding: '6px 14px', fontSize: 12, background: 'linear-gradient(135deg,#7c3aed,#6d28d9)', gap: 5, whiteSpace: 'nowrap' }}
             onClick={() => navigate('/sign-offs')}>
@@ -278,8 +273,8 @@ export default function InitiatorDashboard() {
         </div>
       )}
 
-      <div style={{ marginTop: 14, fontSize: 12, color: '#475569', textAlign: 'right' }}>
-        Showing {displayed.length} of {mine.length} request{mine.length !== 1 ? 's' : ''}
+      <div className={styles.footerMeta}>
+        <span>Showing {displayed.length} of {mine.length} request{mine.length !== 1 ? 's' : ''}</span>
       </div>
     </div>
   );

@@ -9,6 +9,7 @@ import {
 import { useAuth } from '../../context/AuthContext';
 import styles from '../JobCards.module.css';
 import SEO from '../../components/SEO';
+import adminStyles from './AdminTheme.module.css';
 
 export default function AdminDashboard() {
   const { user } = useAuth();
@@ -67,32 +68,41 @@ export default function AdminDashboard() {
   ];
 
   return (
-    <div className={`${styles.pageContainer} animate-in fade-in duration-700`}>
+    <div className={`${styles.pageContainer} ${adminStyles.page} animate-in fade-in duration-700`}>
       <SEO title="System Governance Console" />
       
-      <header className="flex flex-col md:flex-row items-center justify-between gap-8 mb-12">
-        <div className="space-y-2 text-center md:text-left">
-          <div className="flex items-center gap-3 justify-center md:justify-start">
-            <div className="p-3 rounded-2xl bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 shadow-lg shadow-indigo-500/5">
-              <ShieldCheck size={28} />
+      <div className={adminStyles.hero}>
+        <header className={adminStyles.header}>
+          <div className={adminStyles.headerMain}>
+            <div className={adminStyles.headerText}>
+              <p className={adminStyles.eyebrow}>System Governance</p>
+              <div className={adminStyles.titleRow}>
+                <span className={adminStyles.titleIcon}>
+                  <ShieldCheck size={22} />
+                </span>
+                <div>
+                  <h1 className={adminStyles.title}>Governance Console</h1>
+                  <p className={adminStyles.subtitle}>Centralized security, audit, retention, identity, and infrastructure oversight.</p>
+                </div>
+              </div>
             </div>
-            <h1 className="text-4xl font-black text-white tracking-tight">Governance Console</h1>
           </div>
-          <p className="text-slate-400 font-medium ml-1">Centralized security, audit, and infrastructure oversight.</p>
-        </div>
-        
-        <div className="flex items-center gap-4 px-6 py-3 rounded-2xl bg-slate-900/40 border border-white/5 backdrop-blur-md shadow-xl">
-          <div className={`w-2.5 h-2.5 rounded-full ${stats?.systemHealth === 'Healthy' ? 'bg-emerald-500 animate-pulse shadow-[0_0_10px_#10b981]' : 'bg-red-500 animate-ping shadow-[0_0_10px_#ef4444]'}`} />
-          <span className={`text-[11px] font-black tracking-[0.1em] uppercase ${stats?.systemHealth === 'Healthy' ? 'text-emerald-400' : 'text-red-400'}`}>
-            System {stats?.systemHealth || 'STABLE'}
-          </span>
-          <div className="h-4 w-px bg-white/10 mx-2" />
-          <span className="text-[10px] font-mono text-slate-500 uppercase">Ver 4.2.0-LTS</span>
-        </div>
-      </header>
+          
+          <div className={adminStyles.headerActions}>
+            <div className="flex items-center gap-4 px-6 py-3 rounded-2xl bg-slate-900/40 border border-white/5 backdrop-blur-md shadow-xl">
+              <div className={`w-2.5 h-2.5 rounded-full ${stats?.systemHealth === 'Healthy' ? 'bg-emerald-500 animate-pulse shadow-[0_0_10px_#10b981]' : 'bg-red-500 animate-ping shadow-[0_0_10px_#ef4444]'}`} />
+              <span className={`text-[11px] font-black tracking-[0.1em] uppercase ${stats?.systemHealth === 'Healthy' ? 'text-emerald-400' : 'text-red-400'}`}>
+                System {stats?.systemHealth || 'STABLE'}
+              </span>
+              <div className="h-4 w-px bg-white/10 mx-2" />
+              <span className="text-[10px] font-mono text-slate-500 uppercase">Ver 4.2.0-LTS</span>
+            </div>
+          </div>
+        </header>
+      </div>
 
       {/* Governance Stats */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
+      <div className={adminStyles.statsGrid}>
         {kpis.map(k => (
           <div key={k.label} className="glass-panel p-7 border border-white/5 rounded-3xl bg-slate-900/40 backdrop-blur-xl group hover:border-white/10 transition-all shadow-xl">
             <div className="flex items-center justify-between mb-5">
