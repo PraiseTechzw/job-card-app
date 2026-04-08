@@ -138,6 +138,7 @@ export default function AdminDashboard() {
                 { label: 'Security Audits', icon: FileText, desc: 'Compliance traceability', to: '/admin/audit' },
                 { label: 'Data Retention', icon: Archive, desc: 'Archiving & lifecycles', to: '/admin/retention' },
                 { label: 'Core Configuration', icon: Server, desc: 'API & Environment settings', to: '/admin/settings' },
+                { label: 'Database Explorer', icon: HardDrive, desc: 'All public tables and records', to: '/admin/database' },
               ].map(m => (
                 <button 
                   key={m.to} 

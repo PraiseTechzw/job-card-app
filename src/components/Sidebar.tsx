@@ -235,6 +235,13 @@ const Sidebar: React.FC<SidebarProps> = ({ onClose }) => {
       roles: ['Admin'],
       module: 'Admin Controls',
     },
+    {
+      to: '/admin/database',
+      label: 'Database Console',
+      icon: Database,
+      roles: ['Admin'],
+      module: 'Admin Controls',
+    },
   ];
 
   const filteredItems = navItems.filter(item => 

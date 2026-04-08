@@ -270,6 +270,89 @@ const toSnake = (obj) => {
   return newObj;
 };
 
+const quoteIdentifier = (value) => `"${String(value).replace(/"/g, '""')}"`;
+
+const csvEscape = (value) => {
+  if (value === null || value === undefined) return '""';
+  const normalized = typeof value === 'object' ? JSON.stringify(value) : String(value);
+  return `"${normalized.replaceAll('"', '""')}"`;
+};
+
+const getPublicTableDefinitions = async () => {
+  const [columnsResult, statsResult] = await Promise.all([
+    query(
+      `SELECT c.table_name,
+              c.column_name,
+              c.data_type,
+              c.ordinal_position,
+              CASE WHEN pk.column_name IS NOT NULL THEN TRUE ELSE FALSE END AS is_primary
+       FROM information_schema.columns c
+       LEFT JOIN (
+         SELECT kcu.table_name, kcu.column_name
+         FROM information_schema.table_constraints tc
+         JOIN information_schema.key_column_usage kcu
+           ON tc.constraint_name = kcu.constraint_name
+          AND tc.table_schema = kcu.table_schema
+         WHERE tc.table_schema = 'public'
+           AND tc.constraint_type = 'PRIMARY KEY'
+       ) pk
+         ON pk.table_name = c.table_name
+        AND pk.column_name = c.column_name
+       WHERE c.table_schema = 'public'
+       ORDER BY c.table_name, c.ordinal_position`
+    ),
+    query(
+      `SELECT c.relname AS table_name,
+              COALESCE(s.n_live_tup::bigint, 0)::bigint AS estimated_rows
+       FROM pg_class c
+       JOIN pg_namespace n ON n.oid = c.relnamespace
+       LEFT JOIN pg_stat_user_tables s ON s.relid = c.oid
+       WHERE n.nspname = 'public'
+         AND c.relkind = 'r'
+       ORDER BY c.relname`
+    ),
+  ]);
+
+  const statsByTable = new Map(
+    statsResult.rows.map((row) => [row.table_name, Number(row.estimated_rows || 0)])
+  );
+
+  const tables = new Map();
+  for (const row of columnsResult.rows) {
+    if (!tables.has(row.table_name)) {
+      tables.set(row.table_name, {
+        tableName: row.table_name,
+        columnCount: 0,
+        estimatedRows: statsByTable.get(row.table_name) || 0,
+        primaryKey: null,
+        columns: [],
+      });
+    }
+    const table = tables.get(row.table_name);
+    const isPrimary = row.is_primary === true || row.is_primary === 't';
+    table.columnCount += 1;
+    table.columns.push({
+      name: row.column_name,
+      dataType: row.data_type,
+      isPrimary,
+    });
+    if (isPrimary && !table.primaryKey) {
+      table.primaryKey = row.column_name;
+    }
+  }
+
+  return Array.from(tables.values()).sort((a, b) => a.tableName.localeCompare(b.tableName));
+};
+
+const getPreferredSortColumn = (tableDefinition) => {
+  const columnNames = tableDefinition?.columns?.map((column) => column.name) || [];
+  if (columnNames.includes('updated_at')) return 'updated_at';
+  if (columnNames.includes('created_at')) return 'created_at';
+  if (columnNames.includes('archived_at')) return 'archived_at';
+  if (tableDefinition?.primaryKey) return tableDefinition.primaryKey;
+  return columnNames[0];
+};
+
 const ADMIN_CONFIG_KEYS = new Set([
   'permissions',
   'workflow',
@@ -1352,6 +1435,132 @@ const buildTelemetrySnapshot = async (runtimeConfig) => {
 };
 
 // --- ADMIN ENDPOINTS ---
+
+app.get('/api/admin/database/tables', authenticateToken, authorizeRoles('Admin'), authorizeModule('Admin Controls'), async (req, res) => {
+  try {
+    const tables = await getPublicTableDefinitions();
+    res.json({
+      items: tables.map((table) => ({
+        tableName: table.tableName,
+        columnCount: table.columnCount,
+        estimatedRows: table.estimatedRows,
+        primaryKey: table.primaryKey,
+        columns: table.columns,
+      })),
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.get('/api/admin/database/:tableName/export', authenticateToken, authorizeRoles('Admin'), authorizeModule('Admin Controls'), async (req, res) => {
+  const tableName = String(req.params.tableName || '').trim();
+  const rawQuery = String(req.query.q || '').trim();
+
+  try {
+    const tableDefinitions = await getPublicTableDefinitions();
+    const tableDefinition = tableDefinitions.find((table) => table.tableName === tableName);
+    if (!tableDefinition) {
+      return res.status(404).json({ error: 'Table not found' });
+    }
+
+    const quotedTableName = quoteIdentifier(tableDefinition.tableName);
+    const params = [];
+    let whereClause = '';
+
+    if (rawQuery) {
+      params.push(`%${rawQuery}%`);
+      const clauses = tableDefinition.columns.map((column) => `CAST(${quoteIdentifier(column.name)} AS TEXT) ILIKE $1`);
+      whereClause = clauses.length ? `WHERE ${clauses.join(' OR ')}` : '';
+    }
+
+    const sortColumn = getPreferredSortColumn(tableDefinition);
+    const rowsResult = await query(
+      `SELECT *
+       FROM ${quotedTableName}
+       ${whereClause}
+       ORDER BY ${quoteIdentifier(sortColumn)} DESC NULLS LAST`,
+      params
+    );
+
+    const header = tableDefinition.columns.map((column) => column.name).join(',');
+    const lines = rowsResult.rows.map((row) =>
+      tableDefinition.columns.map((column) => csvEscape(row[column.name])).join(',')
+    );
+    const csv = [header, ...lines].join('\n');
+
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+    res.setHeader('Content-Disposition', `attachment; filename="${tableDefinition.tableName}.csv"`);
+    res.send(csv);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.get('/api/admin/database/:tableName', authenticateToken, authorizeRoles('Admin'), authorizeModule('Admin Controls'), async (req, res) => {
+  const tableName = String(req.params.tableName || '').trim();
+  const rawQuery = String(req.query.q || '').trim();
+  const page = Math.max(1, parseInt(req.query.page, 10) || 1);
+  const limit = Math.min(100, Math.max(10, parseInt(req.query.limit, 10) || 25));
+  const offset = (page - 1) * limit;
+
+  try {
+    const tableDefinitions = await getPublicTableDefinitions();
+    const tableDefinition = tableDefinitions.find((table) => table.tableName === tableName);
+    if (!tableDefinition) {
+      return res.status(404).json({ error: 'Table not found' });
+    }
+
+    const quotedTableName = quoteIdentifier(tableDefinition.tableName);
+    const params = [];
+    let whereClause = '';
+
+    if (rawQuery) {
+      params.push(`%${rawQuery}%`);
+      const clauses = tableDefinition.columns.map((column) => `CAST(${quoteIdentifier(column.name)} AS TEXT) ILIKE $1`);
+      whereClause = clauses.length ? `WHERE ${clauses.join(' OR ')}` : '';
+    }
+
+    const [countResult, rowsResult] = await Promise.all([
+      query(
+        `SELECT COUNT(*)::int AS total
+         FROM ${quotedTableName}
+         ${whereClause}`,
+        params
+      ),
+      query(
+        `SELECT *
+         FROM ${quotedTableName}
+         ${whereClause}
+         ORDER BY ${quoteIdentifier(getPreferredSortColumn(tableDefinition))} DESC NULLS LAST
+         LIMIT $${params.length + 1}
+         OFFSET $${params.length + 2}`,
+        [...params, limit, offset]
+      ),
+    ]);
+
+    const total = Number(countResult.rows?.[0]?.total || 0);
+
+    res.json({
+      table: {
+        tableName: tableDefinition.tableName,
+        columnCount: tableDefinition.columnCount,
+        estimatedRows: tableDefinition.estimatedRows,
+        primaryKey: tableDefinition.primaryKey,
+      },
+      columns: tableDefinition.columns,
+      items: rowsResult.rows,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.max(1, Math.ceil(total / limit)),
+      },
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
 
 app.get('/api/admin/stats', authenticateToken, authorizeRoles('Admin'), authorizeModule('Admin Controls'), async (req, res) => {
   try {

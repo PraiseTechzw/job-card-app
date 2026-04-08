@@ -52,6 +52,7 @@ const NotificationSettings = lazy(() => import('./pages/admin/NotificationSettin
 const AuditLogs = lazy(() => import('./pages/admin/AuditLogs'));
 const RetentionSettings = lazy(() => import('./pages/admin/RetentionSettings'));
 const SystemSettings = lazy(() => import('./pages/admin/SystemSettings'));
+const DatabaseExplorer = lazy(() => import('./pages/admin/DatabaseExplorer'));
 
 const RouteLoader = () => (
   <div className="min-h-screen flex items-center justify-center bg-slate-950 text-slate-300">
@@ -150,6 +151,7 @@ const AppContent = () => {
         <Route path="/admin/audit" element={withLayout(<AuditLogs />, ['Admin'], 'Admin Controls')} />
         <Route path="/admin/retention" element={withLayout(<RetentionSettings />, ['Admin'], 'Admin Controls')} />
         <Route path="/admin/settings" element={withLayout(<SystemSettings />, ['Admin'], 'Admin Controls')} />
+        <Route path="/admin/database" element={withLayout(<DatabaseExplorer />, ['Admin'], 'Admin Controls')} />
 
         <Route path="/reports" element={withLayout(<Reports />, ['Admin', 'Supervisor', 'HOD', 'EngSupervisor'], 'Reporting & Analytics')} />
         <Route path="/login" element={<Login />} />
