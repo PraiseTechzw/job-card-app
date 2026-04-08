@@ -200,25 +200,23 @@ export default function CreateJobRequest() {
 
   return (
     <div className={styles.pageContainer} style={{ maxWidth: 780, margin: '0 auto' }}>
-      {/* Header */}
       <button className="btn btn-ghost" onClick={() => navigate('/initiator/dashboard')} style={{ marginBottom: 20, gap: 6, fontSize: 13 }}>
         <ArrowLeft size={15} /> Back to Dashboard
       </button>
 
-      <div style={{ marginBottom: 26 }}>
-        <h1 className={styles.pageTitle} style={{ marginBottom: 4 }}>
+      <div className={styles.heroContent} style={{ marginBottom: 26 }}>
+        <h1 className={styles.pageTitle} style={{ marginBottom: 6 }}>
           {isResubmit ? '🔄 Resubmit Request' : isEdit ? '✏️ Edit Draft Request' : '📋 New Maintenance Request'}
         </h1>
-        <p style={{ color: '#64748b', fontSize: 13 }}>
+        <p className={styles.heroSubtitle}>
           {isResubmit
             ? 'Your previous request was returned. Review the supervisor comments and resubmit with corrections.'
             : 'Fill out each section carefully. Vague or incomplete requests will be returned.'}
         </p>
       </div>
 
-      {/* Return reason banner */}
       {isResubmit && editing?.supervisorComments && (
-        <div style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.25)', borderRadius: 14, padding: '16px 20px', marginBottom: 24, display: 'flex', gap: 14, alignItems: 'flex-start' }}>
+        <div className={`${styles.notice} ${styles.noticeDanger}`} style={{ marginBottom: 24 }}>
           <AlertTriangle size={18} color="#f87171" style={{ flexShrink: 0, marginTop: 2 }} />
           <div>
             <div style={{ fontWeight: 700, fontSize: 13, color: '#f87171', marginBottom: 6 }}>Supervisor Return Reason</div>
@@ -227,14 +225,13 @@ export default function CreateJobRequest() {
         </div>
       )}
 
-      {/* Progress stepper */}
-      <div style={{ display: 'flex', gap: 0, marginBottom: 30, position: 'relative' }}>
+      <div style={{ display: 'flex', gap: 0, marginBottom: 30, position: 'relative', overflowX: 'auto', paddingBottom: 8 }}>
         {['Your Details', 'Plant Info', 'Fault & Work', 'Review & Submit'].map((label, i) => {
           const n = i + 1;
           const active = step === n;
           const done = step > n;
           return (
-            <div key={n} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', position: 'relative' }}>
+            <div key={n} style={{ flex: '1 0 160px', display: 'flex', flexDirection: 'column', alignItems: 'center', position: 'relative', minWidth: 140 }}>
               {i < TOTAL_STEPS - 1 && (
                 <div style={{ position: 'absolute', right: '-50%', top: 14, width: '100%', height: 2, background: done ? '#4f46e5' : 'rgba(255,255,255,0.08)', zIndex: 0 }} />
               )}

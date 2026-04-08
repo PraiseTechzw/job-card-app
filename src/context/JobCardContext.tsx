@@ -40,14 +40,23 @@ export const JobCardProvider: React.FC<{ children: React.ReactNode }> = ({ child
     try {
       setIsLoading(true);
       setError(null);
-      const [cardsRes, sheetsRes, assignRes] = await Promise.all([
+      const [cardsRes, sheetsRes, assignRes] = await Promise.allSettled([
         axios.get(`${API_BASE}/job-cards`),
         axios.get(`${API_BASE}/allocation-sheets`),
         axios.get(`${API_BASE}/assignments`)
       ]);
-      setJobCards(Array.isArray(cardsRes.data) ? cardsRes.data : []);
-      setAllocationSheets(Array.isArray(sheetsRes.data) ? sheetsRes.data : []);
-      setAssignments(Array.isArray(assignRes.data) ? assignRes.data : []);
+
+      const cardsData = cardsRes.status === 'fulfilled' ? cardsRes.value.data : [];
+      const sheetsData = sheetsRes.status === 'fulfilled' ? sheetsRes.value.data : [];
+      const assignmentsData = assignRes.status === 'fulfilled' ? assignRes.value.data : [];
+
+      if (cardsRes.status === 'rejected') {
+        throw cardsRes.reason;
+      }
+
+      setJobCards(Array.isArray(cardsData) ? cardsData : []);
+      setAllocationSheets(Array.isArray(sheetsData) ? sheetsData : []);
+      setAssignments(Array.isArray(assignmentsData) ? assignmentsData : []);
       if (isManualRefresh) toast.success('Data synced with server');
     } catch (error) {
       console.error('Failed to fetch data from API:', error);

@@ -82,15 +82,14 @@ export default function RequestDetails() {
         <ArrowLeft size={15} /> Back to Dashboard
       </button>
 
-      {/* Title row */}
-      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 26, flexWrap: 'wrap', gap: 12 }}>
-        <div>
+      <div className={styles.hero}>
+        <div className={styles.heroContent}>
           <h1 style={{ fontSize: 22, fontWeight: 800, color: '#f1f5f9', fontFamily: 'monospace', marginBottom: 4 }}>
             {job.ticketNumber}
           </h1>
-          <div style={{ fontSize: 13, color: '#64748b' }}>{job.plantDescription} · {job.plantNumber}</div>
+          <div className={styles.heroSubtitle}>{job.plantDescription} · {job.plantNumber}</div>
         </div>
-        <div style={{ display: 'flex', gap: 8 }}>
+        <div className={styles.heroActions}>
           {canEdit && (
             <button className="btn btn-primary" onClick={() => navigate(`/initiator/edit/${job.id}`)} style={{ gap: 6, fontSize: 13 }}>
               <Edit2 size={14} /> Edit Draft
@@ -134,7 +133,7 @@ export default function RequestDetails() {
         </div>
       )}
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 300px', gap: 20, alignItems: 'start' }}>
+      <div className={styles.contentGrid}>
         {/* Left: full request detail */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
           {/* Request Details */}
@@ -204,7 +203,7 @@ export default function RequestDetails() {
         </div>
 
         {/* Right: Status timeline */}
-        <div style={{ position: 'sticky', top: 24, display: 'flex', flexDirection: 'column', gap: 16 }}>
+        <div className={`${styles.asideColumn} ${styles.stickyAside}`}>
           {/* Priority + status summary */}
           <div style={{ background: 'rgba(15,23,42,0.6)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 14, padding: 20 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>

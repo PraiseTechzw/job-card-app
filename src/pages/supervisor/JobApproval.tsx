@@ -136,15 +136,14 @@ export default function JobApproval() {
         <ArrowLeft size={15} /> Back to Dashboard
       </button>
 
-      {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 24, flexWrap: 'wrap', gap: 12 }}>
-        <div>
+      <div className={styles.hero}>
+        <div className={styles.heroContent}>
           <h1 className={styles.pageTitle}>Review Job Request</h1>
-          <p style={{ color: '#64748b', fontSize: 13 }}>
+          <p className={styles.heroSubtitle}>
             Approve or reject this maintenance request. All actions are audit-logged.
           </p>
         </div>
-        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+        <div className={styles.heroActions}>
           <span style={{
             background: `${priorityColor(job.priority)}18`,
             color: priorityColor(job.priority),

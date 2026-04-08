@@ -107,77 +107,61 @@ export default function RequestHistory() {
 
   return (
     <div className={styles.pageContainer}>
-      {/* Header */}
-      <header style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 24, flexWrap: 'wrap', gap: 12 }}>
-        <div>
-          <h1 className={styles.pageTitle} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <span style={{ background: 'rgba(99,102,241,0.15)', borderRadius: 10, padding: '6px 8px', display: 'inline-flex' }}>
-              <Clock size={22} color="#6366f1" />
+      <header className={styles.hero}>
+        <div className={styles.heroContent}>
+          <div className={styles.heroTitleRow}>
+            <span className={styles.heroIcon}>
+              <Clock size={22} />
             </span>
-            My Request History
-          </h1>
-          <p className={styles['text-muted']}>Complete history of all maintenance requests you have raised. Read-only reference.</p>
+            <h1 className={styles.pageTitle}>My Request History</h1>
+          </div>
+          <p className={styles.heroSubtitle}>Browse the full history of every maintenance request you have raised, with cleaner filters and improved mobile wrapping.</p>
         </div>
         <button className="btn btn-ghost" onClick={() => navigate('/initiator/dashboard')} style={{ gap: 6, fontSize: 13 }}>
           ← Dashboard
         </button>
       </header>
 
-      {/* Summary tiles */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: 12, marginBottom: 24 }}>
+      <div className={styles.statsGrid}>
         {[
           { label: 'Total Raised',    count: total,    color: '#6366f1', bg: 'rgba(99,102,241,0.1)' },
           { label: 'Open / Active',   count: open,     color: '#f59e0b', bg: 'rgba(245,158,11,0.1)' },
           { label: 'Completed',       count: closed,   color: '#10b981', bg: 'rgba(16,185,129,0.1)' },
           { label: 'Rejected',        count: rejected, color: '#ef4444', bg: 'rgba(239,68,68,0.1)' },
         ].map(s => (
-          <div key={s.label} style={{ background: s.bg, border: `1px solid ${s.color}22`, borderRadius: 12, padding: '14px 18px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <span style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', color: '#64748b' }}>{s.label}</span>
-            <span style={{ fontSize: 26, fontWeight: 800, color: s.color }}>{s.count}</span>
+          <div key={s.label} className={styles.statCard} style={{ background: s.bg, border: `1px solid ${s.color}22` }}>
+            <span className={styles.statLabel} style={{ marginBottom: 0 }}>{s.label}</span>
+            <span className={styles.statValue} style={{ color: s.color }}>{s.count}</span>
           </div>
         ))}
       </div>
 
-      {/* Filters */}
-      <div style={{ background: 'rgba(15,23,42,0.45)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: 14, padding: '16px 20px', marginBottom: 20 }}>
-        <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', alignItems: 'center' }}>
+      <div className={styles.filterPanel}>
+        <div className={styles.filterRow}>
           <Filter size={14} color="#64748b" />
 
-          {/* Date range */}
-          <div style={{ display: 'flex', gap: 6 }}>
+          <div className={styles.chipRow}>
             {([
               ['all', 'All Time'], ['week', 'Last 7 Days'], ['month', 'Last Month'], ['year', 'Last Year']
             ] as [DateFilter, string][]).map(([v, l]) => (
-              <button key={v} onClick={() => setDateFilter(v)} style={{
-                padding: '5px 12px', borderRadius: 7, fontSize: 12, fontWeight: 600, cursor: 'pointer',
-                background: dateFilter === v ? '#4f46e5' : 'rgba(255,255,255,0.04)',
-                color: dateFilter === v ? '#fff' : '#64748b',
-                border: `1px solid ${dateFilter === v ? '#4f46e5' : 'rgba(255,255,255,0.07)'}`,
-              }}>{l}</button>
+              <button key={v} onClick={() => setDateFilter(v)} className={`${styles.chip} ${dateFilter === v ? styles.chipActive : ''}`}>{l}</button>
             ))}
           </div>
 
           <div style={{ width: 1, height: 20, background: 'rgba(255,255,255,0.08)' }} />
 
-          {/* Status group */}
-          <div style={{ display: 'flex', gap: 6 }}>
+          <div className={styles.chipRow}>
             {([
               ['all', 'All'], ['open', 'Open'], ['closed', 'Completed'], ['rejected', 'Rejected']
             ] as [StatusFilter, string][]).map(([v, l]) => (
-              <button key={v} onClick={() => setStatusFilter(v)} style={{
-                padding: '5px 12px', borderRadius: 7, fontSize: 12, fontWeight: 600, cursor: 'pointer',
-                background: statusFilter === v ? '#4f46e5' : 'rgba(255,255,255,0.04)',
-                color: statusFilter === v ? '#fff' : '#64748b',
-                border: `1px solid ${statusFilter === v ? '#4f46e5' : 'rgba(255,255,255,0.07)'}`,
-              }}>{l}</button>
+              <button key={v} onClick={() => setStatusFilter(v)} className={`${styles.chip} ${statusFilter === v ? styles.chipActive : ''}`}>{l}</button>
             ))}
           </div>
 
-          {/* Search */}
-          <div style={{ marginLeft: 'auto', position: 'relative' }}>
-            <input type="text" placeholder="Search…"
+          <div className={styles.searchWrap} style={{ marginLeft: 'auto' }}>
+            <input type="text" placeholder="Search..."
               value={search} onChange={e => setSearch(e.target.value)}
-              style={{ background: 'rgba(9,11,18,0.5)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 7, padding: '6px 12px', color: '#f1f5f9', fontSize: 13, outline: 'none', fontFamily: 'inherit', width: 180 }}
+              className={styles.searchInput}
             />
           </div>
         </div>

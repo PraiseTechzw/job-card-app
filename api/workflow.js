@@ -3,6 +3,8 @@
  * Enforces the 9-stage workflow and status transitions.
  */
 
+import { DEFAULT_WORKFLOW_CONFIG } from './configDefaults.js';
+
 export const JobCardStatus = {
   DRAFT: 'Draft',
   PENDING_SUPERVISOR: 'Pending_Supervisor',
@@ -70,22 +72,24 @@ export const ROLE_REQUIREMENTS = {
  * @param {string} userRole The role of the user performing the action.
  * @returns {boolean} True if the transition is allowed.
  */
-export function isValidTransition(currentStatus, nextStatus, userRole) {
+export function isValidTransition(currentStatus, nextStatus, userRole, workflowConfig = DEFAULT_WORKFLOW_CONFIG) {
   if (!currentStatus || !nextStatus) return false;
   if (currentStatus === nextStatus) return true;
-  
-  const allowed = VALID_TRANSITIONS[currentStatus];
-  if (!allowed || !allowed.includes(nextStatus)) return false;
-  
-  // Check role requirement
+
+  const configuredRule = workflowConfig?.[currentStatus];
+  const configuredTransitions = [configuredRule?.nextStatus, configuredRule?.returnStatus].filter(Boolean);
+  const hardcodedTransitions = VALID_TRANSITIONS[currentStatus] || [];
+  const allowed = [...new Set([...configuredTransitions, ...hardcodedTransitions])];
+  if (!allowed.includes(nextStatus)) return false;
+
   const transitionKey = `${currentStatus}->${nextStatus}`;
-  const requiredRoles = ROLE_REQUIREMENTS[transitionKey] || ROLE_REQUIREMENTS['ANY->' + nextStatus];
-  
-  if (requiredRoles) {
-    if (!userRole) return false;
-    return requiredRoles.includes(userRole);
-  }
-  
-  // If no specific role defined but transition is within allowed list, allow it for all
-  return true;
+  const hardcodedRoles = ROLE_REQUIREMENTS[transitionKey] || ROLE_REQUIREMENTS['ANY->' + nextStatus];
+  const configuredRoles = configuredRule?.requiredRoles;
+  const requiredRoles = Array.isArray(configuredRoles) && configuredRoles.length > 0
+    ? configuredRoles
+    : hardcodedRoles;
+
+  if (!requiredRoles) return true;
+  if (!userRole) return false;
+  return requiredRoles.includes(userRole);
 }

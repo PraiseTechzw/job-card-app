@@ -9,6 +9,7 @@ import {
 import styles from './Sidebar.module.css';
 import { useAuth } from '../context/AuthContext';
 import { useJobCards } from '../context/JobCardContext';
+import { useRuntimeConfig } from '../context/RuntimeConfigContext';
 import { X } from 'lucide-react';
 
 interface SidebarProps {
@@ -18,6 +19,7 @@ interface SidebarProps {
 const Sidebar: React.FC<SidebarProps> = ({ onClose }) => {
   const { user, logout } = useAuth();
   const { jobCards } = useJobCards();
+  const { globalConfig, hasModuleAccess } = useRuntimeConfig();
 
   const getBadgeCount = (label: string) => {
     if (!jobCards) return 0;
@@ -70,7 +72,8 @@ const Sidebar: React.FC<SidebarProps> = ({ onClose }) => {
       to: '/approvals', 
       label: 'Approval Queue', 
       icon: ShieldCheck, 
-      roles: ['Supervisor', 'HOD', 'Admin'] 
+      roles: ['Supervisor', 'HOD', 'Admin'],
+      module: 'Approvals',
     },
     
     // Only PlanningOffice & Admin see Planning Queue
@@ -78,7 +81,8 @@ const Sidebar: React.FC<SidebarProps> = ({ onClose }) => {
       to: '/planning', 
       label: 'Planning Queue', 
       icon: Clock, 
-      roles: ['PlanningOffice', 'Admin'] 
+      roles: ['PlanningOffice', 'Admin'],
+      module: 'Planning & Records',
     },
     
     // Only EngSupervisor & Admin do Job Assignments
@@ -86,7 +90,8 @@ const Sidebar: React.FC<SidebarProps> = ({ onClose }) => {
       to: '/assignments', 
       label: 'Job Assignments', 
       icon: UserPlus, 
-      roles: ['EngSupervisor', 'Admin'] 
+      roles: ['EngSupervisor', 'Admin'],
+      module: 'Assignments',
     },
     
     // Initiators and Admin can sign off completed work
@@ -94,7 +99,8 @@ const Sidebar: React.FC<SidebarProps> = ({ onClose }) => {
       to: '/sign-offs', 
       label: 'Sign-off Queue', 
       icon: CheckSquare, 
-      roles: ['Initiator', 'Admin'] 
+      roles: ['Initiator', 'Admin'],
+      module: 'Job Requests',
     },
     
     // Artisan Module — scoped exclusively to Artisan and Admin
@@ -102,13 +108,15 @@ const Sidebar: React.FC<SidebarProps> = ({ onClose }) => {
       to: '/artisan/dashboard', 
       label: 'Artisan Board', 
       icon: Wrench, 
-      roles: ['Artisan', 'Admin'] 
+      roles: ['Artisan', 'Admin'],
+      module: 'Work Execution',
     },
     { 
       to: '/artisan/history', 
       label: 'My Work History', 
       icon: History, 
-      roles: ['Artisan', 'Admin'] 
+      roles: ['Artisan', 'Admin'],
+      module: 'Work Execution',
     },
 
     // Initiator Module — scoped to Initiator and Admin
@@ -117,18 +125,21 @@ const Sidebar: React.FC<SidebarProps> = ({ onClose }) => {
       label: 'My Requests',
       icon: FilePlus,
       roles: ['Initiator', 'Admin'],
+      module: 'Job Requests',
     },
     {
       to: '/initiator/new',
       label: 'New Request',
       icon: FilePlus,
       roles: ['Initiator', 'Admin'],
+      module: 'Job Requests',
     },
     {
       to: '/initiator/history',
       label: 'Request History',
       icon: Clock,
       roles: ['Initiator', 'Admin'],
+      module: 'Job Requests',
     },
     
     // Supervisor Module — scoped to Supervisor, EngSupervisor, Admin
@@ -137,18 +148,21 @@ const Sidebar: React.FC<SidebarProps> = ({ onClose }) => {
       label: 'Control Centre',
       icon: ShieldCheck,
       roles: ['Supervisor', 'EngSupervisor', 'Admin'],
+      module: 'Approvals',
     },
     {
       to: '/supervisor/active',
       label: 'Live Monitor',
       icon: Activity,
       roles: ['Supervisor', 'EngSupervisor', 'Admin'],
+      module: 'Assignments',
     },
     {
       to: '/supervisor/reports',
       label: 'Sup. Reports',
       icon: TrendingUp,
       roles: ['Supervisor', 'EngSupervisor', 'Admin', 'HOD'],
+      module: 'Reporting & Analytics',
     },
     
     // Planning Office Module — scoped to PlanningOffice and Admin
@@ -157,36 +171,42 @@ const Sidebar: React.FC<SidebarProps> = ({ onClose }) => {
       label: 'Planner Board',
       icon: LayoutDashboard,
       roles: ['PlanningOffice', 'Admin'],
+      module: 'Planning & Records',
     },
     {
       to: '/planner/jobs',
       label: 'Job Records',
       icon: Database,
       roles: ['PlanningOffice', 'Admin'],
+      module: 'Planning & Records',
     },
     {
       to: '/planner/history',
       label: 'Asset History',
       icon: Activity,
       roles: ['PlanningOffice', 'Admin'],
+      module: 'Planning & Records',
     },
     {
       to: '/planner/reports',
       label: 'Analytics',
       icon: BarChart2,
       roles: ['PlanningOffice', 'Admin'],
+      module: 'Reporting & Analytics',
     },
     {
       to: '/planner/preventive',
       label: 'PM Planning',
       icon: TrendingUp,
       roles: ['PlanningOffice', 'Admin'],
+      module: 'Planning & Records',
     },
     {
       to: '/planner/archive',
       label: 'Cold Storage',
       icon: Archive,
       roles: ['PlanningOffice', 'Admin'],
+      module: 'Archiving',
     },
     
     // Allocations — Supervisors, EngSupervisors, PlanningOffice, Admin
@@ -194,7 +214,8 @@ const Sidebar: React.FC<SidebarProps> = ({ onClose }) => {
       to: '/allocations', 
       label: 'Allocations', 
       icon: CheckSquare, 
-      roles: ['Supervisor', 'EngSupervisor', 'PlanningOffice', 'Admin'] 
+      roles: ['Supervisor', 'EngSupervisor', 'PlanningOffice', 'Admin'],
+      module: 'Assignments',
     },
     
     // Reports — Management & Supervisory roles only
@@ -202,7 +223,8 @@ const Sidebar: React.FC<SidebarProps> = ({ onClose }) => {
       to: '/reports', 
       label: 'Reports & Analytics', 
       icon: FileText, 
-      roles: ['Admin', 'Supervisor', 'HOD', 'EngSupervisor'] 
+      roles: ['Admin', 'Supervisor', 'HOD', 'EngSupervisor'],
+      module: 'Reporting & Analytics',
     },
 
     // System Admin Module
@@ -211,11 +233,12 @@ const Sidebar: React.FC<SidebarProps> = ({ onClose }) => {
       label: 'System Governance',
       icon: Settings,
       roles: ['Admin'],
+      module: 'Admin Controls',
     },
   ];
 
   const filteredItems = navItems.filter(item => 
-    !item.roles || (user && item.roles.includes(user.role))
+    (!item.roles || (user && item.roles.includes(user.role))) && hasModuleAccess(item.module)
   );
 
   const getRoleLabel = (role: string) => {
@@ -249,7 +272,7 @@ const Sidebar: React.FC<SidebarProps> = ({ onClose }) => {
       <div className={styles.brand}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           <img src="https://www.megapak.co.zw/wp-content/uploads/2021/04/WhatsApp-Image-2021-04-14-at-12.07.24-1.jpeg" alt="Mega Pak Logo" style={{ height: 32, width: 'auto', borderRadius: 4 }} />
-          <span className={styles.brandText}>Job Card System</span>
+          <span className={styles.brandText}>{globalConfig.appName || 'Job Card System'}</span>
         </div>
         {onClose && (
           <button className={styles.mobileClose} onClick={onClose}>

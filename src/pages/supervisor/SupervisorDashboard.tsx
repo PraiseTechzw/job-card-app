@@ -120,18 +120,17 @@ export default function SupervisorDashboard() {
 
   return (
     <div className={styles.pageContainer}>
-      {/* Header */}
-      <header style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 28, flexWrap: 'wrap', gap: 12 }}>
-        <div>
-          <h1 className={styles.pageTitle} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <span style={{ background: 'rgba(99,102,241,0.15)', borderRadius: 10, padding: '6px 8px', display: 'inline-flex' }}>
-              <ShieldCheck size={22} color="#6366f1" />
+      <header className={styles.hero}>
+        <div className={styles.heroContent}>
+          <div className={styles.heroTitleRow}>
+            <span className={styles.heroIcon}>
+              <ShieldCheck size={22} />
             </span>
-            Supervisor Control Centre
-          </h1>
-          <p className={styles['text-muted']}>Welcome back, {user?.name} · {new Date().toLocaleDateString('en-ZW', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
+            <h1 className={styles.pageTitle}>Supervisor Control Centre</h1>
+          </div>
+          <p className={styles.heroSubtitle}>Welcome back, {user?.name}. Review urgent work, keep assignments moving, and monitor jobs that need immediate intervention.</p>
         </div>
-        <div style={{ display: 'flex', gap: 8 }}>
+        <div className={styles.heroActions}>
           <button className="btn btn-ghost" onClick={() => navigate('/supervisor/reports')} style={{ gap: 6 }}>
             <TrendingUp size={16} /> Reports
           </button>
@@ -141,25 +140,23 @@ export default function SupervisorDashboard() {
         </div>
       </header>
 
-      {/* KPI Cards */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16, marginBottom: 28 }}>
+      <div className={styles.statsGrid}>
         {kpis.map(k => (
           <button
             key={k.key}
             onClick={() => setFilter(filter === k.key ? 'all' : k.key)}
+            className={styles.statCard}
             style={{
               background: filter === k.key ? k.bg : 'rgba(15,23,42,0.6)',
               border: `1px solid ${filter === k.key ? k.color + '44' : 'rgba(255,255,255,0.05)'}`,
-              borderRadius: 14, padding: '18px 20px',
-              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
               cursor: 'pointer', transition: 'all 0.2s', textAlign: 'left',
               boxShadow: filter === k.key ? `0 0 0 2px ${k.color}33` : 'none',
               transform: filter === k.key ? 'translateY(-2px)' : 'none',
             }}
           >
             <div>
-              <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: '#64748b', marginBottom: 6 }}>{k.label}</div>
-              <div style={{ fontSize: 32, fontWeight: 800, color: filter === k.key ? k.color : '#f1f5f9', lineHeight: 1 }}>{k.count}</div>
+              <div className={styles.statLabel}>{k.label}</div>
+              <div className={styles.statValue} style={{ color: filter === k.key ? k.color : '#f1f5f9' }}>{k.count}</div>
             </div>
             <div style={{ background: k.bg, borderRadius: 12, padding: 12 }}>
               <k.icon size={22} color={k.color} />
@@ -168,58 +165,38 @@ export default function SupervisorDashboard() {
         ))}
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 24 }}>
+      <div className={styles.contentGrid}>
         <div>
-          {/* Filters Row */}
-          <div style={{
-            background: 'rgba(15,23,42,0.5)', border: '1px solid rgba(255,255,255,0.05)',
-            borderRadius: 14, padding: '14px 18px', marginBottom: 20,
-            display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap'
-          }}>
-            <div style={{ position: 'relative', flex: 1, minWidth: 220 }}>
-              <Search size={15} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: '#64748b', pointerEvents: 'none' }} />
-              <input
-                type="text" placeholder="Search by job ID, plant, artisan…"
-                value={search} onChange={e => setSearch(e.target.value)}
-                style={{
-                  background: 'rgba(9,11,18,0.7)', border: '1px solid rgba(255,255,255,0.07)',
-                  borderRadius: 8, padding: '8px 12px 8px 36px', color: '#f1f5f9',
-                  fontSize: 13, width: '100%', outline: 'none', fontFamily: 'inherit'
-                }}
-              />
-            </div>
-            <div style={{ display: 'flex', gap: 6 }}>
-              <Filter size={14} color="#64748b" style={{ alignSelf: 'center' }} />
-              {['all', 'Low', 'Medium', 'High', 'Critical'].map(p => (
-                <button
-                  key={p}
-                  onClick={() => setPriorityFilter(p)}
-                  style={{
-                    padding: '6px 12px', borderRadius: 7, fontSize: 11, fontWeight: 700,
-                    cursor: 'pointer', textTransform: 'uppercase', letterSpacing: '0.04em',
-                    background: priorityFilter === p ? priorityColor(p) + '22' : 'rgba(255,255,255,0.04)',
-                    color: priorityFilter === p ? priorityColor(p) : '#64748b',
-                    border: `1px solid ${priorityFilter === p ? priorityColor(p) + '44' : 'rgba(255,255,255,0.07)'}`,
-                    transition: 'all 0.15s'
-                  }}
-                >{p === 'all' ? 'All' : p}</button>
-              ))}
+          <div className={styles.filterPanel}>
+            <div className={styles.filterRow}>
+              <div className={styles.searchWrap}>
+                <Search size={15} className={styles.searchIcon} />
+                <input
+                  type="text" placeholder="Search by job ID, plant, artisan..."
+                  value={search} onChange={e => setSearch(e.target.value)}
+                  className={styles.searchInput}
+                />
+              </div>
+              <div className={styles.chipRow}>
+                <Filter size={14} color="#64748b" style={{ alignSelf: 'center', marginRight: 2 }} />
+                {['all', 'Low', 'Medium', 'High', 'Critical'].map(p => (
+                  <button
+                    key={p}
+                    onClick={() => setPriorityFilter(p)}
+                    className={`${styles.chip} ${priorityFilter === p ? styles.chipActive : ''}`}
+                    style={priorityFilter === p ? { color: priorityColor(p), borderColor: `${priorityColor(p)}55`, background: `${priorityColor(p)}22` } : undefined}
+                  >{p === 'all' ? 'All' : p}</button>
+                ))}
+              </div>
             </div>
           </div>
 
-          {/* Tab bar */}
-          <div style={{ display: 'flex', gap: 4, marginBottom: 16, overflowX: 'auto' }}>
+          <div className={styles.chipRow} style={{ marginBottom: 16 }}>
             {tabs.map(t => (
               <button
                 key={t.key}
                 onClick={() => setFilter(t.key)}
-                style={{
-                  padding: '7px 14px', borderRadius: 8, fontSize: 12, fontWeight: 600,
-                  whiteSpace: 'nowrap', cursor: 'pointer', transition: 'all 0.15s',
-                  background: filter === t.key ? '#4f46e5' : 'rgba(255,255,255,0.04)',
-                  color: filter === t.key ? '#fff' : '#64748b',
-                  border: `1px solid ${filter === t.key ? '#4f46e5' : 'rgba(255,255,255,0.06)'}`,
-                }}
+                className={`${styles.chip} ${filter === t.key ? styles.chipActive : ''}`}
               >{t.label}</button>
             ))}
           </div>
@@ -315,8 +292,8 @@ export default function SupervisorDashboard() {
         </div>
 
         {/* Sidebar */}
-        <aside style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-          <div style={{ background: 'rgba(15,23,42,0.6)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: 16, padding: 20 }}>
+        <aside className={`${styles.asideColumn} ${styles.stickyAside}`}>
+          <div className={styles.panel}>
             <h3 style={{ fontSize: 11, fontWeight: 800, textTransform: 'uppercase', color: '#475569', marginBottom: 16, letterSpacing: '0.05em' }}>Top Performing Artisans</h3>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
               {topPerformers.length > 0 ? topPerformers.map((a, i) => (
@@ -336,7 +313,7 @@ export default function SupervisorDashboard() {
             </div>
           </div>
 
-          <div style={{ background: 'rgba(15,23,42,0.6)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: 16, padding: 20 }}>
+          <div className={styles.panel}>
             <h3 style={{ fontSize: 11, fontWeight: 800, textTransform: 'uppercase', color: '#475569', marginBottom: 16, letterSpacing: '0.05em' }}>Supervisor Quick Actions</h3>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               <button onClick={() => navigate('/supervisor/active')} className="btn btn-ghost" style={{ width: '100%', justifyContent: 'flex-start', fontSize: 12, padding: '10px 12px', gap: 10 }}>
@@ -354,7 +331,7 @@ export default function SupervisorDashboard() {
       </div>
 
       {/* Footer summary */}
-      <div style={{ marginTop: 18, display: 'flex', gap: 20, color: '#475569', fontSize: 12, alignItems: 'center', justifyContent: 'flex-end' }}>
+      <div className={styles.footerMeta}>
         <span>Showing <strong style={{ color: '#94a3b8' }}>{allVisible.length}</strong> active job(s)</span>
         <button className="btn btn-ghost" style={{ padding: '4px 12px', fontSize: 12, gap: 6 }}
           onClick={() => navigate('/reports')}>

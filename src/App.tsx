@@ -2,6 +2,7 @@ import React, { Suspense, lazy } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { JobCardProvider } from './context/JobCardContext';
+import { RuntimeConfigProvider, useRuntimeConfig } from './context/RuntimeConfigContext';
 import { Toaster } from 'react-hot-toast';
 
 const MainLayout = lazy(() => import('./layouts/MainLayout'));
@@ -61,10 +62,11 @@ const RouteLoader = () => (
   </div>
 );
 
-const ProtectedRoute = ({ children, allowedRoles }: { children: React.ReactNode; allowedRoles?: string[] }) => {
+const ProtectedRoute = ({ children, allowedRoles, moduleName }: { children: React.ReactNode; allowedRoles?: string[]; moduleName?: string }) => {
   const { user, isLoading } = useAuth();
+  const { hasModuleAccess, isLoading: isRuntimeConfigLoading } = useRuntimeConfig();
 
-  if (isLoading) {
+  if (isLoading || (user && isRuntimeConfigLoading)) {
     return <RouteLoader />;
   }
 
@@ -76,11 +78,15 @@ const ProtectedRoute = ({ children, allowedRoles }: { children: React.ReactNode;
     return <Navigate to="/dashboard" replace />;
   }
 
+  if (!hasModuleAccess(moduleName)) {
+    return <Navigate to="/dashboard" replace />;
+  }
+
   return <>{children}</>;
 };
 
-const withLayout = (page: React.ReactNode, allowedRoles?: string[]) => (
-  <ProtectedRoute allowedRoles={allowedRoles}>
+const withLayout = (page: React.ReactNode, allowedRoles?: string[], moduleName?: string) => (
+  <ProtectedRoute allowedRoles={allowedRoles} moduleName={moduleName}>
     <MainLayout>{page}</MainLayout>
   </ProtectedRoute>
 );
@@ -93,59 +99,59 @@ const AppContent = () => {
         <Route path="/dashboard" element={withLayout(<Dashboard />)} />
 
         <Route path="/job-cards" element={withLayout(<JobCards />)} />
-        <Route path="/job-cards/new" element={withLayout(<NewJobCard />, ['Initiator', 'Admin'])} />
+        <Route path="/job-cards/new" element={withLayout(<NewJobCard />, ['Initiator', 'Admin'], 'Job Requests')} />
         <Route path="/job-cards/edit/:id" element={withLayout(<EditJobCard />, ['Initiator', 'Admin', 'Supervisor'])} />
         <Route path="/job-cards/view/:id" element={withLayout(<JobCardDetail />)} />
 
-        <Route path="/allocations" element={withLayout(<Allocations />, ['Supervisor', 'EngSupervisor', 'Admin', 'PlanningOffice'])} />
-        <Route path="/allocations/new" element={withLayout(<AllocationForm />, ['Supervisor', 'EngSupervisor', 'Admin'])} />
-        <Route path="/allocations/edit/:id" element={withLayout(<AllocationForm />, ['Supervisor', 'EngSupervisor', 'Admin'])} />
+        <Route path="/allocations" element={withLayout(<Allocations />, ['Supervisor', 'EngSupervisor', 'Admin', 'PlanningOffice'], 'Assignments')} />
+        <Route path="/allocations/new" element={withLayout(<AllocationForm />, ['Supervisor', 'EngSupervisor', 'Admin'], 'Assignments')} />
+        <Route path="/allocations/edit/:id" element={withLayout(<AllocationForm />, ['Supervisor', 'EngSupervisor', 'Admin'], 'Assignments')} />
 
-        <Route path="/approvals" element={withLayout(<Approvals />, ['Supervisor', 'EngSupervisor', 'HOD', 'Admin'])} />
-        <Route path="/planning" element={withLayout(<Planning />, ['PlanningOffice', 'Admin'])} />
-        <Route path="/assignments" element={withLayout(<Assignments />, ['Supervisor', 'EngSupervisor', 'Admin'])} />
-        <Route path="/sign-offs" element={withLayout(<SignOffs />, ['Initiator', 'Admin'])} />
+        <Route path="/approvals" element={withLayout(<Approvals />, ['Supervisor', 'EngSupervisor', 'HOD', 'Admin'], 'Approvals')} />
+        <Route path="/planning" element={withLayout(<Planning />, ['PlanningOffice', 'Admin'], 'Planning & Records')} />
+        <Route path="/assignments" element={withLayout(<Assignments />, ['Supervisor', 'EngSupervisor', 'Admin'], 'Assignments')} />
+        <Route path="/sign-offs" element={withLayout(<SignOffs />, ['Initiator', 'Admin'], 'Job Requests')} />
 
-        <Route path="/artisan/dashboard" element={withLayout(<ArtisanDashboard />, ['Artisan', 'Admin'])} />
-        <Route path="/artisan/job-details/:id" element={withLayout(<ArtisanJobDetail />, ['Artisan', 'Admin'])} />
-        <Route path="/artisan/execute-work/:id" element={withLayout(<WorkExecution />, ['Artisan', 'Admin'])} />
-        <Route path="/artisan/materials/:id" element={withLayout(<MaterialsResources />, ['Artisan', 'Admin'])} />
-        <Route path="/artisan/review/:id" element={withLayout(<ReviewSubmit />, ['Artisan', 'Admin'])} />
-        <Route path="/artisan/history" element={withLayout(<MyHistory />, ['Artisan', 'Admin'])} />
+        <Route path="/artisan/dashboard" element={withLayout(<ArtisanDashboard />, ['Artisan', 'Admin'], 'Work Execution')} />
+        <Route path="/artisan/job-details/:id" element={withLayout(<ArtisanJobDetail />, ['Artisan', 'Admin'], 'Work Execution')} />
+        <Route path="/artisan/execute-work/:id" element={withLayout(<WorkExecution />, ['Artisan', 'Admin'], 'Work Execution')} />
+        <Route path="/artisan/materials/:id" element={withLayout(<MaterialsResources />, ['Artisan', 'Admin'], 'Work Execution')} />
+        <Route path="/artisan/review/:id" element={withLayout(<ReviewSubmit />, ['Artisan', 'Admin'], 'Work Execution')} />
+        <Route path="/artisan/history" element={withLayout(<MyHistory />, ['Artisan', 'Admin'], 'Work Execution')} />
 
-        <Route path="/supervisor/dashboard" element={withLayout(<SupervisorDashboard />, ['Supervisor', 'EngSupervisor', 'Admin'])} />
-        <Route path="/supervisor/approve/:id" element={withLayout(<JobApproval />, ['Supervisor', 'EngSupervisor', 'Admin'])} />
-        <Route path="/supervisor/assign/:id" element={withLayout(<JobAssignment />, ['Supervisor', 'EngSupervisor', 'Admin'])} />
-        <Route path="/supervisor/active" element={withLayout(<ActiveJobsMonitor />, ['Supervisor', 'EngSupervisor', 'Admin'])} />
-        <Route path="/supervisor/review/:id" element={withLayout(<JobReview />, ['Supervisor', 'EngSupervisor', 'Admin'])} />
-        <Route path="/supervisor/reports" element={withLayout(<SupervisorReports />, ['Supervisor', 'EngSupervisor', 'Admin', 'HOD'])} />
+        <Route path="/supervisor/dashboard" element={withLayout(<SupervisorDashboard />, ['Supervisor', 'EngSupervisor', 'Admin'], 'Approvals')} />
+        <Route path="/supervisor/approve/:id" element={withLayout(<JobApproval />, ['Supervisor', 'EngSupervisor', 'Admin'], 'Approvals')} />
+        <Route path="/supervisor/assign/:id" element={withLayout(<JobAssignment />, ['Supervisor', 'EngSupervisor', 'Admin'], 'Assignments')} />
+        <Route path="/supervisor/active" element={withLayout(<ActiveJobsMonitor />, ['Supervisor', 'EngSupervisor', 'Admin'], 'Assignments')} />
+        <Route path="/supervisor/review/:id" element={withLayout(<JobReview />, ['Supervisor', 'EngSupervisor', 'Admin'], 'Approvals')} />
+        <Route path="/supervisor/reports" element={withLayout(<SupervisorReports />, ['Supervisor', 'EngSupervisor', 'Admin', 'HOD'], 'Reporting & Analytics')} />
 
-        <Route path="/initiator/dashboard" element={withLayout(<InitiatorDashboard />, ['Initiator', 'Admin'])} />
-        <Route path="/initiator/new" element={withLayout(<CreateJobRequest />, ['Initiator', 'Admin'])} />
-        <Route path="/initiator/edit/:id" element={withLayout(<CreateJobRequest />, ['Initiator', 'Admin'])} />
-        <Route path="/initiator/request/:id" element={withLayout(<RequestDetails />, ['Initiator', 'Admin'])} />
-        <Route path="/initiator/history" element={withLayout(<RequestHistory />, ['Initiator', 'Admin'])} />
-        <Route path="/initiator/feedback/:id" element={withLayout(<CompletionFeedback />, ['Initiator', 'Admin'])} />
+        <Route path="/initiator/dashboard" element={withLayout(<InitiatorDashboard />, ['Initiator', 'Admin'], 'Job Requests')} />
+        <Route path="/initiator/new" element={withLayout(<CreateJobRequest />, ['Initiator', 'Admin'], 'Job Requests')} />
+        <Route path="/initiator/edit/:id" element={withLayout(<CreateJobRequest />, ['Initiator', 'Admin'], 'Job Requests')} />
+        <Route path="/initiator/request/:id" element={withLayout(<RequestDetails />, ['Initiator', 'Admin'], 'Job Requests')} />
+        <Route path="/initiator/history" element={withLayout(<RequestHistory />, ['Initiator', 'Admin'], 'Job Requests')} />
+        <Route path="/initiator/feedback/:id" element={withLayout(<CompletionFeedback />, ['Initiator', 'Admin'], 'Job Requests')} />
 
-        <Route path="/planner/dashboard" element={withLayout(<PlannerDashboard />, ['PlanningOffice', 'Admin'])} />
-        <Route path="/planner/jobs" element={withLayout(<JobRecordsManagement />, ['PlanningOffice', 'Admin'])} />
-        <Route path="/planner/job/:id" element={withLayout(<JobClassification />, ['PlanningOffice', 'Admin'])} />
-        <Route path="/planner/history" element={withLayout(<MaintenanceHistory />, ['PlanningOffice', 'Admin'])} />
-        <Route path="/planner/reports" element={withLayout(<ReportingAnalytics />, ['PlanningOffice', 'Admin'])} />
-        <Route path="/planner/preventive" element={withLayout(<PreventiveMaintenancePlanning />, ['PlanningOffice', 'Admin'])} />
-        <Route path="/planner/archive" element={withLayout(<ArchiveManagement />, ['PlanningOffice', 'Admin'])} />
+        <Route path="/planner/dashboard" element={withLayout(<PlannerDashboard />, ['PlanningOffice', 'Admin'], 'Planning & Records')} />
+        <Route path="/planner/jobs" element={withLayout(<JobRecordsManagement />, ['PlanningOffice', 'Admin'], 'Planning & Records')} />
+        <Route path="/planner/job/:id" element={withLayout(<JobClassification />, ['PlanningOffice', 'Admin'], 'Planning & Records')} />
+        <Route path="/planner/history" element={withLayout(<MaintenanceHistory />, ['PlanningOffice', 'Admin'], 'Planning & Records')} />
+        <Route path="/planner/reports" element={withLayout(<ReportingAnalytics />, ['PlanningOffice', 'Admin'], 'Reporting & Analytics')} />
+        <Route path="/planner/preventive" element={withLayout(<PreventiveMaintenancePlanning />, ['PlanningOffice', 'Admin'], 'Planning & Records')} />
+        <Route path="/planner/archive" element={withLayout(<ArchiveManagement />, ['PlanningOffice', 'Admin'], 'Archiving')} />
 
-        <Route path="/admin/dashboard" element={withLayout(<AdminDashboard />, ['Admin'])} />
-        <Route path="/admin/users" element={withLayout(<UserManagement />, ['Admin'])} />
-        <Route path="/admin/roles" element={withLayout(<RolesPermissions />, ['Admin'])} />
-        <Route path="/admin/master-data" element={withLayout(<MasterDataManager />, ['Admin'])} />
-        <Route path="/admin/workflow" element={withLayout(<WorkflowConfig />, ['Admin'])} />
-        <Route path="/admin/notifications" element={withLayout(<NotificationSettings />, ['Admin'])} />
-        <Route path="/admin/audit" element={withLayout(<AuditLogs />, ['Admin'])} />
-        <Route path="/admin/retention" element={withLayout(<RetentionSettings />, ['Admin'])} />
-        <Route path="/admin/settings" element={withLayout(<SystemSettings />, ['Admin'])} />
+        <Route path="/admin/dashboard" element={withLayout(<AdminDashboard />, ['Admin'], 'Admin Controls')} />
+        <Route path="/admin/users" element={withLayout(<UserManagement />, ['Admin'], 'Admin Controls')} />
+        <Route path="/admin/roles" element={withLayout(<RolesPermissions />, ['Admin'], 'Admin Controls')} />
+        <Route path="/admin/master-data" element={withLayout(<MasterDataManager />, ['Admin'], 'Admin Controls')} />
+        <Route path="/admin/workflow" element={withLayout(<WorkflowConfig />, ['Admin'], 'Admin Controls')} />
+        <Route path="/admin/notifications" element={withLayout(<NotificationSettings />, ['Admin'], 'Admin Controls')} />
+        <Route path="/admin/audit" element={withLayout(<AuditLogs />, ['Admin'], 'Admin Controls')} />
+        <Route path="/admin/retention" element={withLayout(<RetentionSettings />, ['Admin'], 'Admin Controls')} />
+        <Route path="/admin/settings" element={withLayout(<SystemSettings />, ['Admin'], 'Admin Controls')} />
 
-        <Route path="/reports" element={withLayout(<Reports />, ['Admin', 'Supervisor', 'HOD', 'EngSupervisor'])} />
+        <Route path="/reports" element={withLayout(<Reports />, ['Admin', 'Supervisor', 'HOD', 'EngSupervisor'], 'Reporting & Analytics')} />
         <Route path="/login" element={<Login />} />
       </Routes>
     </Suspense>
@@ -156,10 +162,12 @@ function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
-        <JobCardProvider>
-          <Toaster position="top-right" reverseOrder={false} />
-          <AppContent />
-        </JobCardProvider>
+        <RuntimeConfigProvider>
+          <JobCardProvider>
+            <Toaster position="top-right" reverseOrder={false} />
+            <AppContent />
+          </JobCardProvider>
+        </RuntimeConfigProvider>
       </AuthProvider>
     </BrowserRouter>
   );

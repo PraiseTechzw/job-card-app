@@ -109,18 +109,17 @@ export default function PlannerDashboard() {
 
   return (
     <div className={styles.pageContainer}>
-      {/* Header */}
-      <header style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 26, flexWrap: 'wrap', gap: 12 }}>
-        <div>
-          <h1 className={styles.pageTitle} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <span style={{ background: 'rgba(99,102,241,0.15)', borderRadius: 10, padding: '6px 8px', display: 'inline-flex' }}>
-              <BarChart2 size={22} color="#6366f1" />
+      <header className={styles.hero}>
+        <div className={styles.heroContent}>
+          <div className={styles.heroTitleRow}>
+            <span className={styles.heroIcon}>
+              <BarChart2 size={22} />
             </span>
-            Planning Dashboard
-          </h1>
-          <p className={styles['text-muted']}>System-wide maintenance intelligence. {jobCards.length} total records loaded.</p>
+            <h1 className={styles.pageTitle}>Planning Dashboard</h1>
+          </div>
+          <p className={styles.heroSubtitle}>System-wide maintenance intelligence with {jobCards.length} loaded records across the active planning window.</p>
         </div>
-        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+        <div className={styles.heroActions}>
           {/* Period selector */}
           <div style={{ display: 'flex', background: 'rgba(15,23,42,0.6)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 8, overflow: 'hidden' }}>
             {(['today', 'week', 'month', 'all'] as const).map(p => (
@@ -136,8 +135,7 @@ export default function PlannerDashboard() {
         </div>
       </header>
 
-      {/* Quick nav links */}
-      <div style={{ display: 'flex', gap: 8, marginBottom: 22, flexWrap: 'wrap' }}>
+      <div className={styles.chipRow} style={{ marginBottom: 22 }}>
         {[
           { label: 'Job Records', icon: Database, to: '/planner/jobs' },
           { label: 'Reports', icon: TrendingUp, to: '/planner/reports' },
@@ -145,8 +143,8 @@ export default function PlannerDashboard() {
           { label: 'PM Planning', icon: Calendar, to: '/planner/preventive' },
           { label: 'Archive', icon: Archive, to: '/planner/archive' },
         ].map(n => (
-          <button key={n.to} onClick={() => navigate(n.to)} className="btn btn-ghost"
-            style={{ gap: 6, fontSize: 12, padding: '6px 12px' }}>
+          <button key={n.to} onClick={() => navigate(n.to)} className={styles.chip}
+            style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
             <n.icon size={13} /> {n.label}
           </button>
         ))}
@@ -156,8 +154,7 @@ export default function PlannerDashboard() {
         <div className="empty-state"><Activity size={40} className="empty-state-icon" /><h3>Loading data…</h3></div>
       ) : (
         <>
-          {/* KPI Strip */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 12, marginBottom: 22 }}>
+          <div className={styles.statsGrid}>
             {[
               { l: 'Total (Scope)',  v: total,         c: '#6366f1', bg: 'rgba(99,102,241,0.1)',  icon: BarChart2 },
               { l: 'Completed',      v: completed,     c: '#10b981', bg: 'rgba(16,185,129,0.1)', icon: CheckCircle2 },
@@ -168,12 +165,12 @@ export default function PlannerDashboard() {
               { l: 'Pending Appr.',  v: pending,       c: '#f59e0b', bg: 'rgba(245,158,11,0.08)', icon: Clock },
               { l: 'Completion %',   v: `${completionRate}%`, c: '#34d399', bg: 'rgba(52,211,153,0.1)', icon: TrendingUp },
             ].map(k => (
-              <div key={k.l} style={{ background: k.bg, border: `1px solid ${k.c}22`, borderRadius: 12, padding: '14px 18px' }}>
+              <div key={k.l} className={`${styles.statCard} ${styles.statCardStack}`} style={{ background: k.bg, border: `1px solid ${k.c}22` }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 6 }}>
-                  <span style={{ fontSize: 10, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.06em', color: '#64748b' }}>{k.l}</span>
+                  <span className={styles.statLabel} style={{ marginBottom: 0 }}>{k.l}</span>
                   <k.icon size={13} color={k.c} />
                 </div>
-                <div style={{ fontSize: 28, fontWeight: 800, color: k.c, lineHeight: 1 }}>{k.v}</div>
+                <div className={styles.statValue} style={{ color: k.c }}>{k.v}</div>
               </div>
             ))}
           </div>
@@ -265,7 +262,7 @@ export default function PlannerDashboard() {
 
           {/* Overdue alerts */}
           {overdue > 0 && (
-            <div style={{ marginTop: 18, background: 'rgba(239,68,68,0.07)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: 14, padding: '14px 20px', display: 'flex', gap: 12, alignItems: 'center' }}>
+            <div className={`${styles.notice} ${styles.noticeDanger}`} style={{ marginTop: 18, alignItems: 'center' }}>
               <AlertTriangle size={18} color="#ef4444" />
               <div style={{ flex: 1 }}>
                 <span style={{ fontWeight: 700, color: '#f87171', fontSize: 13 }}>{overdue} overdue job{overdue > 1 ? 's' : ''}</span>

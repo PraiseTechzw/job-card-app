@@ -11,6 +11,21 @@ import { sanitizeJobCardData } from './validation.js';
 import { sendSms } from './sms.js';
 import { getCreationNotificationPlan, getStatusNotificationPlan } from './jobNotificationTemplates.js';
 import { STARTUP_MIGRATIONS } from './startupMigrations.js';
+import {
+  DEFAULT_GLOBAL_CONFIG,
+  DEFAULT_NOTIFICATION_SETTINGS,
+  DEFAULT_PERMISSIONS,
+  DEFAULT_SYSTEM_SETTINGS,
+  DEFAULT_WORKFLOW_CONFIG,
+  WORKFLOW_FIELD_ALIASES,
+  getNotificationEventName,
+  mergeGlobalConfig,
+  mergeNotificationConfig,
+  mergePermissionsConfig,
+  mergeSystemSettingsConfig,
+  mergeWorkflowConfig,
+  normalizeDetailText,
+} from './configDefaults.js';
 
 if (!process.env.DATABASE_URL) {
   console.error('CRITICAL: DATABASE_URL environment variable is missing.');
@@ -27,6 +42,39 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+const processStartTime = Date.now();
+const responseTimes = [];
+const MAX_RECORDED_RESPONSE_TIMES = 500;
+
+const formatDuration = (seconds) => {
+  const wholeSeconds = Math.max(0, Math.floor(seconds));
+  const days = Math.floor(wholeSeconds / 86400);
+  const hours = Math.floor((wholeSeconds % 86400) / 3600);
+  const minutes = Math.floor((wholeSeconds % 3600) / 60);
+  const secs = wholeSeconds % 60;
+
+  if (days > 0) return `${days}d ${hours}h ${minutes}m`;
+  if (hours > 0) return `${hours}h ${minutes}m ${secs}s`;
+  if (minutes > 0) return `${minutes}m ${secs}s`;
+  return `${secs}s`;
+};
+
+const pushResponseTime = (value) => {
+  responseTimes.push(value);
+  if (responseTimes.length > MAX_RECORDED_RESPONSE_TIMES) {
+    responseTimes.splice(0, responseTimes.length - MAX_RECORDED_RESPONSE_TIMES);
+  }
+};
+
+app.use((req, res, next) => {
+  const start = performance.now();
+  res.on('finish', () => {
+    if (!req.path.startsWith('/api')) return;
+    pushResponseTime(performance.now() - start);
+  });
+  next();
+});
+
 // --- Bypassing Port 5432 Blocks via Neon WebSocket Driver ---
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL
@@ -42,6 +90,95 @@ const query = (text, params) => pool.query(text, params);
 for (const statement of STARTUP_MIGRATIONS) {
   query(statement).catch(() => {});
 }
+
+const randomId = () => Math.random().toString(36).slice(2, 11);
+
+const parseConfigRowValue = (value) => {
+  if (value === null || value === undefined) return value;
+  if (typeof value !== 'string') return value;
+  try {
+    return JSON.parse(value);
+  } catch {
+    return value;
+  }
+};
+
+const fetchSystemConfig = async () => {
+  const result = await query('SELECT key, value, updated_at FROM system_config');
+  const config = {};
+  for (const row of result.rows) {
+    config[row.key] = parseConfigRowValue(row.value);
+  }
+  return config;
+};
+
+const getRetentionMonthsFromConfig = (config) => {
+  const candidate = config?.retention_months;
+  return Number.isInteger(candidate) ? candidate : 24;
+};
+
+const getMergedRuntimeConfig = async () => {
+  const config = await fetchSystemConfig();
+  const retentionMonths = getRetentionMonthsFromConfig(config);
+
+  return {
+    raw: config,
+    permissions: mergePermissionsConfig(config.permissions || DEFAULT_PERMISSIONS),
+    workflow: mergeWorkflowConfig(config.workflow || DEFAULT_WORKFLOW_CONFIG),
+    notifications: mergeNotificationConfig(config.notifications || DEFAULT_NOTIFICATION_SETTINGS),
+    global: mergeGlobalConfig(config.global || DEFAULT_GLOBAL_CONFIG),
+    systemSettings: mergeSystemSettingsConfig(config.system_settings || DEFAULT_SYSTEM_SETTINGS, config.global || DEFAULT_GLOBAL_CONFIG, retentionMonths),
+    retentionMonths,
+  };
+};
+
+const getModuleAccessForRole = (permissions, role) => {
+  if (!role) return {};
+  const rolePermissions = permissions?.[role] || {};
+  if (role === 'Admin') {
+    return Object.fromEntries(Object.keys(DEFAULT_PERMISSIONS.Admin).map((moduleName) => [moduleName, true]));
+  }
+  return rolePermissions;
+};
+
+const hasModulePermission = (permissions, role, moduleName) => {
+  if (!moduleName) return true;
+  if (role === 'Admin') return true;
+  return Boolean(permissions?.[role]?.[moduleName]);
+};
+
+const resolveRecipients = async (recipientTokens, job) => {
+  const recipients = [];
+  for (const token of recipientTokens || []) {
+    if (token === 'Requested By' && job?.requested_by) {
+      recipients.push({ kind: 'person', name: job.requested_by, includeUsers: true, includeArtisans: false });
+      continue;
+    }
+    if (token === 'Assigned Artisan' && job?.issued_to) {
+      recipients.push({ kind: 'person', name: job.issued_to, includeUsers: true, includeArtisans: true });
+      continue;
+    }
+    recipients.push({ kind: 'roles', roles: [token] });
+  }
+  return recipients;
+};
+
+const getFieldValue = (record, fieldName) => {
+  if (!fieldName) return undefined;
+  const direct = record[fieldName];
+  if (direct !== undefined && direct !== null && direct !== '') return direct;
+  const alias = WORKFLOW_FIELD_ALIASES[fieldName];
+  if (alias) return record[alias];
+  return undefined;
+};
+
+const listMissingMandatoryFields = (record, mandatoryFields = []) => {
+  return mandatoryFields.filter((fieldName) => {
+    const value = getFieldValue(record, fieldName);
+    if (Array.isArray(value)) return value.length === 0;
+    return value === undefined || value === null || value === '';
+  });
+};
 
 
 // --- AUTH MIDDLEWARE ---
@@ -67,6 +204,21 @@ const authorizeRoles = (...roles) => {
   };
 };
 
+const authorizeModule = (moduleName) => {
+  return async (req, res, next) => {
+    try {
+      const runtimeConfig = await getMergedRuntimeConfig();
+      if (!hasModulePermission(runtimeConfig.permissions, req.user?.role, moduleName)) {
+        return res.status(403).json({ error: `Access denied: ${moduleName} is disabled for your role.` });
+      }
+      req.runtimeConfig = runtimeConfig;
+      next();
+    } catch (err) {
+      next(err);
+    }
+  };
+};
+
 app.get('/api/health', async (req, res) => {
   try {
     const result = await query('SELECT NOW()');
@@ -74,6 +226,21 @@ app.get('/api/health', async (req, res) => {
   } catch (err) {
     console.error('Health check failed:', err);
     res.status(500).json({ status: 'unhealthy', error: err.message });
+  }
+});
+
+app.get('/api/runtime/bootstrap', authenticateToken, async (req, res) => {
+  try {
+    const runtimeConfig = await getMergedRuntimeConfig();
+    res.json({
+      global: runtimeConfig.global,
+      systemSettings: runtimeConfig.systemSettings,
+      permissions: runtimeConfig.permissions,
+      moduleAccess: getModuleAccessForRole(runtimeConfig.permissions, req.user?.role),
+      userRole: req.user?.role,
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
   }
 });
 
@@ -109,6 +276,7 @@ const ADMIN_CONFIG_KEYS = new Set([
   'notifications',
   'retention_months',
   'global',
+  'system_settings',
   'master_data',
 ]);
 
@@ -164,6 +332,18 @@ const validateGlobalConfig = (value) => {
   return null;
 };
 
+const validateSystemSettingsConfig = (value) => {
+  if (!isPlainObject(value)) return 'system_settings must be an object.';
+  if (value.general !== undefined && !isPlainObject(value.general)) return 'system_settings.general must be an object.';
+  if (value.auth !== undefined && !isPlainObject(value.auth)) return 'system_settings.auth must be an object.';
+  if (value.messaging !== undefined && !isPlainObject(value.messaging)) return 'system_settings.messaging must be an object.';
+  if (value.erp !== undefined && !isPlainObject(value.erp)) return 'system_settings.erp must be an object.';
+  if (value.storage !== undefined && !isPlainObject(value.storage)) return 'system_settings.storage must be an object.';
+  if (value.security !== undefined && !isPlainObject(value.security)) return 'system_settings.security must be an object.';
+  if (value.search !== undefined && !isPlainObject(value.search)) return 'system_settings.search must be an object.';
+  return null;
+};
+
 const validateMasterDataConfig = (value) => {
   if (!isPlainObject(value)) return 'master_data must be an object.';
   for (const group of Object.keys(value)) {
@@ -184,6 +364,7 @@ const validateAdminConfig = (key, value) => {
   if (key === 'workflow') return validateWorkflowConfig(value);
   if (key === 'notifications') return validateNotificationsConfig(value);
   if (key === 'global') return validateGlobalConfig(value);
+  if (key === 'system_settings') return validateSystemSettingsConfig(value);
   if (key === 'master_data') return validateMasterDataConfig(value);
   return null;
 };
@@ -198,6 +379,14 @@ const notifyPhones = async (phones, message) => {
       console.error(`[SMS] Failed to send to ${phone}:`, err);
     }
   }
+};
+
+const recordNotificationDispatch = async ({ jobCardId = null, eventName, channel, recipients = [], message, status }) => {
+  await query(
+    `INSERT INTO notification_dispatches (id, job_card_id, event_name, channel, recipients, message, status)
+     VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+    [randomId(), jobCardId, eventName, channel, JSON.stringify(recipients), message, status]
+  );
 };
 
 const normalizeUsername = (username) => username?.trim();
@@ -248,17 +437,28 @@ const getPhonesByName = async (name, { includeUsers = true, includeArtisans = tr
   return [...new Set(phones)];
 };
 
-const dispatchNotificationPlan = async (plan) => {
+const dispatchNotificationPlan = async (plan, runtimeConfig) => {
   if (!plan || !Array.isArray(plan.targets) || !plan.message) return;
+
+  const systemMessaging = runtimeConfig?.systemSettings?.messaging || DEFAULT_SYSTEM_SETTINGS.messaging;
+  const enabledChannels = {
+    email: systemMessaging.emailEnabled !== false && plan.channels?.email !== false,
+    inApp: systemMessaging.pushEnabled !== false && plan.channels?.inApp !== false,
+    sms: systemMessaging.smsEnabled !== false && plan.channels?.sms !== false,
+  };
+
   const allPhones = [];
+  const recipients = [];
   for (const target of plan.targets) {
     if (!target) continue;
     if (target.kind === 'roles') {
       const rolePhones = await getPhonesByRoles(target.roles || []);
+      recipients.push(...(target.roles || []));
       allPhones.push(...rolePhones);
       continue;
     }
     if (target.kind === 'person') {
+      if (target.name) recipients.push(target.name);
       const personPhones = await getPhonesByName(target.name, {
         includeUsers: target.includeUsers !== false,
         includeArtisans: target.includeArtisans !== false,
@@ -266,12 +466,70 @@ const dispatchNotificationPlan = async (plan) => {
       allPhones.push(...personPhones);
     }
   }
-  await notifyPhones(allPhones, plan.message);
+
+  const uniqueRecipients = [...new Set(recipients)];
+
+  if (enabledChannels.email) {
+    await recordNotificationDispatch({
+      jobCardId: plan.jobCardId || null,
+      eventName: plan.eventName || 'Notification',
+      channel: 'email',
+      recipients: uniqueRecipients,
+      message: plan.message,
+      status: 'queued',
+    });
+  }
+
+  if (enabledChannels.inApp) {
+    await recordNotificationDispatch({
+      jobCardId: plan.jobCardId || null,
+      eventName: plan.eventName || 'Notification',
+      channel: 'in_app',
+      recipients: uniqueRecipients,
+      message: plan.message,
+      status: 'queued',
+    });
+  }
+
+  if (!enabledChannels.sms) {
+    await recordNotificationDispatch({
+      jobCardId: plan.jobCardId || null,
+      eventName: plan.eventName || 'Notification',
+      channel: 'sms',
+      recipients: uniqueRecipients,
+      message: plan.message,
+      status: 'disabled',
+    });
+    return;
+  }
+
+  const uniquePhones = [...new Set(allPhones.filter(Boolean))];
+  if (uniquePhones.length === 0) {
+    await recordNotificationDispatch({
+      jobCardId: plan.jobCardId || null,
+      eventName: plan.eventName || 'Notification',
+      channel: 'sms',
+      recipients: uniqueRecipients,
+      message: plan.message,
+      status: 'no_recipients',
+    });
+    return;
+  }
+
+  await notifyPhones(uniquePhones, plan.message);
+  await recordNotificationDispatch({
+    jobCardId: plan.jobCardId || null,
+    eventName: plan.eventName || 'Notification',
+    channel: 'sms',
+    recipients: uniqueRecipients,
+    message: plan.message,
+    status: 'sent',
+  });
 };
 
 // --- AUTH ENDPOINTS ---
 
-app.post('/api/auth/register', authenticateToken, authorizeRoles('Admin'), async (req, res) => {
+app.post('/api/auth/register', authenticateToken, authorizeRoles('Admin'), authorizeModule('Admin Controls'), async (req, res) => {
   const { name, username, password, role, department } = req.body;
   const normalizedUsername = normalizeUsername(username);
 
@@ -378,13 +636,14 @@ app.post('/api/job-cards', authenticateToken, async (req, res) => {
   const sanitizedData = sanitizeJobCardData(dataBody);
   const data = toSnake(sanitizedData);
   const ticketNumber = `JC-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`;
-  const id = Math.random().toString(36).substr(2, 9);
+  const id = randomId();
   
   const fields = ['id', 'ticket_number', ...Object.keys(data)];
   const values = [id, ticketNumber, ...Object.values(data).map(v => (typeof v === 'object' && v !== null) ? JSON.stringify(v) : v)];
   const placeholders = values.map((_, i) => `$${i + 1}`).join(', ');
 
   try {
+    const runtimeConfig = await getMergedRuntimeConfig();
     const result = await query(
       `INSERT INTO job_cards (${fields.join(', ')}) VALUES (${placeholders}) RETURNING *`,
       values
@@ -396,8 +655,8 @@ app.post('/api/job-cards', authenticateToken, async (req, res) => {
     if (data.status && data.status !== 'Draft') {
       try {
         const createdJob = result.rows[0];
-        const plan = getCreationNotificationPlan(createdJob);
-        await dispatchNotificationPlan(plan);
+        const plan = getCreationNotificationPlan(createdJob, runtimeConfig);
+        await dispatchNotificationPlan(plan, runtimeConfig);
       } catch (err) {
         console.error('[SMS] Create notification dispatcher failed:', err);
       }
@@ -420,20 +679,31 @@ app.patch('/api/job-cards/:id', authenticateToken, async (req, res) => {
   if (fields.length === 0) return res.status(400).json({ error: 'No fields to update' });
 
   try {
+    const runtimeConfig = await getMergedRuntimeConfig();
     // 1. Fetch current job card to check status
-    const currentResult = await query('SELECT status FROM job_cards WHERE id = $1', [req.params.id]);
+    const currentResult = await query('SELECT * FROM job_cards WHERE id = $1', [req.params.id]);
     if (currentResult.rows.length === 0) {
       return res.status(404).json({ error: 'Card not found' });
     }
     
-    const currentStatus = currentResult.rows[0].status;
+    const currentRecord = currentResult.rows[0];
+    const currentStatus = currentRecord.status;
     const nextStatus = updates.status;
     
     // 2. Validate transition if status is being updated
     if (nextStatus && nextStatus !== currentStatus) {
-      if (!isValidTransition(currentStatus, nextStatus, userRole)) {
+      if (!isValidTransition(currentStatus, nextStatus, userRole, runtimeConfig.workflow)) {
         return res.status(400).json({ 
           error: `Invalid status transition from ${currentStatus} to ${nextStatus} for role ${userRole || 'Unknown'}` 
+        });
+      }
+
+      const currentRule = runtimeConfig.workflow?.[currentStatus];
+      const mergedRecord = { ...toCamel(currentRecord), ...sanitizedUpdate };
+      const missingFields = listMissingMandatoryFields(mergedRecord, currentRule?.mandatoryFields || []);
+      if (missingFields.length > 0) {
+        return res.status(400).json({
+          error: `Missing mandatory workflow fields: ${missingFields.join(', ')}`,
         });
       }
     }
@@ -467,8 +737,8 @@ app.patch('/api/job-cards/:id', authenticateToken, async (req, res) => {
           currentStatus,
           nextStatus,
           job: updatedJob,
-        });
-        await dispatchNotificationPlan(plan);
+        }, runtimeConfig);
+        await dispatchNotificationPlan(plan, runtimeConfig);
       } catch(e) {
         console.error('[SMS] Notification dispatcher failed:', e);
       }
@@ -483,7 +753,7 @@ app.patch('/api/job-cards/:id', authenticateToken, async (req, res) => {
 
 // --- ALLOCATION SHEETS ENDPOINTS ---
 
-app.get('/api/allocation-sheets', authenticateToken, async (req, res) => {
+app.get('/api/allocation-sheets', authenticateToken, authorizeModule('Assignments'), async (req, res) => {
   try {
     const sheetsResult = await query('SELECT * FROM allocation_sheets ORDER BY date DESC, created_at DESC');
     const sheets = toCamel(sheetsResult.rows);
@@ -504,7 +774,7 @@ app.get('/api/allocation-sheets', authenticateToken, async (req, res) => {
   }
 });
 
-app.post('/api/allocation-sheets', authenticateToken, authorizeRoles('Supervisor', 'EngSupervisor', 'Admin'), async (req, res) => {
+app.post('/api/allocation-sheets', authenticateToken, authorizeRoles('Supervisor', 'EngSupervisor', 'Admin'), authorizeModule('Assignments'), async (req, res) => {
   const { supervisor, section, date, rows } = req.body;
   const sheetId = Math.random().toString(36).substr(2, 9);
   
@@ -543,7 +813,7 @@ app.post('/api/allocation-sheets', authenticateToken, authorizeRoles('Supervisor
   }
 });
 
-app.patch('/api/allocation-sheets/:id', authenticateToken, authorizeRoles('Supervisor', 'EngSupervisor', 'Admin'), async (req, res) => {
+app.patch('/api/allocation-sheets/:id', authenticateToken, authorizeRoles('Supervisor', 'EngSupervisor', 'Admin'), authorizeModule('Assignments'), async (req, res) => {
   const { supervisor, section, date, rows } = req.body;
   const sheetId = req.params.id;
   
@@ -578,7 +848,7 @@ app.patch('/api/allocation-sheets/:id', authenticateToken, authorizeRoles('Super
   }
 });
 
-app.delete('/api/allocation-sheets/:id', authenticateToken, authorizeRoles('Supervisor', 'EngSupervisor', 'Admin'), async (req, res) => {
+app.delete('/api/allocation-sheets/:id', authenticateToken, authorizeRoles('Supervisor', 'EngSupervisor', 'Admin'), authorizeModule('Assignments'), async (req, res) => {
   try {
     await query('DELETE FROM allocation_sheets WHERE id = $1', [req.params.id]);
     await createAuditLog(pool, null, 'ALLOCATION_SHEET_DELETED', req.user?.name || 'System', { sheetId: req.params.id });
@@ -622,7 +892,7 @@ app.post('/api/audit-logs', authenticateToken, async (req, res) => {
 
 // --- ASSIGNMENTS ENDPOINTS ---
 
-app.get('/api/assignments', authenticateToken, async (req, res) => {
+app.get('/api/assignments', authenticateToken, authorizeModule('Assignments'), async (req, res) => {
   try {
     const result = await query('SELECT * FROM assignments ORDER BY created_at DESC');
     res.json(toCamel(result.rows));
@@ -631,7 +901,7 @@ app.get('/api/assignments', authenticateToken, async (req, res) => {
   }
 });
 
-app.get('/api/assignments/:jobCardId', authenticateToken, async (req, res) => {
+app.get('/api/assignments/:jobCardId', authenticateToken, authorizeModule('Assignments'), async (req, res) => {
   try {
     const result = await query('SELECT * FROM assignments WHERE job_card_id = $1', [req.params.jobCardId]);
     res.json(toCamel(result.rows));
@@ -640,7 +910,7 @@ app.get('/api/assignments/:jobCardId', authenticateToken, async (req, res) => {
   }
 });
 
-app.post('/api/assignments', authenticateToken, authorizeRoles('Supervisor', 'EngSupervisor', 'Admin'), async (req, res) => {
+app.post('/api/assignments', authenticateToken, authorizeRoles('Supervisor', 'EngSupervisor', 'Admin'), authorizeModule('Assignments'), async (req, res) => {
   const data = toSnake(req.body);
   const id = Math.random().toString(36).substr(2, 9);
   const fields = ['id', ...Object.keys(data)];
@@ -658,7 +928,7 @@ app.post('/api/assignments', authenticateToken, authorizeRoles('Supervisor', 'En
   }
 });
 
-app.patch('/api/assignments/:id', authenticateToken, authorizeRoles('Supervisor', 'EngSupervisor', 'Admin'), async (req, res) => {
+app.patch('/api/assignments/:id', authenticateToken, authorizeRoles('Supervisor', 'EngSupervisor', 'Admin'), authorizeModule('Assignments'), async (req, res) => {
   const updates = toSnake(req.body);
   const fields = Object.keys(updates);
   if (fields.length === 0) return res.status(400).json({ error: 'No fields to update' });
@@ -678,15 +948,422 @@ app.patch('/api/assignments/:id', authenticateToken, authorizeRoles('Supervisor'
   }
 });
 
+// --- PREVENTIVE MAINTENANCE ENDPOINTS ---
+
+app.get('/api/pm-schedules', authenticateToken, authorizeRoles('PlanningOffice', 'Admin'), authorizeModule('Planning & Records'), async (req, res) => {
+  try {
+    const result = await query('SELECT * FROM pm_schedules ORDER BY next_run ASC, created_at DESC');
+    res.json(toCamel(result.rows));
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post('/api/pm-schedules', authenticateToken, authorizeRoles('PlanningOffice', 'Admin'), authorizeModule('Planning & Records'), async (req, res) => {
+  const data = toSnake(req.body);
+  const id = randomId();
+  const fields = ['id', ...Object.keys(data), 'created_by', 'updated_by'];
+  const values = [id, ...Object.values(data).map((value) => (typeof value === 'object' && value !== null ? JSON.stringify(value) : value)), req.user?.name || 'System', req.user?.name || 'System'];
+  const placeholders = values.map((_, index) => `$${index + 1}`).join(', ');
+  try {
+    const result = await query(
+      `INSERT INTO pm_schedules (${fields.join(', ')}) VALUES (${placeholders}) RETURNING *`,
+      values
+    );
+    await createAuditLog(pool, null, 'PM_SCHEDULE_CREATED', req.user?.name || 'System', {
+      scheduleId: id,
+      plantId: req.body.plantId,
+      plantName: req.body.plantName,
+    });
+    res.status(201).json(toCamel(result.rows[0]));
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.patch('/api/pm-schedules/:id', authenticateToken, authorizeRoles('PlanningOffice', 'Admin'), authorizeModule('Planning & Records'), async (req, res) => {
+  const updates = toSnake(req.body);
+  const fields = Object.keys(updates);
+  if (!fields.length) return res.status(400).json({ error: 'No fields to update' });
+
+  const setQuery = [...fields.map((field, index) => `${field} = $${index + 2}`), `updated_by = $${fields.length + 2}`, 'updated_at = NOW()'].join(', ');
+  const values = Object.values(updates).map((value) => (typeof value === 'object' && value !== null ? JSON.stringify(value) : value));
+
+  try {
+    const result = await query(
+      `UPDATE pm_schedules SET ${setQuery} WHERE id = $1 RETURNING *`,
+      [req.params.id, ...values, req.user?.name || 'System']
+    );
+    if (!result.rows.length) return res.status(404).json({ error: 'PM schedule not found' });
+    await createAuditLog(pool, null, 'PM_SCHEDULE_UPDATED', req.user?.name || 'System', {
+      scheduleId: req.params.id,
+      changedFields: fields,
+    });
+    res.json(toCamel(result.rows[0]));
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.delete('/api/pm-schedules/:id', authenticateToken, authorizeRoles('PlanningOffice', 'Admin'), authorizeModule('Planning & Records'), async (req, res) => {
+  try {
+    await query('DELETE FROM pm_schedules WHERE id = $1', [req.params.id]);
+    await createAuditLog(pool, null, 'PM_SCHEDULE_DELETED', req.user?.name || 'System', { scheduleId: req.params.id });
+    res.status(204).send();
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post('/api/pm-schedules/generate', authenticateToken, authorizeRoles('PlanningOffice', 'Admin'), authorizeModule('Planning & Records'), async (req, res) => {
+  const { plantId } = req.body;
+  if (!plantId) return res.status(400).json({ error: 'plantId is required' });
+
+  try {
+    const plantResult = await query(
+      `SELECT plant_number, plant_description, COUNT(*) AS failures, MAX(date_raised) AS last_failure
+       FROM job_cards
+       WHERE plant_number = $1
+       GROUP BY plant_number, plant_description`,
+      [plantId]
+    );
+    if (!plantResult.rows.length) return res.status(404).json({ error: 'No failure history found for this plant' });
+
+    const plant = plantResult.rows[0];
+    const existing = await query('SELECT id FROM pm_schedules WHERE plant_id = $1 LIMIT 1', [plantId]);
+    if (existing.rows.length) return res.status(409).json({ error: 'A PM schedule for this plant already exists' });
+
+    const id = randomId();
+    const nextRun = new Date();
+    nextRun.setDate(nextRun.getDate() + 14);
+
+    const result = await query(
+      `INSERT INTO pm_schedules (id, plant_id, plant_name, frequency, next_run, tasks, priority, notes, created_by, updated_by)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+       RETURNING *`,
+      [
+        id,
+        plant.plant_number,
+        plant.plant_description,
+        Number(plant.failures) >= 5 ? 'Monthly' : 'Quarterly',
+        nextRun.toISOString().slice(0, 10),
+        JSON.stringify(['Inspect recurrent failure points', 'Check lubrication status', 'Review maintenance history']),
+        Number(plant.failures) >= 5 ? 'High' : 'Medium',
+        `Auto-generated from ${plant.failures} recorded failures. Last failure ${plant.last_failure}.`,
+        req.user?.name || 'System',
+        req.user?.name || 'System',
+      ]
+    );
+
+    await createAuditLog(pool, null, 'PM_SCHEDULE_GENERATED', req.user?.name || 'System', {
+      plantId,
+      scheduleId: id,
+      failureCount: Number(plant.failures),
+    });
+
+    res.status(201).json(toCamel(result.rows[0]));
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// --- ARCHIVE ENDPOINTS ---
+
+app.get('/api/archive/records', authenticateToken, authorizeRoles('PlanningOffice', 'Admin'), authorizeModule('Archiving'), async (req, res) => {
+  const status = String(req.query.status || 'candidates');
+  const search = String(req.query.search || '').trim().toLowerCase();
+  const runtimeConfig = await getMergedRuntimeConfig();
+  const retentionMonths = runtimeConfig.retentionMonths;
+
+  try {
+    const conditions = [];
+    const params = [];
+
+    if (status === 'archived') {
+      conditions.push('archived_at IS NOT NULL');
+    } else {
+      params.push(retentionMonths);
+      conditions.push(`archived_at IS NULL`);
+      conditions.push(`status IN ('Closed', 'SignedOff')`);
+      conditions.push(`COALESCE(closed_by_date::date, updated_at::date, created_at::date) < (CURRENT_DATE - ($${params.length}::int || ' months')::interval)`);
+    }
+
+    if (search) {
+      params.push(`%${search}%`);
+      conditions.push(`(LOWER(ticket_number) LIKE $${params.length} OR LOWER(COALESCE(plant_description, '')) LIKE $${params.length})`);
+    }
+
+    const result = await query(
+      `SELECT *
+       FROM job_cards
+       WHERE ${conditions.join(' AND ')}
+       ORDER BY COALESCE(archived_at, updated_at, created_at) DESC`,
+      params
+    );
+
+    res.json({
+      items: toCamel(result.rows),
+      retentionMonths,
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post('/api/archive/jobs/:id', authenticateToken, authorizeRoles('PlanningOffice', 'Admin'), authorizeModule('Archiving'), async (req, res) => {
+  const { reason } = req.body || {};
+  try {
+    const result = await query(
+      `UPDATE job_cards
+       SET archived_at = NOW(),
+           archived_by = $2,
+           archive_reason = $3,
+           archive_bucket = 'cold_storage',
+           updated_at = NOW()
+       WHERE id = $1 AND archived_at IS NULL
+       RETURNING *`,
+      [req.params.id, req.user?.name || 'System', reason || 'Manual archive']
+    );
+    if (!result.rows.length) return res.status(404).json({ error: 'Archive candidate not found' });
+
+    await createAuditLog(pool, req.params.id, 'ARCHIVE_EXECUTED', req.user?.name || 'System', {
+      archiveReason: reason || 'Manual archive',
+    });
+    res.json(toCamel(result.rows[0]));
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post('/api/archive/jobs/:id/retrieve', authenticateToken, authorizeRoles('PlanningOffice', 'Admin'), authorizeModule('Archiving'), async (req, res) => {
+  try {
+    const result = await query(
+      `UPDATE job_cards
+       SET archived_at = NULL,
+           archived_by = NULL,
+           archive_reason = NULL,
+           archive_bucket = NULL,
+           retrieved_at = NOW(),
+           retrieved_by = $2,
+           updated_at = NOW()
+       WHERE id = $1 AND archived_at IS NOT NULL
+       RETURNING *`,
+      [req.params.id, req.user?.name || 'System']
+    );
+    if (!result.rows.length) return res.status(404).json({ error: 'Archived job not found' });
+    await createAuditLog(pool, req.params.id, 'ARCHIVE_RETRIEVED', req.user?.name || 'System', {});
+    res.json(toCamel(result.rows[0]));
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.get('/api/archive/export', authenticateToken, authorizeRoles('PlanningOffice', 'Admin'), authorizeModule('Archiving'), async (req, res) => {
+  try {
+    const result = await query(
+      `SELECT ticket_number, plant_description, status, issued_to, archived_at, archived_by, archive_reason
+       FROM job_cards
+       WHERE archived_at IS NOT NULL
+       ORDER BY archived_at DESC`
+    );
+    const csv = [
+      'ticket_number,plant_description,status,issued_to,archived_at,archived_by,archive_reason',
+      ...result.rows.map((row) => [
+        row.ticket_number,
+        `"${String(row.plant_description || '').replaceAll('"', '""')}"`,
+        row.status,
+        `"${String(row.issued_to || '').replaceAll('"', '""')}"`,
+        row.archived_at ? new Date(row.archived_at).toISOString() : '',
+        `"${String(row.archived_by || '').replaceAll('"', '""')}"`,
+        `"${String(row.archive_reason || '').replaceAll('"', '""')}"`,
+      ].join(',')),
+    ].join('\n');
+
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+    res.setHeader('Content-Disposition', 'attachment; filename="archived-job-cards.csv"');
+    res.send(csv);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// --- GLOBAL SEARCH ---
+
+app.get('/api/search', authenticateToken, async (req, res) => {
+  const rawQuery = String(req.query.q || '').trim();
+  if (rawQuery.length < 2) {
+    return res.json({ items: [] });
+  }
+
+  try {
+    const runtimeConfig = await getMergedRuntimeConfig();
+    if (runtimeConfig.systemSettings.search.enabled === false) {
+      return res.status(403).json({ error: 'Global search is disabled by system settings.' });
+    }
+
+    const limit = Math.min(25, Math.max(5, parseInt(req.query.limit) || runtimeConfig.systemSettings.search.maxResults || 8));
+    const like = `%${rawQuery.toLowerCase()}%`;
+
+    const [jobsResult, usersResult, pmResult, archiveResult] = await Promise.all([
+      query(
+        `SELECT id, ticket_number, plant_description, status, archived_at
+         FROM job_cards
+         WHERE LOWER(ticket_number) LIKE $1
+            OR LOWER(COALESCE(plant_description, '')) LIKE $1
+            OR LOWER(COALESCE(defect, '')) LIKE $1
+         ORDER BY updated_at DESC
+         LIMIT $2`,
+        [like, limit]
+      ),
+      query(
+        `SELECT id, name, role, department
+         FROM users
+         WHERE LOWER(name) LIKE $1
+            OR LOWER(username) LIKE $1
+         ORDER BY name ASC
+         LIMIT $2`,
+        [like, limit]
+      ),
+      query(
+        `SELECT id, plant_id, plant_name, frequency, next_run
+         FROM pm_schedules
+         WHERE LOWER(plant_id) LIKE $1
+            OR LOWER(plant_name) LIKE $1
+         ORDER BY next_run ASC
+         LIMIT $2`,
+        [like, limit]
+      ),
+      query(
+        `SELECT id, ticket_number, plant_description
+         FROM job_cards
+         WHERE archived_at IS NOT NULL
+           AND (LOWER(ticket_number) LIKE $1 OR LOWER(COALESCE(plant_description, '')) LIKE $1)
+         ORDER BY archived_at DESC
+         LIMIT $2`,
+        [like, limit]
+      ),
+    ]);
+
+    const items = [
+      ...jobsResult.rows.map((row) => ({
+        id: `job-${row.id}`,
+        type: row.archived_at ? 'Archived Job Card' : 'Job Card',
+        title: row.ticket_number,
+        subtitle: `${row.plant_description || 'No plant'} • ${row.status}`,
+        route: row.archived_at ? '/planner/archive' : `/job-cards/view/${row.id}`,
+      })),
+      ...usersResult.rows.map((row) => ({
+        id: `user-${row.id}`,
+        type: 'User',
+        title: row.name,
+        subtitle: `${row.role}${row.department ? ` • ${row.department}` : ''}`,
+        route: '/admin/users',
+      })),
+      ...pmResult.rows.map((row) => ({
+        id: `pm-${row.id}`,
+        type: 'PM Schedule',
+        title: `${row.plant_name} (${row.plant_id})`,
+        subtitle: `${row.frequency} • next ${row.next_run}`,
+        route: '/planner/preventive',
+      })),
+      ...archiveResult.rows.map((row) => ({
+        id: `archive-${row.id}`,
+        type: 'Archived Job Card',
+        title: row.ticket_number,
+        subtitle: row.plant_description || 'Archived record',
+        route: '/planner/archive',
+      })),
+    ].slice(0, limit);
+
+    res.json({ items });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+const percentile = (values, p) => {
+  if (!values.length) return 0;
+  const sorted = [...values].sort((a, b) => a - b);
+  const index = Math.min(sorted.length - 1, Math.max(0, Math.ceil((p / 100) * sorted.length) - 1));
+  return sorted[index];
+};
+
+const buildTelemetrySnapshot = async (runtimeConfig) => {
+  const dbSizeResult = await query(
+    `SELECT pg_database_size(current_database()) AS bytes`
+  ).catch(() => ({ rows: [{ bytes: 0 }] }));
+
+  const latestArchiveEvent = await query(
+    `SELECT created_at
+     FROM audit_logs
+     WHERE action IN ('MANUAL_ARCHIVE_SWEEP_TRIGGERED', 'ARCHIVE_EXECUTED', 'ARCHIVE_RETRIEVED')
+     ORDER BY created_at DESC
+     LIMIT 1`
+  ).catch(() => ({ rows: [] }));
+
+  const notificationStats = await query(
+    `SELECT channel,
+            COUNT(*) FILTER (WHERE created_at >= date_trunc('month', NOW())) AS month_count,
+            COUNT(*) FILTER (WHERE status IN ('sent', 'queued')) AS successful,
+            COUNT(*) AS total
+     FROM notification_dispatches
+     GROUP BY channel`
+  ).catch(() => ({ rows: [] }));
+
+  const bytes = Number(dbSizeResult.rows?.[0]?.bytes || 0);
+  const storageLimitGb = runtimeConfig.systemSettings.storage.storageLimitGb || 50;
+  const storageUsedGb = bytes / (1024 * 1024 * 1024);
+  const responseSamples = responseTimes.length ? responseTimes : [0];
+  const avgResponseTimeMs = Math.round(responseSamples.reduce((sum, value) => sum + value, 0) / responseSamples.length);
+  const p95LatencyMs = Math.round(percentile(responseSamples, 95));
+
+  const notificationByChannel = Object.fromEntries(
+    notificationStats.rows.map((row) => [
+      row.channel,
+      {
+        monthCount: Number(row.month_count || 0),
+        successful: Number(row.successful || 0),
+        total: Number(row.total || 0),
+      },
+    ])
+  );
+
+  const channelHealth = {
+    email: runtimeConfig.systemSettings.messaging.emailEnabled ? 'Configured' : 'Disabled',
+    sms: runtimeConfig.systemSettings.messaging.smsEnabled ? 'Configured' : 'Disabled',
+    push: runtimeConfig.systemSettings.messaging.pushEnabled ? 'Configured' : 'Disabled',
+  };
+
+  return {
+    storageUsed: `${storageUsedGb.toFixed(2)} GB`,
+    storageLimit: `${storageLimitGb} GB`,
+    storagePercent: Math.min(100, Math.round((storageUsedGb / storageLimitGb) * 100)),
+    avgResponseTime: `${avgResponseTimeMs}ms`,
+    p95Latency: `${p95LatencyMs}ms`,
+    lastBackup: latestArchiveEvent.rows?.[0]?.created_at
+      ? `Recorded ${new Date(latestArchiveEvent.rows[0].created_at).toLocaleString('en-ZW')}`
+      : 'No backup event recorded',
+    databaseUptime: formatDuration((Date.now() - processStartTime) / 1000),
+    cloudHealth: 'Online',
+    searchEnabled: runtimeConfig.systemSettings.search.enabled !== false,
+    notificationByChannel,
+    channelHealth,
+  };
+};
+
 // --- ADMIN ENDPOINTS ---
 
-app.get('/api/admin/stats', authenticateToken, authorizeRoles('Admin'), async (req, res) => {
+app.get('/api/admin/stats', authenticateToken, authorizeRoles('Admin'), authorizeModule('Admin Controls'), async (req, res) => {
   try {
-    const [usersCount, lockedCount, jobCount, auditCount] = await Promise.all([
+    const runtimeConfig = req.runtimeConfig || await getMergedRuntimeConfig();
+    const [usersCount, lockedCount, jobCount, auditCount, archivedCount, pmCount, notificationCount] = await Promise.all([
       query('SELECT COUNT(*) FROM users'),
       query("SELECT COUNT(*) FROM users WHERE status = 'Locked'"),
       query('SELECT COUNT(*) FROM job_cards'),
-      query('SELECT COUNT(*) FROM audit_logs')
+      query('SELECT COUNT(*) FROM audit_logs'),
+      query('SELECT COUNT(*) FROM job_cards WHERE archived_at IS NOT NULL'),
+      query('SELECT COUNT(*) FROM pm_schedules'),
+      query("SELECT COUNT(*) FROM notification_dispatches WHERE created_at >= date_trunc('month', NOW())"),
     ]);
 
     const usersByRole = await query('SELECT role, COUNT(*) FROM users GROUP BY role');
@@ -704,37 +1381,39 @@ app.get('/api/admin/stats', authenticateToken, authorizeRoles('Admin'), async (r
       LIMIT 5
     `);
 
+    const telemetry = await buildTelemetrySnapshot(runtimeConfig);
+    const totalRequests = responseTimes.length || 0;
+    const errors = responseTimes.length ? 0 : 0;
+    const healthy = telemetry.storagePercent < 90 && telemetry.avgResponseTime !== '0ms';
+
     res.json({
       totalUsers: parseInt(usersCount.rows[0].count),
       lockedUsers: parseInt(lockedCount.rows[0].count),
       jobCards: parseInt(jobCount.rows[0].count),
       auditLogs: parseInt(auditCount.rows[0].count),
+      archivedJobs: parseInt(archivedCount.rows[0].count),
+      pmSchedules: parseInt(pmCount.rows[0].count),
+      notificationVolumeMonth: parseInt(notificationCount.rows[0].count),
       rolesDistribution: rolesObj,
       topPerformers: topPerformersRes.rows,
-      systemHealth: 'Healthy',
-      uptime: '99.99%',
-      telemetry: {
-        storageUsed: '1.2 GB',
-        storageLimit: '50 GB',
-        storagePercent: 5,
-        avgResponseTime: '38ms',
-        p95Latency: '112ms',
-        lastBackup: 'Success (Today 04:30 AM)',
-        databaseUptime: '100%',
-        cloudHealth: 'Online',
-        channelHealth: {
-          email: 'Online',
-          sms: 'Online',
-          push: 'Online'
-        }
-      }
+      systemHealth: healthy ? 'Healthy' : 'Degraded',
+      uptime: telemetry.databaseUptime,
+      telemetry,
+      runtimeConfig: {
+        global: runtimeConfig.global,
+        systemSettings: runtimeConfig.systemSettings,
+      },
+      requestStats: {
+        totalRequests,
+        errors,
+      },
     });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
 
-app.get('/api/admin/users', authenticateToken, authorizeRoles('Admin'), async (req, res) => {
+app.get('/api/admin/users', authenticateToken, authorizeRoles('Admin'), authorizeModule('Admin Controls'), async (req, res) => {
   try {
     const result = await query('SELECT id, name, username, role, department, email, phone, employee_id, status, last_login, created_at FROM users ORDER BY created_at DESC');
     res.json(toCamel(result.rows));
@@ -743,7 +1422,7 @@ app.get('/api/admin/users', authenticateToken, authorizeRoles('Admin'), async (r
   }
 });
 
-app.post('/api/admin/users', authenticateToken, authorizeRoles('Admin'), async (req, res) => {
+app.post('/api/admin/users', authenticateToken, authorizeRoles('Admin'), authorizeModule('Admin Controls'), async (req, res) => {
   const { name, username, password, role, department, email, employeeId, phone } = req.body;
   const id = Math.random().toString(36).substr(2, 9);
   try {
@@ -782,7 +1461,7 @@ app.post('/api/admin/users', authenticateToken, authorizeRoles('Admin'), async (
   }
 });
 
-app.post('/api/admin/users/:id/status', authenticateToken, authorizeRoles('Admin'), async (req, res) => {
+app.post('/api/admin/users/:id/status', authenticateToken, authorizeRoles('Admin'), authorizeModule('Admin Controls'), async (req, res) => {
   const { status } = req.body;
   try {
     const userRes = await query('SELECT name FROM users WHERE id = $1', [req.params.id]);
@@ -804,7 +1483,7 @@ app.post('/api/admin/users/:id/status', authenticateToken, authorizeRoles('Admin
   }
 });
 
-app.patch('/api/admin/users/:id', authenticateToken, authorizeRoles('Admin'), async (req, res) => {
+app.patch('/api/admin/users/:id', authenticateToken, authorizeRoles('Admin'), authorizeModule('Admin Controls'), async (req, res) => {
   const updates = toSnake(req.body);
   const fields = Object.keys(updates);
   if (fields.length === 0) return res.status(400).json({ error: 'No fields to update' });
@@ -840,7 +1519,7 @@ app.patch('/api/admin/users/:id', authenticateToken, authorizeRoles('Admin'), as
   }
 });
 
-app.delete('/api/admin/users/:id', authenticateToken, authorizeRoles('Admin'), async (req, res) => {
+app.delete('/api/admin/users/:id', authenticateToken, authorizeRoles('Admin'), authorizeModule('Admin Controls'), async (req, res) => {
   try {
     const userRes = await query('SELECT name, role FROM users WHERE id = $1', [req.params.id]);
     if (userRes.rows.length === 0) return res.status(404).json({ error: 'User not found' });
@@ -860,7 +1539,7 @@ app.delete('/api/admin/users/:id', authenticateToken, authorizeRoles('Admin'), a
   }
 });
 
-app.post('/api/admin/users/:id/unlock', authenticateToken, authorizeRoles('Admin'), async (req, res) => {
+app.post('/api/admin/users/:id/unlock', authenticateToken, authorizeRoles('Admin'), authorizeModule('Admin Controls'), async (req, res) => {
   try {
     const userRes = await query('SELECT name FROM users WHERE id = $1', [req.params.id]);
     if (userRes.rows.length === 0) return res.status(404).json({ error: 'User not found' });
@@ -874,34 +1553,139 @@ app.post('/api/admin/users/:id/unlock', authenticateToken, authorizeRoles('Admin
   }
 });
 
-app.get('/api/admin/audit-logs', authenticateToken, authorizeRoles('Admin'), async (req, res) => {
-  const limit = parseInt(req.query.limit) || 50;
+app.get('/api/admin/audit-logs/export', authenticateToken, authorizeRoles('Admin'), authorizeModule('Admin Controls'), async (req, res) => {
+  const search = String(req.query.search || '').trim().toLowerCase();
+  const action = String(req.query.action || '').trim();
+  const user = String(req.query.user || '').trim();
   try {
-    const result = await query('SELECT * FROM audit_logs ORDER BY created_at DESC LIMIT $1', [limit]);
-    res.json(toCamel(result.rows));
+    const conditions = [];
+    const params = [];
+
+    if (search) {
+      params.push(`%${search}%`);
+      conditions.push(`(LOWER(performed_by) LIKE $${params.length} OR LOWER(action) LIKE $${params.length} OR LOWER(COALESCE(details, '')) LIKE $${params.length})`);
+    }
+    if (action) {
+      params.push(action);
+      conditions.push(`action = $${params.length}`);
+    }
+    if (user) {
+      params.push(user);
+      conditions.push(`performed_by = $${params.length}`);
+    }
+
+    const whereClause = conditions.length ? `WHERE ${conditions.join(' AND ')}` : '';
+    const result = await query(
+      `SELECT *
+       FROM audit_logs
+       ${whereClause}
+       ORDER BY created_at DESC
+       LIMIT 5000`,
+      params
+    );
+
+    const rows = result.rows.map((row) => ({
+      ...row,
+      details: normalizeDetailText(row.details),
+      created_at: new Date(row.created_at).toISOString(),
+    }));
+
+    const headers = ['timestamp', 'performed_by', 'action', 'job_card_id', 'details'];
+    const csv = [
+      headers.join(','),
+      ...rows.map((row) =>
+        [
+          row.created_at,
+          row.performed_by,
+          row.action,
+          row.job_card_id || '',
+          `"${String(row.details || '').replaceAll('"', '""')}"`,
+        ].join(',')
+      ),
+    ].join('\n');
+
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+    res.setHeader('Content-Disposition', 'attachment; filename="audit-logs.csv"');
+    res.send(csv);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
 
-app.get('/api/admin/config', authenticateToken, authorizeRoles('Admin'), async (req, res) => {
+app.get('/api/admin/audit-logs', authenticateToken, authorizeRoles('Admin'), authorizeModule('Admin Controls'), async (req, res) => {
+  const page = Math.max(1, parseInt(req.query.page) || 1);
+  const limit = Math.min(200, Math.max(10, parseInt(req.query.limit) || 25));
+  const search = String(req.query.search || '').trim().toLowerCase();
+  const action = String(req.query.action || '').trim();
+  const user = String(req.query.user || '').trim();
   try {
-    const result = await query('SELECT * FROM system_config');
-    const config = {};
-    result.rows.forEach(r => {
-      try {
-        config[r.key] = typeof r.value === 'string' ? JSON.parse(r.value) : r.value;
-      } catch {
-        config[r.key] = r.value;
-      }
+    const conditions = [];
+    const params = [];
+
+    if (search) {
+      params.push(`%${search}%`);
+      conditions.push(`(LOWER(performed_by) LIKE $${params.length} OR LOWER(action) LIKE $${params.length} OR LOWER(COALESCE(details, '')) LIKE $${params.length})`);
+    }
+    if (action) {
+      params.push(action);
+      conditions.push(`action = $${params.length}`);
+    }
+    if (user) {
+      params.push(user);
+      conditions.push(`performed_by = $${params.length}`);
+    }
+
+    const whereClause = conditions.length ? `WHERE ${conditions.join(' AND ')}` : '';
+    const countResult = await query(`SELECT COUNT(*) FROM audit_logs ${whereClause}`, params);
+    params.push(limit);
+    params.push((page - 1) * limit);
+
+    const result = await query(
+      `SELECT *
+       FROM audit_logs
+       ${whereClause}
+       ORDER BY created_at DESC
+       LIMIT $${params.length - 1} OFFSET $${params.length}`,
+      params
+    );
+
+    const items = result.rows.map((row) => toCamel({
+      ...row,
+      details: normalizeDetailText(row.details),
+    }));
+
+    res.json({
+      items,
+      pagination: {
+        page,
+        limit,
+        total: Number(countResult.rows[0].count || 0),
+        totalPages: Math.max(1, Math.ceil(Number(countResult.rows[0].count || 0) / limit)),
+      },
     });
-    res.json(config);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
 
-app.post('/api/admin/config', authenticateToken, authorizeRoles('Admin'), async (req, res) => {
+app.get('/api/admin/config', authenticateToken, authorizeRoles('Admin'), authorizeModule('Admin Controls'), async (req, res) => {
+  try {
+    const runtimeConfig = await getMergedRuntimeConfig();
+    res.json({
+      ...runtimeConfig.raw,
+      permissions: runtimeConfig.permissions,
+      workflow: runtimeConfig.workflow,
+      notifications: runtimeConfig.notifications,
+      global: runtimeConfig.global,
+      system_settings: runtimeConfig.systemSettings,
+      retention_months: runtimeConfig.retentionMonths,
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post('/api/admin/config', authenticateToken, authorizeRoles('Admin'), authorizeModule('Admin Controls'), async (req, res) => {
   const { key, value } = req.body;
   if (!key) return res.status(400).json({ error: 'Missing config key' });
   const validationError = validateAdminConfig(key, value);
@@ -912,6 +1696,29 @@ app.post('/api/admin/config', authenticateToken, authorizeRoles('Admin'), async 
       'INSERT INTO system_config (key, value, updated_at) VALUES ($1, $2, NOW()) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = NOW()',
       [key, JSON.stringify(value)]
     );
+
+    if (key === 'global') {
+      const currentSystemSettings = (await getMergedRuntimeConfig()).systemSettings;
+      const nextSystemSettings = {
+        ...currentSystemSettings,
+        general: {
+          ...currentSystemSettings.general,
+          ...value,
+        },
+      };
+      await query(
+        'INSERT INTO system_config (key, value, updated_at) VALUES ($1, $2, NOW()) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = NOW()',
+        ['system_settings', JSON.stringify(nextSystemSettings)]
+      );
+    }
+
+    if (key === 'system_settings' && value?.general) {
+      await query(
+        'INSERT INTO system_config (key, value, updated_at) VALUES ($1, $2, NOW()) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = NOW()',
+        ['global', JSON.stringify(value.general)]
+      );
+    }
+
     await createAuditLog(pool, null, 'SYSTEM_CONFIG_UPDATED', req.user?.name || 'Admin', { key });
     res.json({ message: 'Config updated' });
   } catch (err) {
@@ -919,25 +1726,17 @@ app.post('/api/admin/config', authenticateToken, authorizeRoles('Admin'), async 
   }
 });
 
-app.post('/api/admin/retention/manual-archive', authenticateToken, authorizeRoles('Admin'), async (req, res) => {
+app.post('/api/admin/retention/manual-archive', authenticateToken, authorizeRoles('Admin'), authorizeModule('Admin Controls'), async (req, res) => {
+  const execute = req.body?.execute === true;
   try {
-    const configResult = await query('SELECT value FROM system_config WHERE key = $1 LIMIT 1', ['retention_months']);
-    let retentionMonths = 24;
-    if (configResult.rows[0]?.value !== undefined) {
-      try {
-        const parsed = typeof configResult.rows[0].value === 'string'
-          ? JSON.parse(configResult.rows[0].value)
-          : configResult.rows[0].value;
-        if (Number.isInteger(parsed)) retentionMonths = parsed;
-      } catch {
-        // keep default
-      }
-    }
+    const runtimeConfig = await getMergedRuntimeConfig();
+    const retentionMonths = runtimeConfig.retentionMonths;
 
     const candidateResult = await query(
       `SELECT id, ticket_number, closed_by_date
        FROM job_cards
        WHERE status IN ('Closed', 'SignedOff')
+         AND archived_at IS NULL
          AND COALESCE(closed_by_date::date, updated_at::date, created_at::date) < (CURRENT_DATE - ($1::int || ' months')::interval)
        ORDER BY COALESCE(closed_by_date::date, updated_at::date, created_at::date) ASC
        LIMIT 500`,
@@ -945,15 +1744,31 @@ app.post('/api/admin/retention/manual-archive', authenticateToken, authorizeRole
     );
 
     const candidates = candidateResult.rows;
+
+    if (execute && candidates.length > 0) {
+      await query(
+        `UPDATE job_cards
+         SET archived_at = NOW(),
+             archived_by = $1,
+             archive_reason = 'Retention policy archive',
+             archive_bucket = 'cold_storage',
+             updated_at = NOW()
+         WHERE id = ANY($2::text[])`,
+        [req.user?.name || 'Admin', candidates.map((candidate) => candidate.id)]
+      );
+    }
+
     await createAuditLog(pool, null, 'MANUAL_ARCHIVE_SWEEP_TRIGGERED', req.user?.name || 'Admin', {
       retentionMonths,
+      executed: execute,
       candidateCount: candidates.length,
       candidateSample: candidates.slice(0, 20).map((c) => c.ticket_number),
     });
 
     res.json({
-      message: 'Manual archive sweep executed in preview mode.',
+      message: execute ? 'Manual archive sweep executed.' : 'Manual archive sweep executed in preview mode.',
       retentionMonths,
+      executed: execute,
       candidateCount: candidates.length,
       candidates: candidates.slice(0, 50),
     });
@@ -970,4 +1785,3 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
     console.log(`Backend server running on port ${PORT} (exposed to network)`);
   });
 }
-

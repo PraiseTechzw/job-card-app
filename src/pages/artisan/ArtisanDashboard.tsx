@@ -80,24 +80,28 @@ const ArtisanDashboard: React.FC = () => {
   return (
     <div className={styles.pageContainer}>
       <SEO title="Artisan Dashboard" description="Manage your assigned maintenance tasks and work execution." />
-      <header className={styles.tableHeader}>
-        <div>
-          <h1 className={styles.pageTitle} style={{ fontSize: '2rem' }}>Artisan Dashboard</h1>
-          <p className={styles['text-muted']}>Manage your workload, record execution details and submit for review</p>
+      <header className={styles.hero}>
+        <div className={styles.heroContent}>
+          <div className={styles.heroTitleRow}>
+            <span className={styles.heroIcon}>
+              <FileText size={22} />
+            </span>
+            <h1 className={styles.pageTitle}>Artisan Dashboard</h1>
+          </div>
+          <p className={styles.heroSubtitle}>Manage your assigned work, continue active jobs, and keep review-ready tasks easy to spot on smaller screens.</p>
         </div>
       </header>
 
-      {/* Stats Summary */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+      <div className={styles.statsGrid}>
         {[
           { label: 'Assigned', val: dashboardStats.assigned, color: 'text-slate-300', icon: FileText },
           { label: 'In Progress', val: dashboardStats.inProgress, color: 'text-amber-400', icon: Clock },
           { label: 'Waiting Review', val: dashboardStats.waitingReview, color: 'text-blue-400', icon: CheckCircle2 },
           { label: 'Overdue', val: dashboardStats.overdue, color: 'text-red-400', icon: AlertCircle }
         ].map(stat => (
-          <div key={stat.label} className="glass-panel p-4 flex items-center justify-between border border-white/5 rounded-2xl bg-slate-900/50">
+          <div key={stat.label} className={`${styles.statCard}`}>
             <div>
-              <p className="text-slate-500 text-xs font-bold uppercase tracking-wider mb-1">{stat.label}</p>
+              <p className={styles.statLabel}>{stat.label}</p>
               <p className={`text-3xl font-bold ${stat.color}`}>{stat.val}</p>
             </div>
             <div className={`p-3 rounded-full bg-slate-800 ${stat.color}`}>
@@ -107,33 +111,30 @@ const ArtisanDashboard: React.FC = () => {
         ))}
       </div>
 
-      {/* Filter and Search Bar */}
-      <div className="flex flex-col md:flex-row gap-4 mb-8">
-        <div className="relative flex-1 group">
-          <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 group-hover:text-blue-400 transition-colors" />
-          <input 
-            type="text" 
-            placeholder="Search by job ID, plant No, or keyword..." 
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full bg-slate-900/80 border border-white/10 rounded-xl pl-12 pr-4 py-3.5 text-white text-sm outline-none focus:border-blue-500/50 focus:ring-2 focus:ring-blue-500/20 transition-all shadow-inner block"
-          />
-        </div>
-        
-        <div className="flex gap-2 overflow-x-auto pb-2 md:pb-0 scrollbar-hide">
-          {(['All', 'Assigned', 'In Progress', 'Waiting Review', 'Overdue'] as const).map(f => (
-            <button
-              key={f}
-              onClick={() => setFilter(f)}
-              className={`px-5 py-3 whitespace-nowrap rounded-xl text-sm font-semibold transition-all ${
-                filter === f 
-                  ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/25 border-transparent'
-                  : 'bg-slate-900/60 text-slate-400 hover:bg-slate-800 border-white/5 border'
-              }`}
-            >
-              {f}
-            </button>
-          ))}
+      <div className={styles.filterPanel}>
+        <div className={styles.filterRow}>
+          <div className={styles.searchWrap}>
+            <Search size={18} className={styles.searchIcon} />
+            <input 
+              type="text" 
+              placeholder="Search by job ID, plant no, or keyword..." 
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className={styles.searchInput}
+            />
+          </div>
+
+          <div className={styles.chipRow}>
+            {(['All', 'Assigned', 'In Progress', 'Waiting Review', 'Overdue'] as const).map(f => (
+              <button
+                key={f}
+                onClick={() => setFilter(f)}
+                className={`${styles.chip} ${filter === f ? styles.chipActive : ''}`}
+              >
+                {f}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
@@ -244,6 +245,7 @@ const ArtisanDashboard: React.FC = () => {
         )}
       </div>
     </div>
+    
   );
 };
 

@@ -16,12 +16,23 @@ export default function AuditLogs() {
   const [search, setSearch] = useState('');
   const [filterAction, setFilterAction] = useState('');
   const [filterUser, setFilterUser] = useState('');
+  const [page, setPage] = useState(1);
+  const [pagination, setPagination] = useState({ page: 1, limit: 25, total: 0, totalPages: 1 });
 
   const fetchLogs = async () => {
     setIsLoading(true);
     try {
-      const res = await axios.get('/api/admin/audit-logs');
-      setLogs(res.data);
+      const res = await axios.get('/api/admin/audit-logs', {
+        params: {
+          page,
+          limit: pagination.limit,
+          search: search || undefined,
+          action: filterAction || undefined,
+          user: filterUser || undefined,
+        },
+      });
+      setLogs(res.data?.items || []);
+      setPagination(res.data?.pagination || { page: 1, limit: 25, total: 0, totalPages: 1 });
     } catch (e) {
       console.error('Audit log fetch failed', e);
     } finally {
@@ -31,26 +42,32 @@ export default function AuditLogs() {
 
   useEffect(() => {
     fetchLogs();
-  }, []);
+  }, [page, search, filterAction, filterUser]);
 
-  const filteredLogs = useMemo(() => {
-    let list = logs;
-    const s = search.toLowerCase();
-    
-    if (search) {
-      list = list.filter(l => 
-        (l.performed_by?.toLowerCase().includes(s)) ||
-        (l.action?.toLowerCase().includes(s)) ||
-        (l.details?.toLowerCase().includes(s))
-      );
+  const uniqueActions = useMemo(() => Array.from(new Set(logs.map(l => l.action))).filter(Boolean), [logs]);
+  const uniqueUsers = useMemo(() => Array.from(new Set(logs.map(l => l.performedBy))).filter(Boolean), [logs]);
+
+  const handleExport = async () => {
+    try {
+      const res = await axios.get('/api/admin/audit-logs/export', {
+        params: {
+          search: search || undefined,
+          action: filterAction || undefined,
+          user: filterUser || undefined,
+        },
+        responseType: 'blob',
+      });
+
+      const url = window.URL.createObjectURL(new Blob([res.data], { type: 'text/csv;charset=utf-8' }));
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = 'audit-logs.csv';
+      link.click();
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Audit export failed', error);
     }
-    if (filterAction) list = list.filter(l => l.action === filterAction);
-    if (filterUser) list = list.filter(l => l.performed_by === filterUser);
-    return list;
-  }, [logs, search, filterAction, filterUser]);
-
-  const uniqueActions = useMemo(() => Array.from(new Set(logs.map(l => l.action))), [logs]);
-  const uniqueUsers = useMemo(() => Array.from(new Set(logs.map(l => l.performed_by))), [logs]);
+  };
 
   return (
     <div className={`${styles.pageContainer} ${adminStyles.page}`}>
@@ -74,7 +91,7 @@ export default function AuditLogs() {
             </div>
           </div>
           <div className={adminStyles.headerActions}>
-            <button className={`btn btn-ghost ${adminStyles.compactButton}`} style={{ gap: 8, border: '1px solid rgba(148,163,184,0.14)' }}>
+            <button className={`btn btn-ghost ${adminStyles.compactButton}`} style={{ gap: 8, border: '1px solid rgba(148,163,184,0.14)' }} onClick={handleExport}>
               <Download size={16} /> Export CSV
             </button>
           </div>
@@ -108,7 +125,7 @@ export default function AuditLogs() {
               <option value="">All Users</option>
               {uniqueUsers.map(u => <option key={u} value={u}>{u}</option>)}
             </select>
-            <button className={`btn btn-ghost ${adminStyles.compactButton}`} onClick={() => { setSearch(''); setFilterAction(''); setFilterUser(''); fetchLogs(); }}>
+            <button className={`btn btn-ghost ${adminStyles.compactButton}`} onClick={() => { setSearch(''); setFilterAction(''); setFilterUser(''); setPage(1); }}>
                <RefreshCw size={14} />
             </button>
           </div>
@@ -133,14 +150,14 @@ export default function AuditLogs() {
               </tr>
             </thead>
             <tbody>
-              {filteredLogs.map(log => (
+              {logs.map(log => (
                 <tr key={log.id}>
                   <td>
-                    <div style={{ fontSize: 12, fontWeight: 700, color: '#94a3b8' }}>{new Date(log.created_at || log.createdAt).toLocaleDateString('en-ZW')}</div>
-                    <div style={{ fontSize: 11, color: '#475569' }}>{new Date(log.created_at || log.createdAt).toLocaleTimeString('en-ZW', { hour12: false })}</div>
+                    <div style={{ fontSize: 12, fontWeight: 700, color: '#94a3b8' }}>{new Date(log.createdAt).toLocaleDateString('en-ZW')}</div>
+                    <div style={{ fontSize: 11, color: '#475569' }}>{new Date(log.createdAt).toLocaleTimeString('en-ZW', { hour12: false })}</div>
                   </td>
                   <td>
-                    <div style={{ fontWeight: 700, fontSize: 13, color: '#e2e8f0' }}>{log.performed_by || log.performedBy}</div>
+                    <div style={{ fontWeight: 700, fontSize: 13, color: '#e2e8f0' }}>{log.performedBy}</div>
                     <div style={{ fontSize: 11, color: '#444c5a' }}>System Node: Internal</div>
                   </td>
                   <td>
@@ -153,7 +170,7 @@ export default function AuditLogs() {
                   </td>
                   <td>
                     <div style={{ fontSize: 12, color: '#64748b', maxWidth: 400, lineHeight: 1.5 }}>
-                      {log.details || `Admin action performed on ${log.job_card_id || 'System level'}`}
+                      {log.details || `Admin action performed on ${log.jobCardId || 'System level'}`}
                     </div>
                   </td>
                   <td style={{ textAlign: 'right' }}>
@@ -161,7 +178,7 @@ export default function AuditLogs() {
                   </td>
                 </tr>
               ))}
-              {filteredLogs.length === 0 && (
+              {logs.length === 0 && (
                 <tr>
                   <td colSpan={5} style={{ textAlign: 'center', padding: 40 }}>
                     <FileText size={48} color="#1e293b" style={{ margin: '0 auto 16px' }} />
@@ -175,8 +192,9 @@ export default function AuditLogs() {
       </div>
 
       <div className={adminStyles.toolbarGroup} style={{ justifyContent: 'flex-end' }}>
-         <button className="btn btn-ghost" disabled={true} style={{ fontSize: 13 }}>Previous</button>
-         <button className="btn btn-ghost" style={{ fontSize: 13, background: 'rgba(255,255,255,0.04)' }}>Next Page <ChevronRight size={14} /></button>
+         <button className="btn btn-ghost" disabled={page <= 1} style={{ fontSize: 13 }} onClick={() => setPage((prev) => Math.max(1, prev - 1))}>Previous</button>
+         <span style={{ fontSize: 12, color: '#64748b' }}>Page {pagination.page} of {pagination.totalPages}</span>
+         <button className="btn btn-ghost" disabled={page >= pagination.totalPages} style={{ fontSize: 13, background: 'rgba(255,255,255,0.04)' }} onClick={() => setPage((prev) => Math.min(pagination.totalPages, prev + 1))}>Next Page <ChevronRight size={14} /></button>
       </div>
     </div>
   );

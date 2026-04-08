@@ -46,7 +46,7 @@ const ArtisanJobDetail: React.FC = () => {
 
   return (
     <div className={styles.pageContainer}>
-      <header className={`${styles.tableHeader} flex items-center gap-4`}>
+      <header className={styles.hero}>
         <button 
           onClick={() => navigate('/artisan/dashboard')}
           className="p-3 rounded-xl bg-slate-800/50 hover:bg-slate-700 text-slate-300 transition-colors border border-white/5"
@@ -55,7 +55,7 @@ const ArtisanJobDetail: React.FC = () => {
         </button>
         <div>
           <h1 className={styles.pageTitle} style={{ fontSize: '1.75rem' }}>Job Card Details</h1>
-          <p className={styles['text-muted']}>{job.ticketNumber} - {job.plantDescription}</p>
+          <p className={styles.heroSubtitle}>{job.ticketNumber} - {job.plantDescription}</p>
         </div>
       </header>
 
@@ -182,7 +182,7 @@ const ArtisanJobDetail: React.FC = () => {
       </div>
 
       {/* Floating Action Bar */}
-      <div className="fixed bottom-0 left-0 right-0 lg:left-[280px] p-4 lg:p-6 bg-slate-900/90 backdrop-blur-md border-t border-white/10 flex justify-end gap-4 z-50">
+      <div className="fixed bottom-0 left-0 right-0 lg:left-[280px] p-4 lg:p-6 bg-slate-900/90 backdrop-blur-md border-t border-white/10 flex flex-wrap justify-end gap-4 z-50">
         <button 
           onClick={() => navigate('/artisan/dashboard')}
           className="px-6 py-3 rounded-xl bg-slate-800 text-white font-bold hover:bg-slate-700 transition"
