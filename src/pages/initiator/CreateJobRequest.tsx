@@ -46,6 +46,7 @@ export default function CreateJobRequest() {
   const { user } = useAuth();
 
   const editing = id ? jobCards.find(c => c.id === id) : undefined;
+  const editableStatuses: Array<JobCard['status']> = ['Draft', 'Rejected', 'Pending_Supervisor'];
 
   const today = new Date().toISOString().split('T')[0];
   const nowTime = new Date().toTimeString().split(' ')[0].substring(0, 5);
@@ -197,6 +198,20 @@ export default function CreateJobRequest() {
   const TOTAL_STEPS = 4;
   const isEdit = !!editing;
   const isResubmit = editing?.status === 'Rejected';
+  const isCorrectionEdit = editing?.status === 'Pending_Supervisor';
+
+  if (editing && !editableStatuses.includes(editing.status)) {
+    return (
+      <div className={styles.pageContainer} style={{ maxWidth: 780, margin: '0 auto' }}>
+        <button className="btn btn-ghost" onClick={() => navigate('/initiator/dashboard')} style={{ marginBottom: 20, gap: 6, fontSize: 13 }}>
+          <ArrowLeft size={15} /> Back to Dashboard
+        </button>
+        <div className={styles.notice} style={{ border: '1px solid rgba(239,68,68,0.25)', background: 'rgba(239,68,68,0.08)' }}>
+          This request cannot be edited at its current status: <strong>{editing.status}</strong>.
+        </div>
+      </div>
+    );
+  }
 
   const panelStyle = {
     background: 'rgba(15,23,42,0.6)',
@@ -213,12 +228,14 @@ export default function CreateJobRequest() {
 
       <div className={styles.heroContent} style={{ marginBottom: 26 }}>
         <h1 className={styles.pageTitle} style={{ marginBottom: 6 }}>
-          {isResubmit ? '🔄 Resubmit Request' : isEdit ? '✏️ Edit Draft Request' : '📋 New Maintenance Request'}
+          {isResubmit ? '🔄 Resubmit Request' : isCorrectionEdit ? '🛠️ Edit Submitted Request' : isEdit ? '✏️ Edit Draft Request' : '📋 New Maintenance Request'}
         </h1>
         <p className={styles.heroSubtitle}>
           {isResubmit
             ? 'Your previous request was returned. Review the supervisor comments and resubmit with corrections.'
-            : 'Fill out each section carefully. Vague or incomplete requests will be returned.'}
+            : isCorrectionEdit
+              ? 'Update required fields for supervisor review and submit the correction.'
+              : 'Fill out each section carefully. Vague or incomplete requests will be returned.'}
         </p>
       </div>
 

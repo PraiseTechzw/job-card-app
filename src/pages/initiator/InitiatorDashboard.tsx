@@ -103,6 +103,9 @@ export default function InitiatorDashboard() {
     { key: 'Rejected' as FilterKey,         label: `Rejected (${rejected.length})` },
   ];
 
+  const canInitiatorEdit = (status: string) => ['Draft', 'Rejected'].includes(status);
+  const getEditLabel = (status: string) => (status === 'Rejected' ? 'Edit & Resubmit' : 'Edit Draft');
+
   return (
     <div className={styles.pageContainer}>
       <header className={styles.hero}>
@@ -231,10 +234,10 @@ export default function InitiatorDashboard() {
                   </td>
                   <td>
                     <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end' }}>
-                      {card.status === 'Draft' && (
+                      {canInitiatorEdit(card.status) && (
                         <button className="btn btn-primary" style={{ padding: '4px 12px', fontSize: 12, gap: 4 }}
                           onClick={() => navigate(`/initiator/edit/${card.id}`)}>
-                          <Edit2 size={12} /> Edit & Submit
+                          <Edit2 size={12} /> {getEditLabel(card.status)}
                         </button>
                       )}
                       {card.status === 'Awaiting_SignOff' && (

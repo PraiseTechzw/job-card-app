@@ -66,7 +66,7 @@ export default function RequestDetails() {
     );
   }
 
-  const canEdit = job.status === 'Draft';
+  const canEdit = job.status === 'Draft' || job.status === 'Pending_Supervisor';
   const canResubmit = job.status === 'Rejected';
   const needsSignOff = job.status === 'Awaiting_SignOff';
 
@@ -92,7 +92,7 @@ export default function RequestDetails() {
         <div className={styles.heroActions}>
           {canEdit && (
             <button className="btn btn-primary" onClick={() => navigate(`/initiator/edit/${job.id}`)} style={{ gap: 6, fontSize: 13 }}>
-              <Edit2 size={14} /> Edit Draft
+              <Edit2 size={14} /> {job.status === 'Draft' ? 'Edit Draft' : 'Edit Correction'}
             </button>
           )}
           {canResubmit && (
