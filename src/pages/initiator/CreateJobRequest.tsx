@@ -117,6 +117,8 @@ export default function CreateJobRequest() {
       e.defect = 'Please describe the fault in at least 15 characters. Vague entries like "not working" will be rejected.';
     if (!form.workRequest?.trim())
       e.workRequest = 'Describe what maintenance work needs to be done';
+    if (!form.allocatedTrades || form.allocatedTrades.length === 0)
+      e.allocatedTrades = 'Select at least one Trade Allocation before submitting.';
     setErrors(e);
     return Object.keys(e).length === 0;
   };
@@ -153,8 +155,13 @@ export default function CreateJobRequest() {
   };
 
   const handleSubmit = async () => {
-    if (!validateStep1() || !validateStep2() || !validateStep3()) {
-      setStep(1);
+    const step1Ok = validateStep1();
+    const step2Ok = step1Ok ? validateStep2() : false;
+    const step3Ok = step1Ok && step2Ok ? validateStep3() : false;
+    if (!step1Ok || !step2Ok || !step3Ok) {
+      if (!step1Ok) setStep(1);
+      else if (!step2Ok) setStep(2);
+      else setStep(3);
       alert('Please complete all required fields before submitting.');
       return;
     }
@@ -469,7 +476,7 @@ export default function CreateJobRequest() {
                 </div>
               </div>
               <div>
-                <Label text="Suggested Trade (optional)" />
+                <Label text="Trade Allocation" required />
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 8 }}>
                   {TRADE_OPTIONS.map(t => {
                     const sel = (form.allocatedTrades || []).includes(t);
@@ -489,6 +496,7 @@ export default function CreateJobRequest() {
                     );
                   })}
                 </div>
+                <FieldError msg={errors.allocatedTrades} />
               </div>
             </div>
           </div>
@@ -513,6 +521,7 @@ export default function CreateJobRequest() {
               ['Safety Risk', safetyLevel],
               ['Production Affected', productionAffected],
               ['Repeat Failure', repeatFailure],
+              ['Trade Allocation', (form.allocatedTrades || []).join(', ')],
             ].map(([l, v]) => (
               <div key={l} style={{ display: 'flex', gap: 16, padding: '8px 0', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
                 <span style={{ fontSize: 12, color: '#475569', width: 180, flexShrink: 0 }}>{l}</span>

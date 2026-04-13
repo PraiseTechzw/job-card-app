@@ -750,6 +750,13 @@ app.post('/api/job-cards', authenticateToken, async (req, res) => {
   const placeholders = values.map((_, i) => `$${i + 1}`).join(', ');
 
   try {
+    if (data.status === 'Pending_Supervisor') {
+      const tradeAllocations = data.allocated_trades;
+      if (!Array.isArray(tradeAllocations) || tradeAllocations.length === 0) {
+        return res.status(400).json({ error: 'Missing mandatory workflow fields: Trade Allocation' });
+      }
+    }
+
     const runtimeConfig = await getMergedRuntimeConfig();
     const result = await query(
       `INSERT INTO job_cards (${fields.join(', ')}) VALUES (${placeholders}) RETURNING *`,
@@ -808,9 +815,15 @@ app.patch('/api/job-cards/:id', authenticateToken, async (req, res) => {
       const currentRule = runtimeConfig.workflow?.[currentStatus];
       const mergedRecord = { ...toCamel(currentRecord), ...sanitizedUpdate };
       const missingFields = listMissingMandatoryFields(mergedRecord, currentRule?.mandatoryFields || []);
+      if (nextStatus === 'Pending_Supervisor') {
+        const trades = mergedRecord?.allocatedTrades;
+        if (!Array.isArray(trades) || trades.length === 0) {
+          missingFields.push('Trade Allocation');
+        }
+      }
       if (missingFields.length > 0) {
         return res.status(400).json({
-          error: `Missing mandatory workflow fields: ${missingFields.join(', ')}`,
+          error: `Missing mandatory workflow fields: ${[...new Set(missingFields)].join(', ')}`,
         });
       }
     }
@@ -854,6 +867,66 @@ app.patch('/api/job-cards/:id', authenticateToken, async (req, res) => {
     res.json(toCamel(updateResult.rows[0]));
   } catch (err) {
     console.error('Patch failed:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post('/api/job-cards/:id/notify-missing-fields', authenticateToken, authorizeRoles('Supervisor', 'EngSupervisor', 'Admin', 'HOD'), async (req, res) => {
+  const { missingFields, attemptedStatus } = req.body || {};
+  if (!Array.isArray(missingFields) || missingFields.length === 0) {
+    return res.status(400).json({ error: 'missingFields must be a non-empty array.' });
+  }
+
+  try {
+    const result = await query('SELECT * FROM job_cards WHERE id = $1', [req.params.id]);
+    if (result.rows.length === 0) return res.status(404).json({ error: 'Card not found' });
+
+    const job = result.rows[0];
+    const requestedBy = job.requested_by;
+    if (!requestedBy) {
+      return res.status(400).json({ error: 'Cannot notify requester: requestedBy is not set on this job.' });
+    }
+
+    const runtimeConfig = await getMergedRuntimeConfig();
+    const notificationConfig = runtimeConfig?.notifications?.['Rejection / Return'] || {};
+    const channels = {
+      email: notificationConfig.email !== false,
+      inApp: notificationConfig.inApp !== false,
+      sms: notificationConfig.sms === true,
+    };
+
+    const safeMissingFields = missingFields
+      .map((field) => String(field || '').trim())
+      .filter(Boolean)
+      .slice(0, 6);
+
+    const statusLabel = String(job.status || '').replaceAll('_', ' ');
+    const nextLabel = String(attemptedStatus || '').replaceAll('_', ' ');
+    const message = `Megapak Action Required: Job ${job.ticket_number || 'UNKNOWN'} (${job.plant_description || 'Asset'}) cannot move from ${statusLabel}${nextLabel ? ` to ${nextLabel}` : ''}. Missing fields: ${safeMissingFields.join(', ')}. Please update and resubmit.`;
+
+    await dispatchNotificationPlan({
+      eventName: 'Missing Workflow Fields',
+      jobCardId: job.id,
+      channels,
+      targets: [{ kind: 'person', name: requestedBy, includeUsers: true, includeArtisans: false }],
+      message,
+    }, runtimeConfig);
+
+    await createAuditLog(
+      pool,
+      req.params.id,
+      'MISSING_FIELDS_NOTIFICATION_SENT',
+      req.user?.name || 'System',
+      {
+        requestedBy,
+        attemptedStatus: attemptedStatus || null,
+        missingFields: safeMissingFields,
+      }
+    );
+
+    res.json({ ok: true, notified: requestedBy, missingFields: safeMissingFields });
+  } catch (err) {
+    console.error('Missing fields notify failed:', err);
     res.status(500).json({ error: err.message });
   }
 });

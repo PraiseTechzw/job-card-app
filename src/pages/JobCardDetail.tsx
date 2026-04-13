@@ -106,7 +106,20 @@ const JobCardDetail: React.FC = () => {
           const reason = missingFields.length > 1
             ? `Missing fields: ${missingFields.join(', ')}.`
             : `Missing field: ${firstField}.`;
-          toast.error(`Approval blocked. ${reason} Action owner: ${owner}.`);
+          if (owner === 'Initiator (Requester)') {
+            try {
+              const notifyRes = await axios.post(`/api/job-cards/${card.id}/notify-missing-fields`, {
+                missingFields,
+                attemptedStatus: newStatus,
+              });
+              const notified = notifyRes?.data?.notified || card.requestedBy || 'Requester';
+              toast.error(`Approval blocked. ${reason} Action owner: ${owner}. ${notified} has been notified.`);
+            } catch (notifyErr: any) {
+              toast.error(`Approval blocked. ${reason} Action owner: ${owner}. Failed to notify requester automatically.`);
+            }
+          } else {
+            toast.error(`Approval blocked. ${reason} Action owner: ${owner}.`);
+          }
           return;
         }
         toast.error(serverMsg);
