@@ -163,12 +163,36 @@ const resolveRecipients = async (recipientTokens, job) => {
   return recipients;
 };
 
+const normalizeWorkflowFieldName = (value) =>
+  String(value || '')
+    .trim()
+    .toLowerCase()
+    .replace(/[\s_-]+/g, '');
+
+const WORKFLOW_FIELD_ALIASES_NORMALIZED = Object.entries(WORKFLOW_FIELD_ALIASES).reduce((acc, [label, key]) => {
+  acc[normalizeWorkflowFieldName(label)] = key;
+  return acc;
+}, {});
+
+const getRecordValueLoose = (record, fieldName) => {
+  if (!record || !fieldName) return undefined;
+  if (Object.prototype.hasOwnProperty.call(record, fieldName)) return record[fieldName];
+  const normalizedName = normalizeWorkflowFieldName(fieldName);
+  for (const key of Object.keys(record)) {
+    if (normalizeWorkflowFieldName(key) === normalizedName) return record[key];
+  }
+  return undefined;
+};
+
 const getFieldValue = (record, fieldName) => {
   if (!fieldName) return undefined;
-  const direct = record[fieldName];
+  const direct = getRecordValueLoose(record, fieldName);
   if (direct !== undefined && direct !== null && direct !== '') return direct;
-  const alias = WORKFLOW_FIELD_ALIASES[fieldName];
-  if (alias) return record[alias];
+
+  const alias =
+    WORKFLOW_FIELD_ALIASES[fieldName] ||
+    WORKFLOW_FIELD_ALIASES_NORMALIZED[normalizeWorkflowFieldName(fieldName)];
+  if (alias) return getRecordValueLoose(record, alias);
   return undefined;
 };
 
