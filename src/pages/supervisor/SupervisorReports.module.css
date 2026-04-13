@@ -1,0 +1,224 @@
+.page {
+  --bg: #0b1220;
+  --panel: #111a2b;
+  --panel-soft: #0f1726;
+  --border: #223049;
+  --text: #e5edf8;
+  --text-muted: #8ea0bc;
+  --text-soft: #6f82a0;
+  --accent: #4f7cff;
+  --accent-soft: rgba(79, 124, 255, 0.18);
+  --danger: #f26b6b;
+  --warning: #e9b15a;
+  --success: #65c08a;
+  --radius: 14px;
+  --radius-sm: 10px;
+  color: var(--text);
+}
+
+.actionButton {
+  height: 40px;
+  padding: 0 14px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--panel-soft);
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  transition: background 0.2s ease, border-color 0.2s ease;
+}
+
+.actionButton:hover {
+  background: #162238;
+  border-color: #2d4161;
+}
+
+.actionPrimary {
+  border-color: #3856a9;
+  background: linear-gradient(180deg, #315ec8 0%, #2d54b5 100%);
+  color: #f5f8ff;
+}
+
+.actionPrimary:hover {
+  background: linear-gradient(180deg, #3a68d1 0%, #345dbf 100%);
+  border-color: #4c74d9;
+}
+
+.kpiGrid {
+  margin-bottom: 16px;
+  display: grid;
+  grid-template-columns: repeat(1, minmax(0, 1fr));
+  gap: 12px;
+}
+
+@media (min-width: 640px) {
+  .kpiGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1280px) {
+  .kpiGrid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+.groupA {
+  display: grid;
+  grid-template-columns: repeat(1, minmax(0, 1fr));
+  gap: 12px;
+}
+
+@media (min-width: 1280px) {
+  .groupA {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.groupBC {
+  margin-top: 12px;
+  display: grid;
+  grid-template-columns: repeat(1, minmax(0, 1fr));
+  gap: 12px;
+}
+
+@media (min-width: 1280px) {
+  .groupBC {
+    grid-template-columns: 1fr 2fr;
+  }
+}
+
+.bars {
+  display: grid;
+  gap: 12px;
+}
+
+.barRow {
+  display: grid;
+  gap: 6px;
+}
+
+.barHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 12px;
+}
+
+.barLabel {
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.barValue {
+  color: var(--text-soft);
+}
+
+.barTrack {
+  height: 8px;
+  border-radius: 999px;
+  background: #0b1322;
+  border: 1px solid #1d2a40;
+  overflow: hidden;
+}
+
+.barFill {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, rgba(79, 124, 255, 0.9), rgba(79, 124, 255, 0.55));
+}
+
+.barFillCritical {
+  background: linear-gradient(90deg, rgba(242, 107, 107, 0.9), rgba(242, 107, 107, 0.55));
+}
+
+.barFillHigh {
+  background: linear-gradient(90deg, rgba(233, 177, 90, 0.9), rgba(233, 177, 90, 0.55));
+}
+
+.barFillMedium {
+  background: linear-gradient(90deg, rgba(79, 124, 255, 0.9), rgba(79, 124, 255, 0.55));
+}
+
+.barFillLow {
+  background: linear-gradient(90deg, rgba(129, 148, 178, 0.9), rgba(129, 148, 178, 0.55));
+}
+
+.statusRow {
+  display: grid;
+  grid-template-columns: 140px 1fr 32px;
+  gap: 10px;
+  align-items: center;
+  font-size: 12px;
+}
+
+.statusLabel {
+  color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.statusCount {
+  text-align: right;
+  color: var(--text);
+}
+
+.tableWrap {
+  overflow-x: auto;
+}
+
+.table {
+  width: 100%;
+  min-width: 620px;
+  border-collapse: collapse;
+}
+
+.tableHeadRow {
+  border-bottom: 1px solid var(--border);
+}
+
+.tableHeadCell {
+  padding: 12px 12px 12px 0;
+  text-align: left;
+  color: var(--text-soft);
+  font-size: 11px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  font-weight: 600;
+}
+
+.tableHeadCellRight {
+  text-align: right;
+}
+
+.tableRow {
+  border-bottom: 1px solid #1b283f;
+}
+
+.tableCell {
+  padding: 12px 12px 12px 0;
+  color: var(--text);
+  font-size: 13px;
+}
+
+.tableCellRight {
+  text-align: right;
+  color: #c0cede;
+}
+
+.slaPill {
+  display: inline-flex;
+  justify-content: center;
+  min-width: 56px;
+  border-radius: 8px;
+  background: #1b2a44;
+  border: 1px solid #2a3f61;
+  padding: 4px 8px;
+  color: #d5e1f2;
+  font-size: 12px;
+  font-weight: 600;
+}

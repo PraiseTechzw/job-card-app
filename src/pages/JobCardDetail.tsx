@@ -9,6 +9,28 @@ import WorkflowTracker from '../components/WorkflowTracker';
 import JobCardBackForm from '../components/JobCardBackForm';
 import AuditTimeline from '../components/AuditTimeline';
 import styles from './JobCardDetail.module.css';
+import { toast } from 'react-hot-toast';
+
+const parseMissingWorkflowFields = (message: string): string[] => {
+  const match = message.match(/Missing mandatory workflow fields:\s*(.+)$/i);
+  if (!match?.[1]) return [];
+  return match[1]
+    .split(',')
+    .map((value) => value.trim())
+    .filter(Boolean);
+};
+
+const getActionOwnerForField = (fieldName: string, status: JobCardStatus): string => {
+  if (fieldName === 'Trade Allocation') {
+    if (status === 'Pending_Supervisor') return 'Initiator (Requester)';
+    if (status === 'Registered') return 'Supervisor / EngSupervisor';
+    return 'Job owner';
+  }
+  if (fieldName === 'Artisan Assignee') return 'Supervisor / EngSupervisor';
+  if (fieldName === 'Target Date') return status === 'Registered' ? 'Supervisor / EngSupervisor' : 'Initiator (Requester)';
+  if (fieldName === 'Priority' || fieldName === 'Plant Status') return 'Initiator (Requester)';
+  return 'Assigned workflow owner';
+};
 
 const JobCardDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -76,7 +98,18 @@ const JobCardDetail: React.FC = () => {
         setIsEditingBack(false);
       } catch (err: any) {
         console.error('Failed to update status:', err);
-        alert(err.response?.data?.error || 'Failed to update job card. Please check the workflow constraints.');
+        const serverMsg = err?.response?.data?.error || err?.message || 'Failed to update job card. Please check workflow constraints.';
+        const missingFields = parseMissingWorkflowFields(String(serverMsg));
+        if (missingFields.length > 0) {
+          const firstField = missingFields[0];
+          const owner = getActionOwnerForField(firstField, card.status);
+          const reason = missingFields.length > 1
+            ? `Missing fields: ${missingFields.join(', ')}.`
+            : `Missing field: ${firstField}.`;
+          toast.error(`Approval blocked. ${reason} Action owner: ${owner}.`);
+          return;
+        }
+        toast.error(serverMsg);
       }
     }
   };
@@ -177,7 +210,7 @@ const JobCardDetail: React.FC = () => {
                   <button 
                     onClick={() => {
                       if (!backData.workDoneDetails || !backData.causeOfFailure) {
-                        alert("Please fill out 'Details of Work Done' and 'Cause of Failure' before submitting.");
+                        toast.error("Please fill out 'Details of Work Done' and 'Cause of Failure' before submitting.");
                         return;
                       }
                       handleStatusTransition('Awaiting_SignOff', { dateFinished: new Date().toISOString().split('T')[0] })
