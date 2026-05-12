@@ -79,6 +79,10 @@ const JobCards: React.FC = () => {
 
   return (
     <div className={styles.pageContainer}>
+      {/* Debug banner to show raw counts when troubleshooting display issues */}
+      <div style={{ padding: '0.5rem 1rem', background: '#0f172a', color: '#93c5fd', borderRadius: 8, marginBottom: 12, fontSize: 12 }}>
+        Loaded: {cards.length} cards — Showing: {filteredCards.length} (role: {user?.role || 'unknown'})
+      </div>
       <SEO title="Job Card Register" description="View and manage all maintenance job cards and requests." />
       <div className={styles.tableHeader}>
         <div>

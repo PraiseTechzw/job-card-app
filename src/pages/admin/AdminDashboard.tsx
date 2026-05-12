@@ -20,10 +20,22 @@ export default function AdminDashboard() {
   useEffect(() => {
     async function fetchAdminStats() {
       try {
-        const [statsRes] = await Promise.all([
-          axios.get('/api/admin/stats')
-        ]);
-        setStats(statsRes.data);
+        const statsRes = await axios.get('/api/admin/stats');
+        let statsData = statsRes.data || {};
+
+        // If admin stats reports zero job cards (or missing), fall back to querying job-cards directly.
+        if (!Number.isInteger(statsData.jobCards) || statsData.jobCards === 0) {
+          try {
+            const jobsRes = await axios.get('/api/job-cards');
+            const jobCount = Array.isArray(jobsRes.data) ? jobsRes.data.length : 0;
+            statsData = { ...statsData, jobCards: jobCount };
+          } catch (fallbackErr) {
+            // swallow fallback error and keep original statsData
+            console.error('Fallback job-cards fetch failed', fallbackErr);
+          }
+        }
+
+        setStats(statsData);
       } catch (e) {
         console.error('Admin stats fetch failed', e);
       } finally {

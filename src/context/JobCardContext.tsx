@@ -54,6 +54,12 @@ export const JobCardProvider: React.FC<{ children: React.ReactNode }> = ({ child
         throw cardsRes.reason;
       }
 
+      // Debug: log fetched card count to help diagnose missing UI rows
+      try {
+        const len = Array.isArray(cardsData) ? cardsData.length : 0;
+        console.debug(`[JobCardContext] fetched job-cards: ${len}`);
+      } catch (e) { /* ignore */ }
+
       setJobCards(Array.isArray(cardsData) ? cardsData : []);
       setAllocationSheets(Array.isArray(sheetsData) ? sheetsData : []);
       setAssignments(Array.isArray(assignmentsData) ? assignmentsData : []);
