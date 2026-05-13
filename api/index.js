@@ -261,6 +261,7 @@ app.get('/api/runtime/bootstrap', authenticateToken, async (req, res) => {
       systemSettings: runtimeConfig.systemSettings,
       permissions: runtimeConfig.permissions,
       moduleAccess: getModuleAccessForRole(runtimeConfig.permissions, req.user?.role),
+      masterData: runtimeConfig.raw.master_data || {},
       userRole: req.user?.role,
     });
   } catch (err) {

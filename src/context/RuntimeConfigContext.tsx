@@ -10,6 +10,7 @@ interface RuntimeConfigValue {
     timezone: string;
     broadcastBanner: string;
   };
+  masterData: Record<string, any>;
   systemSettings: Record<string, any>;
   permissions: Record<string, Record<string, boolean>>;
   moduleAccess: ModuleAccess;
@@ -29,6 +30,7 @@ const defaultGlobalConfig = {
 export const RuntimeConfigProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user } = useAuth();
   const [globalConfig, setGlobalConfig] = useState(defaultGlobalConfig);
+  const [masterData, setMasterData] = useState<Record<string, any>>({});
   const [systemSettings, setSystemSettings] = useState<Record<string, any>>({});
   const [permissions, setPermissions] = useState<Record<string, Record<string, boolean>>>({});
   const [moduleAccess, setModuleAccess] = useState<ModuleAccess>({});
@@ -37,6 +39,7 @@ export const RuntimeConfigProvider: React.FC<{ children: React.ReactNode }> = ({
   const refresh = async () => {
     if (!user) {
       setGlobalConfig(defaultGlobalConfig);
+      setMasterData({});
       setSystemSettings({});
       setPermissions({});
       setModuleAccess({});
@@ -47,6 +50,7 @@ export const RuntimeConfigProvider: React.FC<{ children: React.ReactNode }> = ({
     try {
       const res = await axios.get('/api/runtime/bootstrap');
       setGlobalConfig((prev) => ({ ...prev, ...(res.data?.global || {}) }));
+      setMasterData(res.data?.masterData || {});
       setSystemSettings(res.data?.systemSettings || {});
       setPermissions(res.data?.permissions || {});
       setModuleAccess(res.data?.moduleAccess || {});
@@ -63,6 +67,7 @@ export const RuntimeConfigProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const value = useMemo<RuntimeConfigValue>(() => ({
     globalConfig,
+    masterData,
     systemSettings,
     permissions,
     moduleAccess,
@@ -73,7 +78,7 @@ export const RuntimeConfigProvider: React.FC<{ children: React.ReactNode }> = ({
       if (user?.role === 'Admin') return true;
       return Boolean(moduleAccess[moduleName]);
     },
-  }), [globalConfig, isLoading, moduleAccess, permissions, systemSettings, user?.role]);
+  }), [globalConfig, isLoading, masterData, moduleAccess, permissions, systemSettings, user?.role]);
 
   return (
     <RuntimeConfigContext.Provider value={value}>

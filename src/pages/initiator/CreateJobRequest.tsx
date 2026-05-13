@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import { useJobCards } from '../../context/JobCardContext';
 import { useAuth } from '../../context/AuthContext';
+import { useRuntimeConfig } from '../../context/RuntimeConfigContext';
 import type { JobCard, Trade } from '../../types';
 import styles from '../JobCards.module.css';
 
@@ -44,6 +45,7 @@ export default function CreateJobRequest() {
   const navigate = useNavigate();
   const { jobCards, addJobCard, updateJobCard, addAuditLog } = useJobCards();
   const { user } = useAuth();
+  const { masterData } = useRuntimeConfig();
 
   const editing = id ? jobCards.find(c => c.id === id) : undefined;
   const editableStatuses: Array<JobCard['status']> = ['Draft', 'Rejected', 'Pending_Supervisor'];
@@ -78,6 +80,46 @@ export default function CreateJobRequest() {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [step, setStep] = useState(1);
+
+  const machineOptions = useMemo(() => {
+    const fromMaster = Array.isArray(masterData?.['Plants / Assets'])
+      ? masterData['Plants / Assets']
+          .filter((item: any) => item?.active !== false)
+          .map((item: any) => ({
+            code: String(item.code || item.name || '').trim(),
+            name: String(item.name || item.code || '').trim(),
+          }))
+      : [];
+
+    const fromJobs = jobCards
+      .map((card) => ({
+        code: card.plantNumber?.trim() || '',
+        name: card.plantDescription?.trim() || '',
+      }))
+      .filter((item) => item.code || item.name);
+
+    return [...fromMaster, ...fromJobs].reduce<Array<{ code: string; name: string }>>((acc, item) => {
+      const key = `${item.code}::${item.name}`.toLowerCase();
+      if (!acc.some((existing) => `${existing.code}::${existing.name}`.toLowerCase() === key)) {
+        acc.push(item);
+      }
+      return acc;
+    }, []).sort((a, b) => a.code.localeCompare(b.code));
+  }, [jobCards, masterData]);
+
+  const selectMachine = (selectedValue: string) => {
+    if (!selectedValue) {
+      f('plantNumber', '');
+      f('plantDescription', '');
+      return;
+    }
+
+    const selected = machineOptions.find((item) => `${item.code}__${item.name}` === selectedValue);
+    if (selected) {
+      f('plantNumber', selected.code);
+      f('plantDescription', selected.name);
+    }
+  };
 
   const f = (field: keyof JobCard, val: any) => {
     setForm(p => ({ ...p, [field]: val }));
@@ -344,13 +386,29 @@ export default function CreateJobRequest() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4" style={{ marginBottom: 16 }}>
             <div>
-              <Label text="Plant Number / Asset ID" required />
-              <input className="form-input" value={form.plantNumber} onChange={e => f('plantNumber', e.target.value)} placeholder="e.g. PMP-042, CB-01" />
+              <Label text="Select Machine / Asset" required />
+              <select
+                className="form-select"
+                value={form.plantNumber && form.plantDescription ? `${form.plantNumber}__${form.plantDescription}` : ''}
+                onChange={(e) => selectMachine(e.target.value)}
+              >
+                <option value="">Choose a machine / asset...</option>
+                {machineOptions.map((item) => (
+                  <option key={`${item.code}__${item.name}`} value={`${item.code}__${item.name}`}>
+                    {item.code} - {item.name}
+                  </option>
+                ))}
+              </select>
+              {!machineOptions.length && (
+                <div style={{ fontSize: 11, color: '#f59e0b', marginTop: 6 }}>
+                  No machine registry found. Add plant / asset master data first.
+                </div>
+              )}
               <FieldError msg={errors.plantNumber} />
             </div>
             <div>
-              <Label text="Plant Description" required />
-              <input className="form-input" value={form.plantDescription} onChange={e => f('plantDescription', e.target.value)} placeholder="e.g. Conveyor Belt 4, Primary Pump" />
+              <Label text="Selected Machine Description" required />
+              <input className="form-input" value={form.plantDescription} readOnly placeholder="Select a machine above" />
               <FieldError msg={errors.plantDescription} />
             </div>
           </div>

@@ -3,6 +3,8 @@ import styles from './JobCardForm.module.css';
 import { FormField, Input, TextArea, Select, CheckboxGroup, RadioGroup } from '../components/Form';
 import type { JobCard, Trade, JobCardStatus } from '../types';
 import { useAuth } from '../context/AuthContext';
+import { useJobCards } from '../context/JobCardContext';
+import { useRuntimeConfig } from '../context/RuntimeConfigContext';
 import { Send, Save, ArrowLeft } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
@@ -19,6 +21,8 @@ const TRADE_OPTIONS: Trade[] = [
 
 const JobCardForm: React.FC<JobCardFormProps> = ({ initialData, onSave, isSubmitting }) => {
   const { user } = useAuth();
+  const { jobCards } = useJobCards();
+  const { masterData } = useRuntimeConfig();
   const navigate = useNavigate();
   
   const [formData, setFormData] = useState<Partial<JobCard>>({
@@ -40,6 +44,44 @@ const JobCardForm: React.FC<JobCardFormProps> = ({ initialData, onSave, isSubmit
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
+
+  const machineOptions = React.useMemo(() => {
+    const fromMaster = Array.isArray(masterData?.['Plants / Assets'])
+      ? masterData['Plants / Assets']
+          .filter((item: any) => item?.active !== false)
+          .map((item: any) => ({
+            code: String(item.code || item.name || '').trim(),
+            name: String(item.name || item.code || '').trim(),
+          }))
+      : [];
+
+    const fromJobs = jobCards
+      .map((card) => ({
+        code: card.plantNumber?.trim() || '',
+        name: card.plantDescription?.trim() || '',
+      }))
+      .filter((item) => item.code || item.name);
+
+    return [...fromMaster, ...fromJobs].reduce<Array<{ code: string; name: string }>>((acc, item) => {
+      const key = `${item.code}::${item.name}`.toLowerCase();
+      if (!acc.some((existing) => `${existing.code}::${existing.name}`.toLowerCase() === key)) {
+        acc.push(item);
+      }
+      return acc;
+    }, []).sort((a, b) => a.code.localeCompare(b.code));
+  }, [jobCards, masterData]);
+
+  const selectMachine = (selectedValue: string) => {
+    if (!selectedValue) {
+      setFormData((prev) => ({ ...prev, plantNumber: '', plantDescription: '' }));
+      return;
+    }
+
+    const selected = machineOptions.find((item) => `${item.code}__${item.name}` === selectedValue);
+    if (selected) {
+      setFormData((prev) => ({ ...prev, plantNumber: selected.code, plantDescription: selected.name }));
+    }
+  };
 
   const validate = () => {
     const newErrors: Record<string, string> = {};
@@ -151,18 +193,17 @@ const JobCardForm: React.FC<JobCardFormProps> = ({ initialData, onSave, isSubmit
           <h2 className={styles.sectionHeader}>2. PLANT & ASSET INFORMATION</h2>
           <div className={styles.grid}>
             <FormField label="Plant Number" required error={errors.plantNumber}>
-              <Input 
-                value={formData.plantNumber} 
-                onChange={e => handleChange('plantNumber', e.target.value)} 
-                placeholder="Asset ID"
+              <Select
+                value={formData.plantNumber && formData.plantDescription ? `${formData.plantNumber}__${formData.plantDescription}` : ''}
+                onChange={(e) => selectMachine(e.target.value)}
+                options={[
+                  { value: '', label: 'Choose a machine / asset...' },
+                  ...machineOptions.map((item) => ({ value: `${item.code}__${item.name}`, label: `${item.code} - ${item.name}` })),
+                ]}
               />
             </FormField>
             <FormField label="Plant Description" required error={errors.plantDescription}>
-              <Input 
-                value={formData.plantDescription} 
-                onChange={e => handleChange('plantDescription', e.target.value)} 
-                placeholder="e.g. Conveyor Belt 4"
-              />
+              <Input value={formData.plantDescription} readOnly placeholder="Select a machine above" />
             </FormField>
             <FormField label="Plant Status">
               <RadioGroup 

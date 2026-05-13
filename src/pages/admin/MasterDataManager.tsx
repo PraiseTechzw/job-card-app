@@ -11,7 +11,7 @@ import styles from '../JobCards.module.css';
 import adminStyles from './AdminTheme.module.css';
 
 const DATA_TYPES = [
-  'Departments', 'Plants / Assets', 'Equipment Categories', 
+  'Departments', 'Plants / Assets', 'Tools / Stores', 'Equipment Categories', 
   'Job Types', 'Failure Codes', 'Root Cause Codes', 'Sections'
 ];
 
@@ -22,7 +22,7 @@ export default function MasterDataManager() {
   const [isLoading, setIsLoading] = useState(true);
   const [masterData, setMasterData] = useState<any>({});
   const [showAddModal, setShowAddModal] = useState(false);
-  const [newItem, setNewItem] = useState({ code: '', name: '', department: '' });
+  const [newItem, setNewItem] = useState({ code: '', name: '', department: '', totalQty: '', usedQty: '' });
 
   const fetchMasterData = async () => {
     setIsLoading(true);
@@ -77,14 +77,23 @@ export default function MasterDataManager() {
   const handleAddItem = async (e: React.FormEvent) => {
     e.preventDefault();
     const id = crypto.randomUUID();
-    const itemToAdd = { ...newItem, id, active: true };
+    const totalQty = Number(newItem.totalQty || 0);
+    const usedQty = Number(newItem.usedQty || 0);
+    const itemToAdd = {
+      ...newItem,
+      id,
+      active: true,
+      totalQty: Number.isFinite(totalQty) ? totalQty : 0,
+      usedQty: Number.isFinite(usedQty) ? usedQty : 0,
+      remainingQty: Math.max((Number.isFinite(totalQty) ? totalQty : 0) - (Number.isFinite(usedQty) ? usedQty : 0), 0),
+    };
     const updatedList = [...(masterData[activeType] || []), itemToAdd];
     const updatedData = { ...masterData, [activeType]: updatedList };
     try {
       await axios.post('/api/admin/config', { key: 'master_data', value: updatedData });
       setMasterData(updatedData);
       setShowAddModal(false);
-      setNewItem({ code: '', name: '', department: '' });
+      setNewItem({ code: '', name: '', department: '', totalQty: '', usedQty: '' });
     } catch (e) {
       toast.error('Failed to add master record.');
     }
@@ -166,8 +175,11 @@ export default function MasterDataManager() {
                 <table className={styles.table}>
                   <thead>
                     <tr>
-                      <th>System Code</th>
-                      <th>Ref Description</th>
+                      <th>{activeType === 'Tools / Stores' ? 'Store Code' : 'System Code'}</th>
+                      <th>{activeType === 'Tools / Stores' ? 'Tool / Store Name' : 'Ref Description'}</th>
+                      {activeType === 'Tools / Stores' && <th>Total Qty</th>}
+                      {activeType === 'Tools / Stores' && <th>Used Qty</th>}
+                      {activeType === 'Tools / Stores' && <th>Left</th>}
                       <th>Status</th>
                       <th style={{ textAlign: 'right' }}>Actions</th>
                     </tr>
@@ -180,6 +192,9 @@ export default function MasterDataManager() {
                           <div style={{ fontSize: 13, fontWeight: 600, color: '#e2e8f0' }}>{item.name}</div>
                           {item.department && <div style={{ fontSize: 10, color: '#475569', marginTop: 2 }}>{item.department}</div>}
                         </td>
+                        {activeType === 'Tools / Stores' && <td style={{ fontSize: 13, color: '#cbd5e1' }}>{item.totalQty ?? 0}</td>}
+                        {activeType === 'Tools / Stores' && <td style={{ fontSize: 13, color: '#cbd5e1' }}>{item.usedQty ?? 0}</td>}
+                        {activeType === 'Tools / Stores' && <td style={{ fontSize: 13, color: '#cbd5e1' }}>{item.remainingQty ?? Math.max((Number(item.totalQty) || 0) - (Number(item.usedQty) || 0), 0)}</td>}
                         <td>
                           <div className="flex items-center gap-2">
                             <div style={{ width: 6, height: 6, borderRadius: '50%', background: item.active ? '#10b981' : '#64748b' }} />
@@ -202,7 +217,7 @@ export default function MasterDataManager() {
                     ))}
                     {filteredData.length === 0 && (
                       <tr>
-                        <td colSpan={4} style={{ textAlign: 'center', padding: 40, color: '#475569', fontSize: 13 }}>No master data records exist for this category.</td>
+                        <td colSpan={activeType === 'Tools / Stores' ? 7 : 4} style={{ textAlign: 'center', padding: 40, color: '#475569', fontSize: 13 }}>No master data records exist for this category.</td>
                       </tr>
                     )}
                   </tbody>
@@ -233,11 +248,11 @@ export default function MasterDataManager() {
             </div>
             <form onSubmit={handleAddItem} className="modal-body flex flex-col gap-4">
               <div className="form-group">
-                <label>System Code (Permanent / Unique)</label>
+                <label>{activeType === 'Tools / Stores' ? 'Store Code (Permanent / Unique)' : 'System Code (Permanent / Unique)'}</label>
                 <input required className="form-input" style={{ textTransform: 'uppercase' }} value={newItem.code} onChange={e => setNewItem({...newItem, code: e.target.value})} />
               </div>
               <div className="form-group">
-                <label>Descriptive Label</label>
+                <label>{activeType === 'Tools / Stores' ? 'Tool / Store Name' : 'Descriptive Label'}</label>
                 <input required className="form-input" value={newItem.name} onChange={e => setNewItem({...newItem, name: e.target.value})} />
               </div>
               {activeType === 'Plants / Assets' && (
@@ -251,6 +266,22 @@ export default function MasterDataManager() {
                     <option value="IT">IT</option>
                   </select>
                 </div>
+              )}
+              {activeType === 'Tools / Stores' && (
+                <>
+                  <div className="form-group">
+                    <label>Total Quantity</label>
+                    <input required type="number" min="0" className="form-input" value={newItem.totalQty} onChange={e => setNewItem({...newItem, totalQty: e.target.value})} />
+                  </div>
+                  <div className="form-group">
+                    <label>Used Quantity</label>
+                    <input required type="number" min="0" className="form-input" value={newItem.usedQty} onChange={e => setNewItem({...newItem, usedQty: e.target.value})} />
+                  </div>
+                  <div className="form-group">
+                    <label>Remaining Quantity</label>
+                    <input className="form-input" value={Math.max((Number(newItem.totalQty) || 0) - (Number(newItem.usedQty) || 0), 0)} readOnly />
+                  </div>
+                </>
               )}
               <div className="modal-footer" style={{ marginTop: 10 }}>
                 <button type="button" className="btn btn-ghost" onClick={() => setShowAddModal(false)}>Cancel</button>
