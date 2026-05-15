@@ -32,6 +32,7 @@ const JobCardForm: React.FC<JobCardFormProps> = ({ initialData, onSave, isSubmit
     requiredCompletionDate: initialData?.requiredCompletionDate || '',
     plantNumber: initialData?.plantNumber || '',
     plantDescription: initialData?.plantDescription || '',
+    	plantLocation: initialData?.plantLocation || '',
     plantStatus: initialData?.plantStatus || 'Run',
     defect: initialData?.defect || '',
     maintenanceSchedule: initialData?.maintenanceSchedule || '',
@@ -60,6 +61,22 @@ const JobCardForm: React.FC<JobCardFormProps> = ({ initialData, onSave, isSubmit
       }
       return acc;
     }, []).sort((a, b) => a.name.localeCompare(b.name));
+  }, [masterData]);
+
+  const locationOptions = React.useMemo(() => {
+    const fromMaster = masterData?.Locations || masterData?.locations || masterData?.['Locations'] || null;
+    if (Array.isArray(fromMaster)) {
+      return fromMaster.map((item: any) => {
+        if (typeof item === 'string') return String(item).trim();
+        if (item && (item.name || item.code)) return String(item.name || item.code).trim();
+        return '';
+      }).filter(Boolean).sort();
+    }
+
+    // fallback list extracted from provided image
+    return [
+      'BLOW','CREDITORS','ENGINEERING','HQ','IT','LIM','PET','POLYCYCLING','PREFORMS','QC LAB','ROTO','SACMI','SALES','STORES','TRADITIONAL CANTEEN','WARE HOUSE','WESTERN CANTEEN','WILLOWVALE MAHEU'
+    ];
   }, [masterData]);
 
   const selectMachine = (selectedValue: string) => {
@@ -195,6 +212,16 @@ const JobCardForm: React.FC<JobCardFormProps> = ({ initialData, onSave, isSubmit
             </FormField>
             <FormField label="Plant Description" required error={errors.plantDescription}>
               <Input value={formData.plantDescription} readOnly placeholder="Select a machine above" />
+            </FormField>
+            <FormField label="Location">
+              <Select
+                value={formData.plantLocation || ''}
+                onChange={e => handleChange('plantLocation', e.target.value)}
+                options={[
+                  { value: '', label: 'Choose a location...' },
+                  ...locationOptions.map((loc) => ({ value: loc, label: loc }))
+                ]}
+              />
             </FormField>
             <FormField label="Plant Status">
               <RadioGroup 

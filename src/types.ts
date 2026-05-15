@@ -135,6 +135,7 @@ export interface JobCard {
   // Plant Info
   plantNumber: string;
   plantDescription: string;
+  plantLocation?: string;
   plantStatus: 'Run' | 'Shut';
   
   // Details
