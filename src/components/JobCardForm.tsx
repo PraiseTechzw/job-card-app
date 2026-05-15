@@ -78,7 +78,8 @@ const JobCardForm: React.FC<JobCardFormProps> = ({ initialData, onSave, isSubmit
 
     const selected = machineOptions.find((item) => `${item.code}__${item.name}` === selectedValue);
     if (selected) {
-      const mappedLocation = machineLocations[selected.name] || machineLocations[selected.code] || '';
+      const map = machineLocations as Record<string, string>;
+      const mappedLocation = map[selected.name] || map[selected.code] || '';
       setFormData((prev) => ({ ...prev, plantNumber: selected.code, plantDescription: selected.name, plantLocation: mappedLocation }));
     }
   };

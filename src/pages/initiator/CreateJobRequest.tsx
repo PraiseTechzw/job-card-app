@@ -113,7 +113,8 @@ export default function CreateJobRequest() {
       f('plantNumber', selected.code);
       f('plantDescription', selected.name);
       // auto-fill exact location input if mapping exists
-      const mapped = machineLocations[selected.name] || machineLocations[selected.code] || '';
+      const map = machineLocations as Record<string, string>;
+      const mapped = map[selected.name] || map[selected.code] || '';
       if (mapped) setLocation(mapped);
     }
   };
