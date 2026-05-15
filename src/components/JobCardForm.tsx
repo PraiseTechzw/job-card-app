@@ -60,7 +60,7 @@ const JobCardForm: React.FC<JobCardFormProps> = ({ initialData, onSave, isSubmit
 
     const initial = Array.isArray(fromMaster)
       ? fromMaster
-      : fallbackMachines.map((name) => ({ code: name.replace(/\s+/g, '_').toUpperCase(), name }));
+      : fallbackMachines.map((name) => ({ code: String(name).trim(), name: String(name).trim() }));
 
     return initial.reduce<Array<{ code: string; name: string }>>((acc, item) => {
       const key = `${item.code}::${item.name}`.toLowerCase();
@@ -68,7 +68,7 @@ const JobCardForm: React.FC<JobCardFormProps> = ({ initialData, onSave, isSubmit
         acc.push(item);
       }
       return acc;
-    }, []).sort((a, b) => a.name.localeCompare(b.name));
+    }, []);
   }, [masterData]);
 
   const locationOptions = React.useMemo(() => {
