@@ -2071,6 +2071,43 @@ app.post('/api/admin/config', authenticateToken, authorizeRoles('Admin'), author
   }
 });
 
+// Admin: import machines from seed Excel into master_data['Plants / Assets']
+app.post('/api/admin/import-machines', authenticateToken, authorizeRoles('Admin'), authorizeModule('Admin Controls'), async (req, res) => {
+  try {
+    const workbook = new ExcelJS.Workbook();
+    await workbook.xlsx.readFile(path.join(__dirname, '../data/seed-data/machines with location.xlsx'));
+    const sheet = workbook.getWorksheet(1);
+    const machines = [];
+    sheet.eachRow((row, i) => {
+      if (i > 2) {
+        const name = row.values[2];
+        const loc = row.values[3];
+        if (name) {
+          const cleanName = name.toString().trim();
+          machines.push({ code: cleanName, name: cleanName, location: loc ? loc.toString().trim() : 'Unknown', active: true });
+        }
+      }
+    });
+
+    if (machines.length === 0) return res.status(400).json({ error: 'No machines found in seed file.' });
+
+    // Fetch existing master_data and merge
+    const runtimeConfig = await getMergedRuntimeConfig();
+    const existing = runtimeConfig.raw.master_data || {};
+    const nextMaster = { ...existing, ['Plants / Assets']: machines };
+
+    await query(
+      'INSERT INTO system_config (key, value, updated_at) VALUES ($1, $2, NOW()) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = NOW()',
+      ['master_data', JSON.stringify(nextMaster)]
+    );
+
+    await createAuditLog(pool, null, 'MASTER_DATA_IMPORTED', req.user?.name || 'Admin', { count: machines.length });
+    res.json({ message: `Imported ${machines.length} machines into master_data` });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 app.post('/api/admin/retention/manual-archive', authenticateToken, authorizeRoles('Admin'), authorizeModule('Admin Controls'), async (req, res) => {
   const execute = req.body?.execute === true;
   try {
