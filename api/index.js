@@ -269,6 +269,17 @@ app.get('/api/runtime/bootstrap', authenticateToken, async (req, res) => {
   }
 });
 
+// Convenience endpoint: return machines list from master data
+app.get('/api/machines', authenticateToken, async (req, res) => {
+  try {
+    const runtimeConfig = await getMergedRuntimeConfig();
+    const machines = (runtimeConfig.raw && runtimeConfig.raw.master_data && runtimeConfig.raw.master_data['Plants / Assets']) || [];
+    res.json({ machines });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // Utility to convert snake_case to camelCase
 const toCamel = (obj) => {
   if (!obj || typeof obj !== 'object') return obj;
