@@ -13,9 +13,11 @@ async function run() {
       console.log('No master_data found');
       return;
     }
-    let master = {};
-    try { master = JSON.parse(res.rows[0].value); } catch (e) { master = {}; }
-    const machines = master['Plants / Assets'] || [];
+    let master = res.rows[0].value;
+    if (typeof master === 'string') {
+      try { master = JSON.parse(master); } catch (e) { master = {}; }
+    }
+    const machines = (master && master['Plants / Assets']) || [];
     console.log(`Found ${machines.length} machines in master_data['Plants / Assets']`);
     console.log(JSON.stringify(machines, null, 2));
   } catch (err) {

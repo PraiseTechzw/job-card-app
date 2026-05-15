@@ -13,11 +13,16 @@ async function run() {
       console.log('No master_data row found');
       return;
     }
-    console.log('raw value length:', res.rows[0].value.length);
+    const raw = res.rows[0].value;
+    console.log('type of value:', typeof raw);
     console.log('updated_at:', res.rows[0].updated_at);
-    console.log('----- RAW START -----');
-    console.log(res.rows[0].value.slice(0, 2000));
-    console.log('----- RAW END -----');
+    try {
+      console.log('----- RAW JSON -----');
+      console.log(JSON.stringify(raw, null, 2).slice(0, 4000));
+      console.log('----- END -----');
+    } catch (e) {
+      console.log('Could not stringify raw value:', e.message || e);
+    }
   } catch (err) {
     console.error('Error reading master_data:', err.message || err);
   } finally {
