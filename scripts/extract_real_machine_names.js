@@ -18,15 +18,6 @@ function clean(value) {
   return String(value || '').trim().replace(/\s+/g, ' ');
 }
 
-function isRealMachineName(value) {
-  const s = clean(value);
-  if (!s) return false;
-  if (!/[A-Za-z]/.test(s)) return false;
-  if (/^machine$/i.test(s)) return false;
-  if (/^fault/i.test(s)) return false;
-  return true;
-}
-
 for (const source of sources) {
   const workbook = new ExcelJS.Workbook();
   const filePath = path.join(__dirname, '..', 'data', 'seed-data', source.file);
@@ -35,7 +26,7 @@ for (const source of sources) {
   sheet.eachRow((row, i) => {
     if (i >= source.startRow) {
       const value = clean(row.getCell(source.col).value);
-      if (isRealMachineName(value)) {
+      if (value) {
         set.set(value.toLowerCase(), value);
       }
     }

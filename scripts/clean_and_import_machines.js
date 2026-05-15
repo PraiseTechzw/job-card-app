@@ -20,17 +20,7 @@ function normalizeName(n) {
     .toLowerCase();
 }
 
-function isValidMachineName(n) {
-  const s = String(n || '').trim();
-  if (!s) return false;
-  // reject purely numeric names like '30', '60'
-  if (/^\d+$/.test(s)) return false;
-  // reject very short single-character values (except common two-letter codes)
-  if (s.length === 1) return false;
-  return true;
-}
-
-async function collectFromExcel(filename, colNameIndex = 2, colLocIndex = 3) {
+async function collectFromExcel(filename, colNameIndex = 2, colLocIndex = 3, startRow = 3) {
   const workbook = new ExcelJS.Workbook();
   try {
     await workbook.xlsx.readFile(filename);
@@ -41,24 +31,27 @@ async function collectFromExcel(filename, colNameIndex = 2, colLocIndex = 3) {
   const sheet = workbook.getWorksheet(1);
   const items = [];
   sheet.eachRow((row, i) => {
-    if (i > 2) {
+    if (i >= startRow) {
       const name = row.values[colNameIndex];
       const loc = row.values[colLocIndex];
-      if (name && isValidMachineName(name)) items.push({ name: String(name).trim(), location: loc ? String(loc).trim() : 'Unknown' });
+      if (name) items.push({ name: String(name).trim(), location: loc ? String(loc).trim() : 'Unknown' });
     }
   });
   return items;
 }
 
 async function run() {
-  const files = [
-    path.join(__dirname, '..', 'data', 'seed-data', 'machines with location.xlsx'),
-    path.join(__dirname, '..', 'data', 'seed-data', 'location.xlsx')
+  const sources = [
+    { file: 'machines with location.xlsx', col: 2, startRow: 3, locCol: 3 },
+    { file: 'Machine breakdown.xlsx', col: 4, startRow: 3 },
+    { file: 'Machine breakdown query.xlsx', col: 2, startRow: 5 },
+    { file: 'machineFault frequency.xlsx', col: 2, startRow: 4 },
   ];
 
   const collected = [];
-  for (const f of files) {
-    const items = await collectFromExcel(f);
+  for (const source of sources) {
+    const filePath = path.join(__dirname, '..', 'data', 'seed-data', source.file);
+    const items = await collectFromExcel(filePath, source.col, source.locCol || source.col + 1, source.startRow);
     if (items && items.length) collected.push(...items);
   }
 
@@ -93,7 +86,7 @@ async function run() {
       ['master_data', JSON.stringify(master)]
     );
     await client.query('COMMIT');
-    console.log(`Imported ${machines.length} cleaned machines into master_data`);
+    console.log(`Imported ${machines.length} raw machines into master_data`);
   } catch (err) {
     await client.query('ROLLBACK');
     console.error('DB insert failed:', err.message || err);
