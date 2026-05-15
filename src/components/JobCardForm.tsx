@@ -4,6 +4,7 @@ import { FormField, Input, TextArea, Select, CheckboxGroup, RadioGroup } from '.
 import type { JobCard, Trade, JobCardStatus } from '../types';
 import { useAuth } from '../context/AuthContext';
 import { useRuntimeConfig } from '../context/RuntimeConfigContext';
+import machineLocations from '../data/machine_locations.json';
 import { Send, Save, ArrowLeft } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
@@ -45,30 +46,12 @@ const JobCardForm: React.FC<JobCardFormProps> = ({ initialData, onSave, isSubmit
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const machineOptions = React.useMemo(() => {
-    const fromMaster = Array.isArray(masterData?.['Plants / Assets'])
-      ? masterData['Plants / Assets']
-          .filter((item: any) => item?.active !== false)
-          .map((item: any) => ({
-            code: String(item.code || item.name || '').trim(),
-            name: String(item.name || item.code || '').trim(),
-          }))
-      : null;
-
+    // Use ONLY the exact machine list provided by the user (preserve order).
     const fallbackMachines = [
       'EXB02','HYPET 400','UROLA BLOWER','KM02','KM04','SACMI','INJ03','CHIPPER','EXB02 CHIPPER','HUSKY','KM01','CMM Mitutoyo','INJ06','EXB04 CHIPPER','WINTEC','DBs','AIR DRYERS','FILMATIC BLOWER','CHILLER','INJ07','SB10','L132 RS COMPRESSOR','L132 COMPRESSOR','COLDROOM','UROLA','UROLA MAHEU','KM','KM03','TUMBLER','SB13','SERVICES','SACMI LAB','UROLA TRIMMER','TC500','TMC 750','MC03','NETSTAL','HOOVER','TC480','TC300','16G MOULD','INJ02','TRANSFORMER','FLAME TREATER','TMC','AIR COMPRESSORS','WALKER DRIER','EXB03 CHIPPER','CHILLER FRIGO','AIR CONDITIONERS','L30 COMPRESSOR','CHIPPER 2','ROTO','SB11','CHILLER TC500','CHILLER KM3','LABELLER','EXB03','EXB04','EXB04 LEAK TESTER','CHILLER 360','INJ05'
     ];
 
-    const initial = Array.isArray(fromMaster)
-      ? fromMaster
-      : fallbackMachines.map((name) => ({ code: String(name).trim(), name: String(name).trim() }));
-
-    return initial.reduce<Array<{ code: string; name: string }>>((acc, item) => {
-      const key = `${item.code}::${item.name}`.toLowerCase();
-      if (!acc.some((existing) => `${existing.code}::${existing.name}`.toLowerCase() === key)) {
-        acc.push(item);
-      }
-      return acc;
-    }, []);
+    return fallbackMachines.map((name) => ({ code: String(name).trim(), name: String(name).trim() }));
   }, [masterData]);
 
   const locationOptions = React.useMemo(() => {
@@ -89,13 +72,14 @@ const JobCardForm: React.FC<JobCardFormProps> = ({ initialData, onSave, isSubmit
 
   const selectMachine = (selectedValue: string) => {
     if (!selectedValue) {
-      setFormData((prev) => ({ ...prev, plantNumber: '', plantDescription: '' }));
+      setFormData((prev) => ({ ...prev, plantNumber: '', plantDescription: '', plantLocation: '' }));
       return;
     }
 
     const selected = machineOptions.find((item) => `${item.code}__${item.name}` === selectedValue);
     if (selected) {
-      setFormData((prev) => ({ ...prev, plantNumber: selected.code, plantDescription: selected.name }));
+      const mappedLocation = machineLocations[selected.name] || machineLocations[selected.code] || '';
+      setFormData((prev) => ({ ...prev, plantNumber: selected.code, plantDescription: selected.name, plantLocation: mappedLocation }));
     }
   };
 

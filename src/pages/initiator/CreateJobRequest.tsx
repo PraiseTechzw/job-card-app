@@ -10,6 +10,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useRuntimeConfig } from '../../context/RuntimeConfigContext';
 import type { JobCard, Trade } from '../../types';
 import styles from '../JobCards.module.css';
+import machineLocations from '../../data/machine_locations.json';
 
 const TRADE_OPTIONS: Trade[] = ['Fitting','Tooling','Electrical','B/ Making','Inst & Cntrl','Machine Shop','Build & Maint','Project'];
 const JOB_CATEGORIES = ['Defect','Maintenance Schedule','Installation','Modification','Inspection'];
@@ -73,6 +74,8 @@ export default function CreateJobRequest() {
   // Extra initiator-only local fields (not in JobCard type, stored in maintenanceSchedule + defect for now)
   const [jobCategory, setJobCategory]     = useState('Defect');
   const [location, setLocation]           = useState('');
+  const [showCustomLocation, setShowCustomLocation] = useState(false);
+  const [customLocation, setCustomLocation] = useState('');
   const [safetyLevel, setSafetyLevel]     = useState('None – No risk');
   const [productionAffected, setProductionAffected] = useState<'Yes'|'No'>('No');
   const [repeatFailure, setRepeatFailure] = useState<'Yes'|'No'>('No');
@@ -82,22 +85,20 @@ export default function CreateJobRequest() {
   const [step, setStep] = useState(1);
 
   const machineOptions = useMemo(() => {
-    const fromMaster = Array.isArray(masterData?.['Plants / Assets'])
-      ? masterData['Plants / Assets']
-          .filter((item: any) => item?.active !== false)
-          .map((item: any) => ({
-            code: String(item.code || item.name || '').trim(),
-            name: String(item.name || item.code || '').trim(),
-          }))
-      : [];
+    // Force the machine select to use only the provided 62-machine list (preserve order)
+    const fallbackMachines = [
+      'EXB02','HYPET 400','UROLA BLOWER','KM02','KM04','SACMI','INJ03','CHIPPER','EXB02 CHIPPER','HUSKY','KM01','CMM Mitutoyo','INJ06','EXB04 CHIPPER','WINTEC','DBs','AIR DRYERS','FILMATIC BLOWER','CHILLER','INJ07','SB10','L132 RS COMPRESSOR','L132 COMPRESSOR','COLDROOM','UROLA','UROLA MAHEU','KM','KM03','TUMBLER','SB13','SERVICES','SACMI LAB','UROLA TRIMMER','TC500','TMC 750','MC03','NETSTAL','HOOVER','TC480','TC300','16G MOULD','INJ02','TRANSFORMER','FLAME TREATER','TMC','AIR COMPRESSORS','WALKER DRIER','EXB03 CHIPPER','CHILLER FRIGO','AIR CONDITIONERS','L30 COMPRESSOR','CHIPPER 2','ROTO','SB11','CHILLER TC500','CHILLER KM3','LABELLER','EXB03','EXB04','EXB04 LEAK TESTER','CHILLER 360','INJ05'
+    ];
 
-    return fromMaster.reduce<Array<{ code: string; name: string }>>((acc, item) => {
-      const key = `${item.code}::${item.name}`.toLowerCase();
-      if (!acc.some((existing) => `${existing.code}::${existing.name}`.toLowerCase() === key)) {
-        acc.push(item);
-      }
-      return acc;
-    }, []).sort((a, b) => a.name.localeCompare(b.name));
+    return fallbackMachines.map((name) => ({ code: String(name).trim(), name: String(name).trim() }));
+  }, [masterData]);
+
+  const locationOptions = useMemo(() => {
+    const fromMaster = masterData?.Locations || masterData?.locations || masterData?.['Locations'] || null;
+    if (Array.isArray(fromMaster)) return fromMaster.map((i: any) => (typeof i === 'string' ? i : i.name || i.code)).filter(Boolean);
+    return [
+      'BLOW','CREDITORS','ENGINEERING','HQ','IT','LIM','PET','POLYCYCLING','PREFORMS','QC LAB','ROTO','SACMI','SALES','STORES','TRADITIONAL CANTEEN','WARE HOUSE','WESTERN CANTEEN','WILLOWVALE MAHEU'
+    ];
   }, [masterData]);
 
   const selectMachine = (selectedValue: string) => {
@@ -111,6 +112,9 @@ export default function CreateJobRequest() {
     if (selected) {
       f('plantNumber', selected.code);
       f('plantDescription', selected.name);
+      // auto-fill exact location input if mapping exists
+      const mapped = machineLocations[selected.name] || machineLocations[selected.code] || '';
+      if (mapped) setLocation(mapped);
     }
   };
 
@@ -452,8 +456,33 @@ export default function CreateJobRequest() {
               <Label text="Exact Location / Area" />
               <div style={{ position: 'relative' }}>
                 <MapPin size={13} style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: '#64748b' }} />
-                <input className="form-input" style={{ paddingLeft: 30 }} value={location} onChange={e => setLocation(e.target.value)} placeholder="e.g. Section B, Pit 3" />
+                <select
+                  className="form-select"
+                  style={{ paddingLeft: 30 }}
+                  value={showCustomLocation ? '__other__' : (location || '')}
+                  onChange={(e) => {
+                    const v = e.target.value;
+                    if (v === '__other__') {
+                      setShowCustomLocation(true);
+                      setLocation('');
+                    } else {
+                      setShowCustomLocation(false);
+                      setLocation(v);
+                    }
+                  }}
+                >
+                  <option value="">Choose a location...</option>
+                  {locationOptions.map((loc) => (
+                    <option key={loc} value={loc}>{loc}</option>
+                  ))}
+                  <option value="__other__">Other (type custom location)</option>
+                </select>
               </div>
+              {showCustomLocation && (
+                <div style={{ marginTop: 8 }}>
+                  <input className="form-input" value={customLocation} onChange={e => { setCustomLocation(e.target.value); setLocation(e.target.value); }} placeholder="Type exact location" />
+                </div>
+              )}
             </div>
             <div>
               <Label text="Job Category" />
