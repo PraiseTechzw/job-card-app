@@ -3,6 +3,8 @@ import cors from 'cors';
 import { Pool } from '@neondatabase/serverless';
 import 'dotenv/config';
 import { fileURLToPath } from 'url';
+import path from 'path';
+import ExcelJS from 'exceljs';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { isValidTransition } from './workflow.js';
@@ -41,6 +43,9 @@ const JWT_SECRET = process.env.JWT_SECRET;
 const app = express();
 app.use(cors());
 app.use(express.json());
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const processStartTime = Date.now();
 const responseTimes = [];
@@ -273,7 +278,29 @@ app.get('/api/runtime/bootstrap', authenticateToken, async (req, res) => {
 app.get('/api/machines', authenticateToken, async (req, res) => {
   try {
     const runtimeConfig = await getMergedRuntimeConfig();
-    const machines = (runtimeConfig.raw && runtimeConfig.raw.master_data && runtimeConfig.raw.master_data['Plants / Assets']) || [];
+    let machines = (runtimeConfig.raw && runtimeConfig.raw.master_data && runtimeConfig.raw.master_data['Plants / Assets']) || [];
+
+    // Fallback: if master_data is empty, try reading the local seed Excel file
+    if ((!machines || machines.length === 0)) {
+      try {
+        const workbook = new ExcelJS.Workbook();
+        await workbook.xlsx.readFile(path.join(__dirname, '../data/seed-data/machines with location.xlsx'));
+        const sheet = workbook.getWorksheet(1);
+        const parsed = [];
+        sheet.eachRow((row, i) => {
+          if (i > 2) {
+            const name = row.values[2];
+            const loc = row.values[3];
+            if (name) parsed.push({ name: name.toString().trim(), location: loc ? loc.toString().trim() : 'Unknown' });
+          }
+        });
+        if (parsed.length) machines = parsed;
+      } catch (ex) {
+        // ignore excel read errors, we'll return whatever we have
+        console.error('Failed to read machines Excel fallback:', ex.message || ex);
+      }
+    }
+
     res.json({ machines });
   } catch (err) {
     res.status(500).json({ error: err.message });
