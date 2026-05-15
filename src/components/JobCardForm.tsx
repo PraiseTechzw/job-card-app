@@ -52,9 +52,17 @@ const JobCardForm: React.FC<JobCardFormProps> = ({ initialData, onSave, isSubmit
             code: String(item.code || item.name || '').trim(),
             name: String(item.name || item.code || '').trim(),
           }))
-      : [];
+      : null;
 
-    return fromMaster.reduce<Array<{ code: string; name: string }>>((acc, item) => {
+    const fallbackMachines = [
+      'EXB02','HYPET 400','UROLA BLOWER','KM02','KM04','SACMI','INJ03','CHIPPER','EXB02 CHIPPER','HUSKY','KM01','CMM Mitutoyo','INJ06','EXB04 CHIPPER','WINTEC','DBs','AIR DRYERS','FILMATIC BLOWER','CHILLER','INJ07','SB10','L132 RS COMPRESSOR','L132 COMPRESSOR','COLDROOM','UROLA','UROLA MAHEU','KM','KM03','TUMBLER','SB13','SERVICES','SACMI LAB','UROLA TRIMMER','TC500','TMC 750','MC03','NETSTAL','HOOVER','TC480','TC300','16G MOULD','INJ02','TRANSFORMER','FLAME TREATER','TMC','AIR COMPRESSORS','WALKER DRIER','EXB03 CHIPPER','CHILLER FRIGO','AIR CONDITIONERS','L30 COMPRESSOR','CHIPPER 2','ROTO','SB11','CHILLER TC500','CHILLER KM3','LABELLER','EXB03','EXB04','EXB04 LEAK TESTER','CHILLER 360','INJ05'
+    ];
+
+    const initial = Array.isArray(fromMaster)
+      ? fromMaster
+      : fallbackMachines.map((name) => ({ code: name.replace(/\s+/g, '_').toUpperCase(), name }));
+
+    return initial.reduce<Array<{ code: string; name: string }>>((acc, item) => {
       const key = `${item.code}::${item.name}`.toLowerCase();
       if (!acc.some((existing) => `${existing.code}::${existing.name}`.toLowerCase() === key)) {
         acc.push(item);
