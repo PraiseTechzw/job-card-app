@@ -3,7 +3,6 @@ import styles from './JobCardForm.module.css';
 import { FormField, Input, TextArea, Select, CheckboxGroup, RadioGroup } from '../components/Form';
 import type { JobCard, Trade, JobCardStatus } from '../types';
 import { useAuth } from '../context/AuthContext';
-import { useJobCards } from '../context/JobCardContext';
 import { useRuntimeConfig } from '../context/RuntimeConfigContext';
 import { Send, Save, ArrowLeft } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -21,7 +20,6 @@ const TRADE_OPTIONS: Trade[] = [
 
 const JobCardForm: React.FC<JobCardFormProps> = ({ initialData, onSave, isSubmitting }) => {
   const { user } = useAuth();
-  const { jobCards } = useJobCards();
   const { masterData } = useRuntimeConfig();
   const navigate = useNavigate();
   
@@ -55,21 +53,14 @@ const JobCardForm: React.FC<JobCardFormProps> = ({ initialData, onSave, isSubmit
           }))
       : [];
 
-    const fromJobs = jobCards
-      .map((card) => ({
-        code: card.plantNumber?.trim() || '',
-        name: card.plantDescription?.trim() || '',
-      }))
-      .filter((item) => item.code || item.name);
-
-    return [...fromMaster, ...fromJobs].reduce<Array<{ code: string; name: string }>>((acc, item) => {
+    return fromMaster.reduce<Array<{ code: string; name: string }>>((acc, item) => {
       const key = `${item.code}::${item.name}`.toLowerCase();
       if (!acc.some((existing) => `${existing.code}::${existing.name}`.toLowerCase() === key)) {
         acc.push(item);
       }
       return acc;
-    }, []).sort((a, b) => a.code.localeCompare(b.code));
-  }, [jobCards, masterData]);
+    }, []).sort((a, b) => a.name.localeCompare(b.name));
+  }, [masterData]);
 
   const selectMachine = (selectedValue: string) => {
     if (!selectedValue) {
@@ -198,7 +189,7 @@ const JobCardForm: React.FC<JobCardFormProps> = ({ initialData, onSave, isSubmit
                 onChange={(e) => selectMachine(e.target.value)}
                 options={[
                   { value: '', label: 'Choose a machine / asset...' },
-                  ...machineOptions.map((item) => ({ value: `${item.code}__${item.name}`, label: `${item.code} - ${item.name}` })),
+                  ...machineOptions.map((item) => ({ value: `${item.code}__${item.name}`, label: item.name || item.code })),
                 ]}
               />
             </FormField>

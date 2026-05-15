@@ -91,21 +91,14 @@ export default function CreateJobRequest() {
           }))
       : [];
 
-    const fromJobs = jobCards
-      .map((card) => ({
-        code: card.plantNumber?.trim() || '',
-        name: card.plantDescription?.trim() || '',
-      }))
-      .filter((item) => item.code || item.name);
-
-    return [...fromMaster, ...fromJobs].reduce<Array<{ code: string; name: string }>>((acc, item) => {
+    return fromMaster.reduce<Array<{ code: string; name: string }>>((acc, item) => {
       const key = `${item.code}::${item.name}`.toLowerCase();
       if (!acc.some((existing) => `${existing.code}::${existing.name}`.toLowerCase() === key)) {
         acc.push(item);
       }
       return acc;
-    }, []).sort((a, b) => a.code.localeCompare(b.code));
-  }, [jobCards, masterData]);
+    }, []).sort((a, b) => a.name.localeCompare(b.name));
+  }, [masterData]);
 
   const selectMachine = (selectedValue: string) => {
     if (!selectedValue) {
@@ -395,7 +388,7 @@ export default function CreateJobRequest() {
                 <option value="">Choose a machine / asset...</option>
                 {machineOptions.map((item) => (
                   <option key={`${item.code}__${item.name}`} value={`${item.code}__${item.name}`}>
-                    {item.code} - {item.name}
+                    {item.name || item.code}
                   </option>
                 ))}
               </select>
